@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="ltr"] {
+  direction: ltr;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-vazir), system-ui, sans-serif;
+}
+
+.trading-wall-logo {
+  font-family: var(--font-orbitron), sans-serif;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, #3786b8 0%, #2b458c 100%);
+  padding: 4px;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.25);
+}
+
+.logo-badge-light {
+  background: linear-gradient(135deg, #9ebbdf 0%, #0f4787 100%);
+  padding: 4px;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Profit/Loss colors */
+.profit-text {
+  color: #10b981;
+}
+
+.loss-text {
+  color: #ef4444;
+}
+
+.profit-bg {
+  background-color: #d1fae5;
+}
+
+.loss-bg {
+  background-color: #fee2e2;
+}
