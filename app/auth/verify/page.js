@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import Button from "@/components/Button";
-import Input from "@/components/Input";
-import { LoadingSpinner } from "@/components/Loading";
+import {
+  buildSupportRedirect,
+  isInactiveAccountError,
+} from "@/utils/supportRedirect";
 
-export default function VerifyPage() {
+function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phone = searchParams.get("phone");
@@ -54,6 +55,16 @@ export default function VerifyPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (isInactiveAccountError(data.error)) {
+          router.push(
+            buildSupportRedirect({
+              phone,
+              category: "account_activation",
+              reason: "inactive",
+            }),
+          );
+          return;
+        }
         throw new Error(data.error || "کد تایید نامعتبر است");
       }
 
@@ -65,6 +76,16 @@ export default function VerifyPage() {
       // Redirect to dashboard
       router.push("/dashboard");
     } catch (err) {
+      if (isInactiveAccountError(err.message)) {
+        router.push(
+          buildSupportRedirect({
+            phone,
+            category: "account_activation",
+            reason: "inactive",
+          }),
+        );
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -87,11 +108,31 @@ export default function VerifyPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (isInactiveAccountError(data.error)) {
+          router.push(
+            buildSupportRedirect({
+              phone,
+              category: "account_activation",
+              reason: "inactive",
+            }),
+          );
+          return;
+        }
         throw new Error(data.error || "خطا در ارسال کد");
       }
 
       setResendTimer(120);
     } catch (err) {
+      if (isInactiveAccountError(err.message)) {
+        router.push(
+          buildSupportRedirect({
+            phone,
+            category: "account_activation",
+            reason: "inactive",
+          }),
+        );
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -206,5 +247,21 @@ export default function VerifyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function VerifyFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+      <div className="text-white text-center">در حال بارگذاری...</div>
+    </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<VerifyFallback />}>
+      <VerifyContent />
+    </Suspense>
   );
 }

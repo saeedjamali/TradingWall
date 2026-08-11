@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Loading from '@/components/Loading'
 import AdminHeader from '@/components/AdminHeader'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
+import { UserName } from '@/components/VerifiedBadge'
 import { formatDate } from '@/utils/dateHelpers'
 
 export default function AdminUsersPage() {
@@ -18,7 +20,10 @@ export default function AdminUsersPage() {
     search: '',
     verified: '',
     role: '',
+    isActive: '',
   })
+  const [tempPasswordInfo, setTempPasswordInfo] = useState(null)
+  const [actionLoadingId, setActionLoadingId] = useState(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -52,6 +57,7 @@ export default function AdminUsersPage() {
       if (filters.search) params.set('search', filters.search)
       if (filters.verified) params.set('verified', filters.verified)
       if (filters.role) params.set('role', filters.role)
+      if (filters.isActive) params.set('isActive', filters.isActive)
 
       const response = await fetch(`/api/admin/users?${params}`)
       const data = await response.json()
@@ -115,6 +121,92 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleToggleActive = async (targetUser) => {
+    const nextActive = targetUser.isActive === false
+    const label = nextActive ? 'فعال' : 'غیرفعال'
+    if (
+      !confirm(
+        `آیا از ${label} کردن کاربر «${targetUser.publicName || targetUser.phone}» مطمئن هستید؟`
+      )
+    ) {
+      return
+    }
+
+    setActionLoadingId(targetUser._id)
+    try {
+      const response = await fetch(`/api/admin/users/${targetUser._id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.id,
+          isActive: nextActive,
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id === targetUser._id ? { ...u, isActive: nextActive } : u
+          )
+        )
+      } else {
+        alert(data.error || 'خطا')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('خطا در تغییر وضعیت کاربر')
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const handleResetPassword = async (targetUser) => {
+    if (
+      !confirm(
+        `رمز عبور «${targetUser.publicName || targetUser.phone}» ریست شود؟ رمز موقت فقط یک‌بار نمایش داده می‌شود.`
+      )
+    ) {
+      return
+    }
+
+    setActionLoadingId(targetUser._id)
+    try {
+      const response = await fetch(
+        `/api/admin/users/${targetUser._id}/reset-password`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminUserId: user.id }),
+        }
+      )
+      const data = await response.json()
+      if (data.success) {
+        setTempPasswordInfo({
+          publicName: targetUser.publicName,
+          phone: targetUser.phone,
+          tempPassword: data.tempPassword,
+        })
+      } else {
+        alert(data.error || 'خطا در ریست رمز')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('خطا در ریست رمز')
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const copyTempPassword = async () => {
+    if (!tempPasswordInfo?.tempPassword) return
+    try {
+      await navigator.clipboard.writeText(tempPasswordInfo.tempPassword)
+      alert('رمز موقت کپی شد')
+    } catch {
+      alert('کپی نشد؛ رمز را دستی بردارید')
+    }
+  }
+
   if (!user) {
     return <Loading text="در حال بارگذاری..." />
   }
@@ -133,7 +225,7 @@ export default function AdminUsersPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <Input
               placeholder="جستجو نام یا شماره..."
               value={filters.search}
@@ -144,7 +236,7 @@ export default function AdminUsersPage() {
               onChange={(e) => setFilters({ ...filters, verified: e.target.value })}
               className="p-3 border border-gray-300 rounded-lg text-gray-900"
             >
-              <option value="">همه وضعیت‌ها</option>
+              <option value="">همه تاییدها</option>
               <option value="true">تایید شده</option>
               <option value="false">تایید نشده</option>
             </select>
@@ -157,9 +249,47 @@ export default function AdminUsersPage() {
               <option value="user">کاربر</option>
               <option value="admin">مدیر</option>
             </select>
+            <select
+              value={filters.isActive}
+              onChange={(e) => setFilters({ ...filters, isActive: e.target.value })}
+              className="p-3 border border-gray-300 rounded-lg text-gray-900"
+            >
+              <option value="">همه حساب‌ها</option>
+              <option value="true">فعال</option>
+              <option value="false">غیرفعال</option>
+            </select>
             <Button onClick={() => fetchUsers(user.id, 1)}>اعمال فیلتر</Button>
           </div>
         </div>
+
+        {tempPasswordInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" dir="rtl">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">رمز موقت جدید</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                برای {tempPasswordInfo.publicName || 'کاربر'} ({tempPasswordInfo.phone})
+              </p>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center mb-4">
+                <p className="text-xs text-gray-500 mb-1">این رمز فقط یک‌بار نمایش داده می‌شود</p>
+                <p className="text-2xl font-mono font-bold tracking-wider text-gray-900" dir="ltr">
+                  {tempPasswordInfo.tempPassword}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={copyTempPassword} className="flex-1">
+                  کپی رمز
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setTempPasswordInfo(null)}
+                >
+                  بستن
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <Loading text="در حال بارگذاری کاربران..." />
@@ -188,12 +318,22 @@ export default function AdminUsersPage() {
                       </tr>
                     ) : (
                       users.map((u) => (
-                        <tr key={u._id} className="hover:bg-gray-50">
+                        <tr
+                          key={u._id}
+                          className={`hover:bg-gray-50 ${u.isActive === false ? 'bg-rose-50/40' : ''}`}
+                        >
                           <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">{u.publicName || '—'}</span>
-                              {u.verified && (
-                                <span className="text-blue-500" title="تایید شده">✓</span>
+                            <div className="flex flex-col gap-1">
+                              <UserName
+                                name={u.publicName || '—'}
+                                verified={u.verified}
+                                className="font-medium text-gray-900"
+                                badgeClassName="w-4 h-4 text-blue-500"
+                              />
+                              {u.isActive === false && (
+                                <span className="inline-flex w-fit text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">
+                                  غیرفعال
+                                </span>
                               )}
                             </div>
                           </td>
@@ -219,16 +359,44 @@ export default function AdminUsersPage() {
                             {formatDate(u.createdAt)}
                           </td>
                           <td className="px-4 py-3">
-                            <button
-                              onClick={() => handleVerify(u._id, !u.verified)}
-                              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                u.verified
-                                  ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                              }`}
-                            >
-                              {u.verified ? 'لغو تیک آبی' : 'اعطای تیک آبی'}
-                            </button>
+                            <div className="flex flex-wrap gap-1.5" dir="rtl">
+                              <Link
+                                href={`/wall/${u._id}`}
+                                target="_blank"
+                                className="px-2.5 py-1 rounded text-xs font-medium bg-primary-100 text-primary-700 hover:bg-primary-200 transition-colors"
+                              >
+                                مشاهده دیوار
+                              </Link>
+                              <button
+                                onClick={() => handleVerify(u._id, !u.verified)}
+                                disabled={actionLoadingId === u._id}
+                                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                                  u.verified
+                                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                }`}
+                              >
+                                {u.verified ? 'لغو تیک آبی' : 'اعطای تیک آبی'}
+                              </button>
+                              <button
+                                onClick={() => handleResetPassword(u)}
+                                disabled={actionLoadingId === u._id}
+                                className="px-2.5 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
+                              >
+                                ریست رمز
+                              </button>
+                              <button
+                                onClick={() => handleToggleActive(u)}
+                                disabled={actionLoadingId === u._id || u._id === user.id}
+                                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50 ${
+                                  u.isActive === false
+                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                    : 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                }`}
+                              >
+                                {u.isActive === false ? 'فعال کردن' : 'غیرفعال کردن'}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))

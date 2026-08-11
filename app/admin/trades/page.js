@@ -6,6 +6,7 @@ import Loading from '@/components/Loading'
 import AdminHeader from '@/components/AdminHeader'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
+import { UserName } from '@/components/VerifiedBadge'
 import { formatDateTime } from '@/utils/dateHelpers'
 
 export default function AdminTradesPage() {
@@ -170,9 +171,12 @@ export default function AdminTradesPage() {
                       trades.map((trade) => (
                         <tr key={trade._id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm">
-                            <div className="font-medium text-gray-900">
-                              {trade.userId?.publicName || '—'}
-                            </div>
+                            <UserName
+                              name={trade.userId?.publicName || '—'}
+                              verified={trade.userId?.verified}
+                              className="font-medium text-gray-900"
+                              badgeClassName="w-3.5 h-3.5 text-blue-500"
+                            />
                             <div className="text-xs text-gray-500">{trade.userId?.phone}</div>
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">{trade.symbol}</td>

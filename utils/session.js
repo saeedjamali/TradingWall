@@ -35,6 +35,12 @@ export function normalizeSessionUser(raw) {
   }
 }
 
+export function clearSession() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('user')
+  localStorage.removeItem('tokenExpiry')
+}
+
 /**
  * Read + repair localStorage user session.
  * If repaired, writes back to localStorage.
@@ -47,15 +53,13 @@ export function getSessionUser() {
 
   if (!raw || !tokenExpiry) return null
   if (Date.now() >= parseInt(tokenExpiry)) {
-    localStorage.removeItem('user')
-    localStorage.removeItem('tokenExpiry')
+    clearSession()
     return null
   }
 
   const normalized = normalizeSessionUser(raw)
   if (!normalized) {
-    localStorage.removeItem('user')
-    localStorage.removeItem('tokenExpiry')
+    clearSession()
     return null
   }
 

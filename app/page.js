@@ -5,16 +5,39 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProposalForm from "@/components/ProposalForm";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { getSessionUser } from "@/utils/session";
+import { FEEDBACK_CATEGORY_VALUES } from "@/utils/feedbackCategories";
 
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [homeBoards, setHomeBoards] = useState(null);
   const [boardsLoading, setBoardsLoading] = useState(true);
+  const [supportCategory, setSupportCategory] = useState("other");
+  const [supportPhone, setSupportPhone] = useState("");
+  const [supportReason, setSupportReason] = useState("");
 
   useEffect(() => {
     setUser(getSessionUser());
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const category = params.get("category");
+      setSupportCategory(
+        FEEDBACK_CATEGORY_VALUES.includes(category) ? category : "other",
+      );
+      setSupportPhone(params.get("phone") || "");
+      setSupportReason(params.get("reason") || "");
+
+      if (window.location.hash === "#support") {
+        setTimeout(() => {
+          document
+            .getElementById("support")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 120);
+      }
+    }
 
     let cancelled = false;
     (async () => {
@@ -259,32 +282,55 @@ export default function Home() {
         </section>
 
         {/* Feedback / Development section */}
-        <section className="container mx-auto px-4 py-16">
+        <section id="support" className="container mx-auto px-4 py-16 scroll-mt-8">
           <div className="max-w-3xl mx-auto bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 md:p-8">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 text-center">
               این سایت در حال توسعه می‌باشد
             </h2>
-            <p className="text-gray-300 text-center mb-8 text-sm md:text-base leading-relaxed">
+            <p className="text-gray-300 text-center mb-6 text-sm md:text-base leading-relaxed">
               لطفاً انتقادات و چالش‌ها را برای توسعه سایت برای ما ارسال کنید.
               نظر شما به بخش نظرات مدیر می‌رود و پس از بررسی پاسخ دریافت
               می‌کنید.
             </p>
+
+            {supportReason === "inactive" && (
+              <div className="mb-6 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-amber-100 text-sm text-center">
+                حساب شما غیرفعال است. دسته‌بندی «فعال‌سازی کاربری» را انتخاب
+                کرده و درخواست خود را برای پشتیبانی ارسال کنید.
+              </div>
+            )}
+
             <ProposalForm
               dark
+              allowGuest
               requireLogin
               isLoggedIn={!!user}
+              showCategory
+              defaultCategory={
+                supportReason === "inactive"
+                  ? "account_activation"
+                  : supportCategory
+              }
+              defaultPhone={supportPhone}
+              defaultTitle={
+                supportReason === "inactive" ? "درخواست فعال‌سازی حساب" : ""
+              }
               submitLabel="ارسال نظر / پیشنهاد"
-              onSubmit={async ({ title, body, image }) => {
+              onSubmit={async ({ title, body, image, category, phone }) => {
+                const payload = {
+                  type: "site_feedback",
+                  title,
+                  body,
+                  image,
+                  category,
+                };
+                if (user?.id) payload.userId = user.id;
+                else if (phone) payload.phone = phone;
+
                 const res = await fetch("/api/messages", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    userId: user.id,
-                    type: "site_feedback",
-                    title,
-                    body,
-                    image,
-                  }),
+                  body: JSON.stringify(payload),
                 });
                 const data = await res.json();
                 if (!res.ok || !data.success) {
@@ -379,17 +425,7 @@ function HomeLeaderboardCard({ title, minTrades, board, loading }) {
                     </span>
                   )}
                   {trader.verified && (
-                    <svg
-                      className="w-4 h-4 text-blue-400 shrink-0"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <VerifiedBadge className="w-4 h-4 text-blue-400" />
                   )}
                 </div>
               </div>

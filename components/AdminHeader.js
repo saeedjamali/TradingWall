@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { UserName } from "@/components/VerifiedBadge";
 
 const navItems = [
   { href: "/admin", label: "داشبورد", icon: "🏠", exact: true },
@@ -78,9 +79,12 @@ export default function AdminHeader({ user }) {
               </svg>
               <span className="hidden md:inline">نمای کاربری</span>
             </Link>
-            <span className="hidden md:inline text-slate-400 text-sm truncate max-w-[100px]">
-              {user?.publicName}
-            </span>
+            <UserName
+              name={user?.publicName}
+              verified={user?.verified}
+              className="hidden md:inline-flex text-slate-400 text-sm max-w-[140px]"
+              badgeClassName="w-3.5 h-3.5 text-blue-500"
+            />
             <button
               onClick={handleLogout}
               title="خروج"

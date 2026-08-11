@@ -40,7 +40,7 @@ export async function GET(request) {
 
     // Recent trades
     const recentTrades = await Trade.find()
-      .populate('userId', 'publicName phone')
+      .populate('userId', 'publicName phone verified')
       .sort({ createdAt: -1 })
       .limit(5)
 

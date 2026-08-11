@@ -7,6 +7,10 @@ import Image from "next/image";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import { LoadingSpinner } from "@/components/Loading";
+import {
+  buildSupportRedirect,
+  isInactiveAccountError,
+} from "@/utils/supportRedirect";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +19,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const redirectInactiveToSupport = (message) => {
+    if (!isInactiveAccountError(message)) return false;
+    setError(message);
+    router.push(
+      buildSupportRedirect({
+        phone,
+        category: "account_activation",
+        reason: "inactive",
+      }),
+    );
+    return true;
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -35,6 +52,7 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (!response.ok) {
+          if (redirectInactiveToSupport(data.error)) return;
           throw new Error(data.error || "خطا در ارسال کد");
         }
 
@@ -53,6 +71,7 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (!response.ok) {
+          if (redirectInactiveToSupport(data.error)) return;
           throw new Error(data.error || "خطایی رخ داد");
         }
 
@@ -65,6 +84,7 @@ export default function LoginPage() {
         router.push("/dashboard");
       }
     } catch (err) {
+      if (redirectInactiveToSupport(err.message)) return;
       setError(err.message);
     } finally {
       setLoading(false);
@@ -174,7 +194,21 @@ export default function LoginPage() {
             )}
 
             {error && (
-              <p className="text-sm text-red-600 font-medium">{error}</p>
+              <div className="space-y-2">
+                <p className="text-sm text-red-600 font-medium">{error}</p>
+                {isInactiveAccountError(error) && (
+                  <Link
+                    href={buildSupportRedirect({
+                      phone,
+                      category: "account_activation",
+                      reason: "inactive",
+                    })}
+                    className="inline-block text-sm text-primary-600 hover:underline font-medium"
+                  >
+                    ارسال درخواست فعال‌سازی به پشتیبانی →
+                  </Link>
+                )}
+              </div>
             )}
 
             <button

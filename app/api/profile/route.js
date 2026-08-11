@@ -26,6 +26,13 @@ export async function GET(request) {
         { status: 404 }
       )
     }
+
+    if (user.isActive === false) {
+      return NextResponse.json(
+        { error: 'حساب کاربری شما غیرفعال شده است' },
+        { status: 403 }
+      )
+    }
     
     return NextResponse.json({
       success: true,
@@ -55,11 +62,26 @@ export async function PUT(request) {
         { status: 401 }
       )
     }
+
+    const existing = await User.findById(userId).select('isActive')
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'کاربر یافت نشد' },
+        { status: 404 }
+      )
+    }
+    if (existing.isActive === false) {
+      return NextResponse.json(
+        { error: 'حساب کاربری شما غیرفعال شده است' },
+        { status: 403 }
+      )
+    }
     
     // Don't allow updating sensitive fields
     delete updateData.phone
     delete updateData.role
     delete updateData.verified
+    delete updateData.isActive
     
     // Hash password if provided
     if (updateData.password) {

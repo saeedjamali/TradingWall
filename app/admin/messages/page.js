@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation'
 import Loading from '@/components/Loading'
 import AdminHeader from '@/components/AdminHeader'
 import Button from '@/components/Button'
+import { UserName } from '@/components/VerifiedBadge'
+import {
+  FEEDBACK_CATEGORIES,
+  getFeedbackCategoryLabel,
+} from '@/utils/feedbackCategories'
 
 export default function AdminMessagesPage() {
   const router = useRouter()
@@ -13,6 +18,9 @@ export default function AdminMessagesPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('site_feedback')
   const [statusFilter, setStatusFilter] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [phoneSearch, setPhoneSearch] = useState('')
+  const [phoneQuery, setPhoneQuery] = useState('')
   const [selected, setSelected] = useState(null)
   const [replyBody, setReplyBody] = useState('')
   const [replyImage, setReplyImage] = useState('')
@@ -39,7 +47,7 @@ export default function AdminMessagesPage() {
   useEffect(() => {
     if (user) fetchMessages()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, filter, statusFilter])
+  }, [user, filter, statusFilter, categoryFilter, phoneQuery])
 
   const fetchMessages = async () => {
     setLoading(true)
@@ -49,6 +57,8 @@ export default function AdminMessagesPage() {
         type: filter,
       })
       if (statusFilter) params.set('status', statusFilter)
+      if (categoryFilter) params.set('category', categoryFilter)
+      if (phoneQuery) params.set('phone', phoneQuery)
       const res = await fetch(`/api/admin/messages?${params}`)
       const data = await res.json()
       if (data.success) setMessages(data.messages || [])
@@ -58,6 +68,12 @@ export default function AdminMessagesPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const applyPhoneSearch = (e) => {
+    e?.preventDefault?.()
+    setSelected(null)
+    setPhoneQuery(phoneSearch.trim())
   }
 
   const handleUpload = async (e) => {
@@ -122,25 +138,75 @@ export default function AdminMessagesPage() {
           <p className="text-sm text-gray-500 mt-1">بازخورد کاربران درباره توسعه سایت و پیشنهادات کاری</p>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          <select
-            value={filter}
-            onChange={(e) => { setFilter(e.target.value); setSelected(null) }}
-            className="px-3 py-2 border rounded-lg text-sm bg-white"
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 mb-6">
+          <form
+            onSubmit={applyPhoneSearch}
+            className="flex flex-wrap gap-2 items-center"
           >
-            <option value="site_feedback">نظرات سایت</option>
-            <option value="job_offer">پیشنهادات کاری</option>
-            <option value="all">همه</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm bg-white"
-          >
-            <option value="">همه وضعیت‌ها</option>
-            <option value="open">بدون پاسخ</option>
-            <option value="replied">پاسخ‌داده‌شده</option>
-          </select>
+            <select
+              value={filter}
+              onChange={(e) => {
+                const next = e.target.value
+                setFilter(next)
+                if (next === 'job_offer') setCategoryFilter('')
+                setSelected(null)
+              }}
+              className="px-3 py-2 border rounded-lg text-sm bg-white"
+            >
+              <option value="site_feedback">نظرات سایت</option>
+              <option value="job_offer">پیشنهادات کاری</option>
+              <option value="all">همه</option>
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setSelected(null) }}
+              className="px-3 py-2 border rounded-lg text-sm bg-white"
+            >
+              <option value="">همه وضعیت‌ها</option>
+              <option value="open">بدون پاسخ</option>
+              <option value="replied">پاسخ‌داده‌شده</option>
+            </select>
+            <select
+              value={categoryFilter}
+              onChange={(e) => { setCategoryFilter(e.target.value); setSelected(null) }}
+              className="px-3 py-2 border rounded-lg text-sm bg-white min-w-[180px]"
+              disabled={filter === 'job_offer'}
+              title={filter === 'job_offer' ? 'دسته‌بندی فقط برای نظرات سایت است' : ''}
+            >
+              <option value="">همه دسته‌بندی‌ها</option>
+              {FEEDBACK_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <input
+              type="tel"
+              value={phoneSearch}
+              onChange={(e) => setPhoneSearch(e.target.value)}
+              placeholder="جستجو شماره همراه..."
+              dir="ltr"
+              className="px-3 py-2 border rounded-lg text-sm bg-white min-w-[180px] flex-1"
+            />
+            <Button type="submit" className="!py-2 !px-4 text-sm">
+              جستجو
+            </Button>
+            {(phoneQuery || categoryFilter || statusFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPhoneSearch('')
+                  setPhoneQuery('')
+                  setCategoryFilter('')
+                  setStatusFilter('')
+                  setSelected(null)
+                }}
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+              >
+                پاک کردن فیلتر
+              </button>
+            )}
+          </form>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-6">
@@ -172,9 +238,32 @@ export default function AdminMessagesPage() {
                             : 'باز'}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 truncate">
-                        {m.fromUserId?.publicName || 'کاربر'}
-                        {m.type === 'job_offer' && m.toUserId ? ` → ${m.toUserId.publicName}` : ''}
+                      {m.type === 'site_feedback' && (
+                        <p className="text-[10px] text-primary-700 mb-1">
+                          {getFeedbackCategoryLabel(m.category)}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 truncate inline-flex items-center gap-1 max-w-full">
+                        <UserName
+                          name={m.fromUserId?.publicName || (m.contactPhone ? 'مهمان' : 'کاربر')}
+                          verified={m.fromUserId?.verified}
+                          badgeClassName="w-3 h-3 text-blue-500"
+                        />
+                        {m.contactPhone ? (
+                          <span className="text-gray-400" dir="ltr">
+                            ({m.contactPhone})
+                          </span>
+                        ) : null}
+                        {m.type === 'job_offer' && m.toUserId ? (
+                          <>
+                            <span>→</span>
+                            <UserName
+                              name={m.toUserId.publicName}
+                              verified={m.toUserId.verified}
+                              badgeClassName="w-3 h-3 text-blue-500"
+                            />
+                          </>
+                        ) : null}
                       </p>
                       <p className="text-[10px] text-gray-400 mt-1">
                         {new Date(m.createdAt).toLocaleString('fa-IR')}
@@ -198,9 +287,21 @@ export default function AdminMessagesPage() {
                     }`}>
                       {selected.type === 'site_feedback' ? 'نظر سایت' : 'پیشنهاد کاری'}
                     </span>
-                    <span className="text-xs text-gray-400">
-                      از {selected.fromUserId?.publicName}
-                      {selected.fromUserId?.phone ? ` (${selected.fromUserId.phone})` : ''}
+                    {selected.type === 'site_feedback' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                        {getFeedbackCategoryLabel(selected.category)}
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-400 inline-flex items-center gap-1 flex-wrap">
+                      از{' '}
+                      <UserName
+                        name={selected.fromUserId?.publicName || (selected.contactPhone ? 'مهمان' : 'کاربر')}
+                        verified={selected.fromUserId?.verified}
+                        badgeClassName="w-3 h-3 text-blue-500"
+                      />
+                      {(selected.fromUserId?.phone || selected.contactPhone)
+                        ? ` (${selected.fromUserId?.phone || selected.contactPhone})`
+                        : ''}
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">{selected.title}</h3>
@@ -230,8 +331,12 @@ export default function AdminMessagesPage() {
                               : 'bg-white border'
                           }`}
                         >
-                          <p className="text-xs text-gray-500 mb-1">
-                            {item.fromUserId?.publicName || 'کاربر'}
+                          <p className="text-xs text-gray-500 mb-1 inline-flex items-center gap-1 flex-wrap">
+                            <UserName
+                              name={item.fromUserId?.publicName}
+                              verified={item.fromUserId?.verified}
+                              badgeClassName="w-3 h-3 text-blue-500"
+                            />
                             {item.fromUserId?.role === 'admin' ? ' (مدیر)' : ''}
                           </p>
                           <p className="text-sm text-gray-800 whitespace-pre-wrap">{item.body}</p>

@@ -7,6 +7,7 @@ import Image from "next/image";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import Loading from "@/components/Loading";
+import VerifiedBadge, { UserName } from "@/components/VerifiedBadge";
 import { provinces, getCitiesByProvince } from "@/utils/iranLocations";
 import { getSessionUser } from "@/utils/session";
 
@@ -514,7 +515,13 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
-                <h3 className="font-bold text-lg">{formData.publicName}</h3>
+                <h3 className="font-bold text-lg">
+                  <UserName
+                    name={formData.publicName}
+                    verified={user?.verified}
+                    badgeClassName="w-4 h-4 text-blue-500"
+                  />
+                </h3>
                 <p className="text-sm text-gray-500">{user?.phone}</p>
                 {formData.province && formData.city && (
                   <p className="text-xs text-gray-400 mt-1">
@@ -755,17 +762,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2">
                       {user?.verified ? (
                         <>
-                          <svg
-                            className="w-5 h-5 text-blue-500"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
+                          <VerifiedBadge className="w-5 h-5 text-blue-500" />
                           <span className="text-green-600">حساب تایید شده</span>
                         </>
                       ) : (
@@ -1239,13 +1236,23 @@ export default function ProfilePage() {
                                 : "در انتظار پاسخ"}
                             </span>
                             {isIncomingJob && (
-                              <span className="text-xs text-gray-500">
-                                از {m.fromUserId?.publicName || "کاربر"}
+                              <span className="text-xs text-gray-500 inline-flex items-center gap-1">
+                                از{" "}
+                                <UserName
+                                  name={m.fromUserId?.publicName}
+                                  verified={m.fromUserId?.verified}
+                                  badgeClassName="w-3 h-3 text-blue-500"
+                                />
                               </span>
                             )}
                             {isSent && m.type === "job_offer" && (
-                              <span className="text-xs text-gray-500">
-                                به {m.toUserId?.publicName || "کاربر"}
+                              <span className="text-xs text-gray-500 inline-flex items-center gap-1">
+                                به{" "}
+                                <UserName
+                                  name={m.toUserId?.publicName}
+                                  verified={m.toUserId?.verified}
+                                  badgeClassName="w-3 h-3 text-blue-500"
+                                />
                               </span>
                             )}
                           </div>
@@ -1260,8 +1267,13 @@ export default function ProfilePage() {
                                 : "bg-white border"
                             }`}
                           >
-                            <p className="text-xs text-gray-500 mb-1">
-                              {m.fromUserId?.publicName || "کاربر"} · پیام اولیه
+                            <p className="text-xs text-gray-500 mb-1 inline-flex items-center gap-1 flex-wrap">
+                              <UserName
+                                name={m.fromUserId?.publicName}
+                                verified={m.fromUserId?.verified}
+                                badgeClassName="w-3 h-3 text-blue-500"
+                              />
+                              <span>· پیام اولیه</span>
                             </p>
                             <p className="text-sm text-gray-700 whitespace-pre-wrap">
                               {m.body}
@@ -1296,9 +1308,15 @@ export default function ProfilePage() {
                                         : "bg-white border ml-4"
                                     }`}
                                   >
-                                    <p className="text-xs text-gray-500 mb-1">
-                                      {item.fromUserId?.publicName ||
-                                        (mine ? "شما" : "طرف مقابل")}
+                                    <p className="text-xs text-gray-500 mb-1 inline-flex items-center gap-1 flex-wrap">
+                                      <UserName
+                                        name={
+                                          item.fromUserId?.publicName ||
+                                          (mine ? "شما" : "طرف مقابل")
+                                        }
+                                        verified={item.fromUserId?.verified}
+                                        badgeClassName="w-3 h-3 text-blue-500"
+                                      />
                                       {item.fromUserId?.role === "admin"
                                         ? " (مدیر)"
                                         : ""}

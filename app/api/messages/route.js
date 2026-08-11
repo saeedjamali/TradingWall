@@ -6,6 +6,7 @@ import Message, {
   clearUnreadForUser,
 } from '@/models/Message'
 import User from '@/models/User'
+import { FEEDBACK_CATEGORY_VALUES } from '@/utils/feedbackCategories'
 
 function populateMessage(query) {
   return query
@@ -101,14 +102,24 @@ export async function POST(request) {
   try {
     await connectDB()
     const body = await request.json()
-    const { userId, type, title, body: text, image, toUserId, messageId, action } = body
+    const {
+      userId,
+      phone,
+      type,
+      title,
+      body: text,
+      image,
+      toUserId,
+      messageId,
+      action,
+      category,
+    } = body
 
-    if (!userId) {
-      return NextResponse.json({ error: 'ابتدا وارد شوید' }, { status: 401 })
-    }
-
-    // Append to existing conversation
+    // Append to existing conversation (requires login)
     if (action === 'continue' || (messageId && !type)) {
+      if (!userId) {
+        return NextResponse.json({ error: 'ابتدا وارد شوید' }, { status: 401 })
+      }
       if (!text?.trim()) {
         return NextResponse.json({ error: 'متن پیام الزامی است' }, { status: 400 })
       }
@@ -116,9 +127,15 @@ export async function POST(request) {
         return NextResponse.json({ error: 'شناسه گفتگو الزامی است' }, { status: 400 })
       }
 
-      const user = await User.findById(userId).select('role publicName')
+      const user = await User.findById(userId).select('role publicName isActive')
       if (!user) {
         return NextResponse.json({ error: 'کاربر یافت نشد' }, { status: 404 })
+      }
+      if (user.isActive === false) {
+        return NextResponse.json(
+          { error: 'حساب کاربری شما غیرفعال است؛ از فرم پشتیبانی صفحه اصلی پیام دهید' },
+          { status: 403 }
+        )
       }
 
       const message = await Message.findById(messageId)
@@ -164,9 +181,44 @@ export async function POST(request) {
       return NextResponse.json({ error: 'عنوان و متن الزامی است' }, { status: 400 })
     }
 
-    const sender = await User.findById(userId).select('_id')
-    if (!sender) {
-      return NextResponse.json({ error: 'کاربر یافت نشد' }, { status: 404 })
+    let senderId = userId || null
+    let contactPhone = null
+    const feedbackCategory = FEEDBACK_CATEGORY_VALUES.includes(category)
+      ? category
+      : 'other'
+
+    if (type === 'site_feedback') {
+      if (senderId) {
+        const sender = await User.findById(senderId).select('_id isActive phone')
+        if (!sender) {
+          return NextResponse.json({ error: 'کاربر یافت نشد' }, { status: 404 })
+        }
+        // Inactive users may still send support tickets
+        contactPhone = sender.phone || null
+      } else if (phone && /^09\d{9}$/.test(String(phone).trim())) {
+        contactPhone = String(phone).trim()
+        const byPhone = await User.findOne({ phone: contactPhone }).select('_id phone')
+        if (byPhone) senderId = byPhone._id
+      } else {
+        return NextResponse.json(
+          { error: 'برای ارسال نظر وارد شوید یا شماره موبایل معتبر وارد کنید' },
+          { status: 400 }
+        )
+      }
+    } else {
+      if (!senderId) {
+        return NextResponse.json({ error: 'ابتدا وارد شوید' }, { status: 401 })
+      }
+      const sender = await User.findById(senderId).select('_id isActive')
+      if (!sender) {
+        return NextResponse.json({ error: 'کاربر یافت نشد' }, { status: 404 })
+      }
+      if (sender.isActive === false) {
+        return NextResponse.json(
+          { error: 'حساب کاربری شما غیرفعال است' },
+          { status: 403 }
+        )
+      }
     }
 
     let recipientId = null
@@ -176,7 +228,7 @@ export async function POST(request) {
       if (!toUserId) {
         return NextResponse.json({ error: 'گیرنده مشخص نشده است' }, { status: 400 })
       }
-      if (String(toUserId) === String(userId)) {
+      if (String(toUserId) === String(senderId)) {
         return NextResponse.json({ error: 'نمی‌توانید به خودتان پیشنهاد بدهید' }, { status: 400 })
       }
 
@@ -197,7 +249,9 @@ export async function POST(request) {
 
     const message = await Message.create({
       type,
-      fromUserId: userId,
+      fromUserId: senderId,
+      contactPhone,
+      category: type === 'site_feedback' ? feedbackCategory : 'other',
       toUserId: recipientId,
       title: title.trim(),
       body: text.trim(),
@@ -210,7 +264,7 @@ export async function POST(request) {
 
     const populated = normalizeMessageThread(
       await populateMessage(Message.findById(message._id)).lean(),
-      userId
+      senderId
     )
 
     return NextResponse.json({

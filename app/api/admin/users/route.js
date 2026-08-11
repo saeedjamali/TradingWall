@@ -15,6 +15,7 @@ export async function GET(request) {
     const search = searchParams.get('search') || ''
     const verified = searchParams.get('verified')
     const role = searchParams.get('role')
+    const isActive = searchParams.get('isActive')
 
     const admin = await requireAdmin(adminUserId)
     if (!admin) {
@@ -31,6 +32,8 @@ export async function GET(request) {
     if (verified === 'true') query.verified = true
     if (verified === 'false') query.verified = false
     if (role) query.role = role
+    if (isActive === 'true') query.isActive = true
+    if (isActive === 'false') query.isActive = false
 
     const users = await User.find(query)
       .select('-password')

@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import Loading from "@/components/Loading";
 import WallCalendar from "@/components/WallCalendar";
 import ProposalForm from "@/components/ProposalForm";
+import { UserName } from "@/components/VerifiedBadge";
 import { MONTH_NAMES } from "@/utils/periods";
 import { getSessionUser } from "@/utils/session";
 
@@ -35,23 +36,6 @@ function formatAchievementValue(category, value) {
   return `${sign}$${Math.abs(n).toFixed(2)}`;
 }
 
-function VerifiedBadge() {
-  return (
-    <svg
-      className="w-5 h-5 text-blue-500"
-      fill="currentColor"
-      viewBox="0 0 20 20"
-      aria-label="تایید شده"
-    >
-      <path
-        fillRule="evenodd"
-        d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-}
-
 export default function UserWallPage() {
   const params = useParams();
   const userId = params?.userId;
@@ -78,7 +62,11 @@ export default function UserWallPage() {
     setError("");
     try {
       const monthKey = `${monthCursor.year}-${String(monthCursor.month).padStart(2, "0")}`;
-      const res = await fetch(`/api/wall/${userId}?month=${monthKey}`);
+      const session = getSessionUser();
+      const params = new URLSearchParams({ month: monthKey });
+      if (session?.id) params.set("viewerId", session.id);
+
+      const res = await fetch(`/api/wall/${userId}?${params}`);
       const json = await res.json();
 
       if (res.status === 403 || json.private) {
@@ -131,12 +119,11 @@ export default function UserWallPage() {
           <div className="mt-10 bg-white/10 border border-white/15 rounded-2xl p-8">
             <div className="text-5xl mb-4">🔒</div>
             <h1 className="text-2xl font-bold mb-2">
-              {privateUser?.publicName || "کاربر"}
-              {privateUser?.verified && (
-                <span className="inline-flex align-middle mr-2">
-                  <VerifiedBadge />
-                </span>
-              )}
+              <UserName
+                name={privateUser?.publicName}
+                verified={privateUser?.verified}
+                badgeClassName="w-5 h-5 text-blue-400"
+              />
             </h1>
             <p className="text-gray-300">
               این دیوار کاربری خصوصی است و برای دیگران قابل مشاهده نیست.
@@ -207,16 +194,22 @@ export default function UserWallPage() {
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold">
-                  {user?.publicName || "کاربر"}
-                </h1>
-                {user?.verified && <VerifiedBadge />}
-              </div>
+              <h1 className="text-2xl md:text-3xl font-bold">
+                <UserName
+                  name={user?.publicName}
+                  verified={user?.verified}
+                  badgeClassName="w-5 h-5 text-blue-400"
+                />
+              </h1>
               <p className="text-gray-400 text-sm mt-1">
                 {[user?.city, user?.province].filter(Boolean).join("، ") ||
                   "دیوار کاربر"}
               </p>
+              {data?.adminView && (
+                <p className="mt-2 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30">
+                  مشاهده ادمین — حریم خصوصی نادیده گرفته شده
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -385,8 +378,13 @@ export default function UserWallPage() {
             </h2>
             <p className="text-sm text-gray-500 mb-5">
               اگر فرصت شغلی یا همکاری دارید، برای{" "}
-              {user?.publicName || "این کاربر"} ارسال کنید. پیشنهاد در بخش
-              پیام‌های ایشان نمایش داده می‌شود.
+              <UserName
+                name={user?.publicName || "این کاربر"}
+                verified={user?.verified}
+                className="align-middle"
+                badgeClassName="w-3.5 h-3.5 text-blue-500"
+              />{" "}
+              ارسال کنید. پیشنهاد در بخش پیام‌های ایشان نمایش داده می‌شود.
             </p>
             {viewer && String(viewer.id) === String(userId) ? (
               <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg">

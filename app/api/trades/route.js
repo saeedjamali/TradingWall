@@ -4,6 +4,7 @@ import Trade from '@/models/Trade'
 import Setup from '@/models/Setup'
 import Symbol from '@/models/Symbol'
 import { assertActiveSymbol } from '@/utils/symbolSeed'
+import { requireActiveUser } from '@/utils/requireActiveUser'
 
 // GET: Fetch trades with filters
 export async function GET(request) {
@@ -23,6 +24,14 @@ export async function GET(request) {
       return NextResponse.json(
         { error: 'کاربر مشخص نشده است' },
         { status: 400 }
+      )
+    }
+
+    const activeCheck = await requireActiveUser(userId)
+    if (activeCheck.error) {
+      return NextResponse.json(
+        { error: activeCheck.error },
+        { status: activeCheck.status }
       )
     }
     
@@ -86,6 +95,14 @@ export async function POST(request) {
       return NextResponse.json(
         { error: 'کاربر احراز هویت نشده است' },
         { status: 401 }
+      )
+    }
+
+    const activeCheck = await requireActiveUser(userId)
+    if (activeCheck.error) {
+      return NextResponse.json(
+        { error: activeCheck.error },
+        { status: activeCheck.status }
       )
     }
     

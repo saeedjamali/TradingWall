@@ -12,8 +12,10 @@ import WinRateTrendChart from "@/components/WinRateTrendChart";
 import DisciplineResultChart from "@/components/DisciplineResultChart";
 import SetupPerformanceChart from "@/components/SetupPerformanceChart";
 import DayTradesModal from "@/components/DayTradesModal";
+import MonthPlansListModal from "@/components/MonthPlansListModal";
 import PreTradeChecklist from "@/components/PreTradeChecklist";
 import FileUploadCard from "@/components/FileUploadCard";
+import { UserName } from "@/components/VerifiedBadge";
 import { checkPlanCompliance, getPlanForDate } from "@/utils/planCompliance";
 import { getSessionUser } from "@/utils/session";
 
@@ -25,6 +27,7 @@ export default function DashboardPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthTrades, setMonthTrades] = useState([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [showMonthPlans, setShowMonthPlans] = useState(false);
 
   useEffect(() => {
     const parsedUser = getSessionUser();
@@ -164,9 +167,12 @@ export default function DashboardPage() {
                 />
               </Link>
               <span className="text-white/30 hidden md:inline">|</span>
-              <span className="text-white/80 hidden md:inline truncate max-w-[120px]">
-                {user?.publicName}
-              </span>
+              <UserName
+                name={user?.publicName}
+                verified={user?.verified}
+                className="hidden md:inline text-white/80 max-w-[140px]"
+                badgeClassName="w-4 h-4 text-blue-400"
+              />
             </div>
 
             <nav className="flex gap-1 md:gap-4 items-center">
@@ -381,7 +387,7 @@ export default function DashboardPage() {
 
           <div className="rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-6 mb-8">
             {/* Title - Centered */}
-            <div className="text-center mb-4 md:mb-6 relative">
+            <div className="text-center mb-4 md:mb-6 relative px-12 sm:px-28">
               <div className="flex items-center justify-center gap-2 md:gap-3 mb-2">
                 <span className="text-2xl md:text-4xl">📊</span>
                 <h2 className="text-xl md:text-3xl font-bold text-gray-800">
@@ -413,6 +419,16 @@ export default function DashboardPage() {
                 <span className="hidden sm:inline">
                   {isExporting ? "در حال آماده‌سازی..." : "Export Image"}
                 </span>
+              </button>
+
+              {/* Month plans list */}
+              <button
+                onClick={() => setShowMonthPlans(true)}
+                className="absolute right-0 top-0 p-2 md:px-4 md:py-2 bg-white border border-primary-200 text-primary-700 rounded-lg hover:bg-primary-50 transition-colors flex items-center gap-2 text-sm"
+                title="مشاهده پلن‌های این ماه"
+              >
+                <span>📋</span>
+                <span className="hidden sm:inline">پلن‌های این ماه</span>
               </button>
             </div>
 
@@ -520,6 +536,13 @@ export default function DashboardPage() {
               monthTrades={monthTrades}
             />
           </div>
+
+          <MonthPlansListModal
+            isOpen={showMonthPlans}
+            onClose={() => setShowMonthPlans(false)}
+            userId={user?.id}
+            currentMonth={currentMonth}
+          />
 
           {/* Monthly Performance Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4 items-stretch">

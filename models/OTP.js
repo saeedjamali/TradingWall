@@ -13,7 +13,6 @@ const OTPSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
-    index: true,
   },
   verified: {
     type: Boolean,
@@ -26,7 +25,7 @@ const OTPSchema = new mongoose.Schema({
   },
 })
 
-// Index for cleanup
+// TTL index for cleanup
 OTPSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
 export default mongoose.models.OTP || mongoose.model('OTP', OTPSchema)

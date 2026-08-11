@@ -39,6 +39,10 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false, // Blue tick
   },
+  isActive: {
+    type: Boolean,
+    default: true, // false = deactivated by admin
+  },
   privacySettings: {
     // Master switch: if false, wall is inaccessible to others
     isPublic: {
@@ -80,7 +84,6 @@ const UserSchema = new mongoose.Schema({
 })
 
 // Indexes
-UserSchema.index({ phone: 1 })
 UserSchema.index({ createdAt: -1 })
 
 export default mongoose.models.User || mongoose.model('User', UserSchema)

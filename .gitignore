@@ -40,5 +40,4 @@ next-env.d.ts
 *.pyc
 __pycache__/
 *.csv
-*.json
 parse_metatrader.py

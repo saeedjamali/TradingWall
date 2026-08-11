@@ -5,7 +5,9 @@ import Message, {
   setUnreadForOthers,
   clearUnreadForUser,
 } from '@/models/Message'
+import User from '@/models/User'
 import { requireAdmin } from '@/utils/adminAuth'
+import { FEEDBACK_CATEGORY_VALUES } from '@/utils/feedbackCategories'
 
 function populateAdmin(query) {
   return query
@@ -16,7 +18,7 @@ function populateAdmin(query) {
 }
 
 /**
- * GET /api/admin/messages?adminUserId=&type=site_feedback|job_offer|all&status=
+ * GET /api/admin/messages?adminUserId=&type=&status=&category=&phone=
  */
 export async function GET(request) {
   try {
@@ -25,6 +27,8 @@ export async function GET(request) {
     const adminUserId = searchParams.get('adminUserId')
     const type = searchParams.get('type') || 'site_feedback'
     const status = searchParams.get('status')
+    const category = searchParams.get('category')
+    const phone = (searchParams.get('phone') || '').trim()
 
     const admin = await requireAdmin(adminUserId)
     if (!admin) {
@@ -34,6 +38,27 @@ export async function GET(request) {
     const query = {}
     if (type && type !== 'all') query.type = type
     if (status) query.status = status
+    if (
+      category &&
+      FEEDBACK_CATEGORY_VALUES.includes(category) &&
+      type !== 'job_offer'
+    ) {
+      query.category = category
+    }
+
+    if (phone) {
+      const phoneRegex = new RegExp(phone.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      const matchedUsers = await User.find({ phone: phoneRegex })
+        .select('_id')
+        .limit(50)
+        .lean()
+      const userIds = matchedUsers.map((u) => u._id)
+
+      query.$or = [
+        { contactPhone: phoneRegex },
+        ...(userIds.length ? [{ fromUserId: { $in: userIds } }] : []),
+      ]
+    }
 
     const raw = await populateAdmin(
       Message.find(query).sort({ updatedAt: -1 }).limit(200)

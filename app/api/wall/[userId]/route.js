@@ -6,11 +6,13 @@ import Plan from '@/models/Plan'
 import Achievement from '@/models/Achievement'
 import Activity from '@/models/Activity'
 import Setup from '@/models/Setup'
+import { requireAdmin } from '@/utils/adminAuth'
 
 /**
  * GET /api/wall/[userId]
  * Public user wall — gated by privacySettings.isPublic + section flags
  * Optional: ?month=2026-08 for calendar trades
+ * Optional: ?viewerId= — if viewer is admin, private walls are fully visible
  */
 export async function GET(request, { params }) {
   try {
@@ -22,12 +24,17 @@ export async function GET(request, { params }) {
     }
 
     const user = await User.findById(userId)
-      .select('publicName profileImage province city verified privacySettings createdAt')
+      .select('publicName profileImage province city verified privacySettings createdAt isActive')
       .lean()
 
     if (!user) {
       return NextResponse.json({ error: 'کاربر یافت نشد' }, { status: 404 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const viewerId = searchParams.get('viewerId')
+    const adminViewer = viewerId ? await requireAdmin(viewerId) : null
+    const isAdminView = !!adminViewer
 
     const privacy = {
       isPublic: false,
@@ -39,7 +46,7 @@ export async function GET(request, { params }) {
       ...(user.privacySettings || {}),
     }
 
-    if (!privacy.isPublic) {
+    if (!privacy.isPublic && !isAdminView) {
       return NextResponse.json({
         success: false,
         private: true,
@@ -53,7 +60,6 @@ export async function GET(request, { params }) {
       }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month') // YYYY-MM
     const now = new Date()
     let year = now.getFullYear()
@@ -67,9 +73,16 @@ export async function GET(request, { params }) {
     const monthStart = new Date(year, month, 1, 0, 0, 0, 0)
     const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999)
 
+    // Admin can see every section even when owner hid them
+    const showCalendar = isAdminView || !!privacy.showCalendar
+    const showAchievements = isAdminView || !!privacy.showAchievements
+    const showActivities = isAdminView || !!privacy.showActivities
+    const showSetups = isAdminView || !!privacy.showSetups
+
     const payload = {
       success: true,
       private: false,
+      adminView: isAdminView,
       user: {
         id: userId,
         publicName: user.publicName,
@@ -78,14 +91,15 @@ export async function GET(request, { params }) {
         city: user.city,
         verified: user.verified,
         memberSince: user.createdAt,
+        isActive: user.isActive !== false,
       },
       privacy: {
-        isPublic: true,
-        showCalendar: !!privacy.showCalendar,
-        showAchievements: !!privacy.showAchievements,
-        showActivities: !!privacy.showActivities,
-        showSetups: !!privacy.showSetups,
-        allowJobOffers: !!privacy.allowJobOffers,
+        isPublic: !!privacy.isPublic,
+        showCalendar,
+        showAchievements,
+        showActivities,
+        showSetups,
+        allowJobOffers: isAdminView ? false : !!privacy.allowJobOffers,
       },
       calendar: null,
       achievements: null,
@@ -93,7 +107,7 @@ export async function GET(request, { params }) {
       setups: null,
     }
 
-    if (privacy.showCalendar) {
+    if (showCalendar) {
       const [trades, plans] = await Promise.all([
         Trade.find({
           userId,
@@ -121,19 +135,19 @@ export async function GET(request, { params }) {
       }
     }
 
-    if (privacy.showAchievements) {
+    if (showAchievements) {
       payload.achievements = await Achievement.find({ userId })
         .sort({ 'period.year': -1, 'period.month': -1, 'period.week': -1, rank: 1 })
         .lean()
     }
 
-    if (privacy.showActivities) {
+    if (showActivities) {
       payload.activities = await Activity.find({ userId })
         .sort({ date: -1 })
         .lean()
     }
 
-    if (privacy.showSetups) {
+    if (showSetups) {
       payload.setups = await Setup.find({ type: 'custom', userId })
         .sort({ title: 1 })
         .lean()

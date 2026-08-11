@@ -26,6 +26,13 @@ export async function POST(request) {
         { status: 404 }
       )
     }
+
+    if (user.isActive === false) {
+      return NextResponse.json(
+        { error: 'حساب کاربری شما غیرفعال شده است. با پشتیبانی تماس بگیرید' },
+        { status: 403 }
+      )
+    }
     
     // Check if user has password set
     if (!user.password) {

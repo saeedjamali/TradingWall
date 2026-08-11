@@ -25,7 +25,14 @@ const MessageSchema = new mongoose.Schema({
   fromUserId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
+    default: null,
+    index: true,
+  },
+  // Guest / inactive support contact when session login is not possible
+  contactPhone: {
+    type: String,
+    default: null,
     index: true,
   },
   // null for site_feedback; wall owner for job_offer
@@ -33,6 +40,21 @@ const MessageSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null,
+    index: true,
+  },
+  category: {
+    type: String,
+    enum: [
+      'add_symbol',
+      'add_setup',
+      'upload_error',
+      'account_activation',
+      'login_issue',
+      'bug_report',
+      'feature_request',
+      'other',
+    ],
+    default: 'other',
     index: true,
   },
   title: {

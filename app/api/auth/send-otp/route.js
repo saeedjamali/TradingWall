@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import OTP from '@/models/OTP'
+import User from '@/models/User'
 import { generateOTP, getOTPExpiryTime } from '@/utils/generateOTP'
 import { sendOTP } from '@/utils/smsir'
 
@@ -15,6 +16,14 @@ export async function POST(request) {
       return NextResponse.json(
         { error: 'شماره موبایل معتبر نیست' },
         { status: 400 }
+      )
+    }
+
+    const existingUser = await User.findOne({ phone }).select('isActive')
+    if (existingUser && existingUser.isActive === false) {
+      return NextResponse.json(
+        { error: 'حساب کاربری شما غیرفعال شده است. با پشتیبانی تماس بگیرید' },
+        { status: 403 }
       )
     }
     

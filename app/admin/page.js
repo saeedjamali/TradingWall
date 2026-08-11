@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Loading from '@/components/Loading'
 import AdminHeader from '@/components/AdminHeader'
+import { UserName } from '@/components/VerifiedBadge'
 import { formatDate, formatDateTime } from '@/utils/dateHelpers'
 
 export default function AdminDashboard() {
@@ -156,10 +157,12 @@ export default function AdminDashboard() {
                 {recentUsers.map((u) => (
                   <li key={u._id} className="py-3 flex justify-between items-center gap-2">
                     <div className="min-w-0">
-                      <div className="font-medium text-gray-900 truncate flex items-center gap-1">
-                        {u.publicName}
-                        {u.verified && <span className="text-blue-500 text-sm">✓</span>}
-                      </div>
+                      <UserName
+                        name={u.publicName}
+                        verified={u.verified}
+                        className="font-medium text-gray-900"
+                        badgeClassName="w-4 h-4 text-blue-500"
+                      />
                       <div className="text-xs text-gray-500" dir="ltr">{u.phone}</div>
                     </div>
                     <div className="text-xs text-gray-400 shrink-0">{formatDate(u.createdAt)}</div>
@@ -189,8 +192,13 @@ export default function AdminDashboard() {
                           {t.type?.toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {t.userId?.publicName || '—'} · {formatDateTime(t.closeTime)}
+                      <div className="text-xs text-gray-500 truncate inline-flex items-center gap-1">
+                        <UserName
+                          name={t.userId?.publicName || '—'}
+                          verified={t.userId?.verified}
+                          badgeClassName="w-3 h-3 text-blue-500"
+                        />
+                        <span>· {formatDateTime(t.closeTime)}</span>
                       </div>
                     </div>
                     <div className={`text-sm font-semibold shrink-0 ${

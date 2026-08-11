@@ -53,9 +53,13 @@ export async function POST(request) {
         publicName: `کاربر ${phone.slice(-4)}`,
       })
     }
-    
-    // Create session (you'll implement NextAuth later)
-    // For now, just return user data
+
+    if (user.isActive === false) {
+      return NextResponse.json(
+        { error: 'حساب کاربری شما غیرفعال شده است. با پشتیبانی تماس بگیرید' },
+        { status: 403 }
+      )
+    }
     
     return NextResponse.json({
       success: true,

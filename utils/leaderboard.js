@@ -98,6 +98,41 @@ export async function computeLeaderboard(metric, periodType, startDate, endDate,
 }
 
 /**
+ * Refresh display fields that change outside the score cache
+ * (verified badge, public name, wall visibility).
+ */
+export async function enrichEntriesWithLatestUserData(entries = []) {
+  if (!entries.length) return entries
+
+  const userIds = [
+    ...new Set(
+      entries
+        .map((e) => e.userId?._id || e.userId)
+        .filter(Boolean)
+        .map((id) => id.toString()),
+    ),
+  ]
+  if (!userIds.length) return entries
+
+  const users = await User.find({ _id: { $in: userIds } })
+    .select('publicName verified privacySettings')
+    .lean()
+  const userMap = Object.fromEntries(users.map((u) => [u._id.toString(), u]))
+
+  return entries.map((entry) => {
+    const id = (entry.userId?._id || entry.userId)?.toString?.()
+    const user = id ? userMap[id] : null
+    if (!user) return entry
+    return {
+      ...entry,
+      publicName: user.publicName || entry.publicName || 'کاربر',
+      verified: !!user.verified,
+      wallPublic: !!user.privacySettings?.isPublic,
+    }
+  })
+}
+
+/**
  * Get live board for current period — uses 24h cache
  */
 export async function getLiveBoard(metric, periodType, now = new Date()) {
@@ -115,7 +150,7 @@ export async function getLiveBoard(metric, periodType, now = new Date()) {
       ...info,
       metric,
       isFinal: false,
-      entries: cached.entries,
+      entries: await enrichEntriesWithLatestUserData(cached.entries || []),
       computedAt: cached.computedAt,
       fromCache: true,
       minTrades: MIN_TRADES[periodType],
@@ -311,7 +346,13 @@ export async function getHistoryBoards({
     .limit(limit)
     .lean()
 
-  return snapshots
+  // Keep verified/name current even on archived boards
+  return Promise.all(
+    snapshots.map(async (snap) => ({
+      ...snap,
+      entries: await enrichEntriesWithLatestUserData(snap.entries || []),
+    })),
+  )
 }
 
 export function formatLeaderboardValue(metric, value) {

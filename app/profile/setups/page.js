@@ -239,7 +239,7 @@ export default function PersonalSetupsPage() {
           {setups.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500">
               <p className="text-lg mb-2">هیچ ستاپ شخصی‌ای ثبت نشده است</p>
-              <p className="text-sm">با کلیک روی دکمه "افزودن ستاپ جدید" اولین ستاپ خود را ایجاد کنید</p>
+              <p className="text-sm">با کلیک روی دکمه «افزودن ستاپ جدید» اولین ستاپ خود را ایجاد کنید</p>
             </div>
           ) : (
             setups.map((setup) => (

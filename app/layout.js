@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Vazirmatn, Orbitron } from "next/font/google";
 import SiteFooter from "@/components/SiteFooter";
+import ActiveSessionGuard from "@/components/ActiveSessionGuard";
 
 const vazir = Vazirmatn({
   subsets: ["latin", "arabic"],
@@ -58,6 +59,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${vazir.variable} ${orbitron.variable} antialiased min-h-screen flex flex-col`}
       >
+        <ActiveSessionGuard />
         <div className="flex-1 flex flex-col">{children}</div>
         <SiteFooter />
       </body>
