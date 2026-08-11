@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
 import Loading from '@/components/Loading'
+import SymbolSelect from '@/components/SymbolSelect'
 
 export default function EditTradePage() {
   const router = useRouter()
@@ -222,11 +223,9 @@ export default function EditTradePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Symbol <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  name="symbol"
+                <SymbolSelect
                   value={formData.symbol}
-                  onChange={handleChange}
-                  placeholder="US30_i"
+                  onChange={(code) => setFormData((prev) => ({ ...prev, symbol: code }))}
                   required
                 />
               </div>

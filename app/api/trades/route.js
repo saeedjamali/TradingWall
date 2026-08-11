@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Trade from '@/models/Trade'
 import Setup from '@/models/Setup'
+import Symbol from '@/models/Symbol'
+import { assertActiveSymbol } from '@/utils/symbolSeed'
 
 // GET: Fetch trades with filters
 export async function GET(request) {
@@ -17,7 +19,7 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     
-    if (!userId) {
+    if (!userId || userId === 'undefined' || userId === 'null') {
       return NextResponse.json(
         { error: 'کاربر مشخص نشده است' },
         { status: 400 }
@@ -90,13 +92,19 @@ export async function POST(request) {
     // Validate required fields
     const requiredFields = ['positionId', 'symbol', 'type', 'volume', 'openPrice', 'closePrice', 'openTime', 'closeTime', 'profit']
     for (const field of requiredFields) {
-      if (!tradeData[field]) {
+      if (!tradeData[field] && tradeData[field] !== 0) {
         return NextResponse.json(
           { error: `فیلد ${field} الزامی است` },
           { status: 400 }
         )
       }
     }
+
+    const symbolCheck = await assertActiveSymbol(Symbol, tradeData.symbol)
+    if (!symbolCheck.ok) {
+      return NextResponse.json({ error: symbolCheck.error }, { status: 400 })
+    }
+    tradeData.symbol = symbolCheck.code
     
     const trade = await Trade.create({
       userId,

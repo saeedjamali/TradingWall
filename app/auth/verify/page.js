@@ -1,128 +1,134 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import Button from '@/components/Button'
-import Input from '@/components/Input'
-import { LoadingSpinner } from '@/components/Loading'
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import Button from "@/components/Button";
+import Input from "@/components/Input";
+import { LoadingSpinner } from "@/components/Loading";
 
 export default function VerifyPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const phone = searchParams.get('phone')
-  
-  const [code, setCode] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [resendTimer, setResendTimer] = useState(120) // 2 minutes
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const phone = searchParams.get("phone");
+
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(120); // 2 minutes
 
   useEffect(() => {
     if (!phone) {
-      router.push('/auth/login')
-      return
+      router.push("/auth/login");
+      return;
     }
 
     const timer = setInterval(() => {
       setResendTimer((prev) => {
         if (prev <= 0) {
-          clearInterval(timer)
-          return 0
+          clearInterval(timer);
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [phone, router])
+    return () => clearInterval(timer);
+  }, [phone, router]);
 
   const handleVerify = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ phone, code }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'کد تایید نامعتبر است')
+        throw new Error(data.error || "کد تایید نامعتبر است");
       }
 
       // Store user in localStorage with 1 week expiry
-      localStorage.setItem('user', JSON.stringify(data.user))
-      const oneWeekFromNow = new Date().getTime() + (7 * 24 * 60 * 60 * 1000) // 1 week in milliseconds
-      localStorage.setItem('tokenExpiry', oneWeekFromNow.toString())
-      
+      localStorage.setItem("user", JSON.stringify(data.user));
+      const oneWeekFromNow = new Date().getTime() + 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+      localStorage.setItem("tokenExpiry", oneWeekFromNow.toString());
+
       // Redirect to dashboard
-      router.push('/dashboard')
+      router.push("/dashboard");
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleResend = async () => {
-    setError('')
-    setLoading(true)
+    setError("");
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/send-otp', {
-        method: 'POST',
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ phone }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'خطا در ارسال کد')
+        throw new Error(data.error || "خطا در ارسال کد");
       }
 
-      setResendTimer(120)
+      setResendTimer(120);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Title */}
         <div className="text-center mb-8">
-              <Link href="/" className="inline-flex items-center justify-center gap-2 mb-4">
-                <div className="logo-badge">
-                  <Image
-                    src="/icons/tradinggwall-icon.svg"
-                    alt="Trading Wall Logo"
-                    width={72}
-                    height={72}
-                    className="w-16 h-16 md:w-18 md:h-18"
-                  />
-                </div>
-              </Link>
-          <h1 className="text-4xl font-bold text-white mb-2">تایید شماره موبایل</h1>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 mb-4"
+          >
+            <div className="logo-badge">
+              <Image
+                src="/icons/tradingwall-icon-dark.png"
+                alt="Trading Wall Logo"
+                width={72}
+                height={72}
+                className="w-16 h-16 md:w-18 md:h-18"
+              />
+            </div>
+          </Link>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            تایید شماره موبایل
+          </h1>
           <p className="text-gray-400">
-            کد ارسال شده به شماره <span className="text-white font-bold">{phone}</span> را وارد کنید
+            کد ارسال شده به شماره{" "}
+            <span className="text-white font-bold">{phone}</span> را وارد کنید
           </p>
         </div>
 
@@ -130,7 +136,10 @@ export default function VerifyPage() {
         <div className="bg-white rounded-2xl p-8 shadow-2xl">
           <form onSubmit={handleVerify} className="space-y-6">
             <div>
-              <label htmlFor="code" className="block text-lg font-semibold text-gray-800 mb-2 text-center">
+              <label
+                htmlFor="code"
+                className="block text-lg font-semibold text-gray-800 mb-2 text-center"
+              >
                 کد تایید
               </label>
               <input
@@ -146,7 +155,9 @@ export default function VerifyPage() {
                 className="w-full px-4 py-4 text-2xl font-bold text-center border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 tracking-widest"
               />
               {error && (
-                <p className="mt-2 text-sm text-red-600 font-medium text-center">{error}</p>
+                <p className="mt-2 text-sm text-red-600 font-medium text-center">
+                  {error}
+                </p>
               )}
             </div>
 
@@ -161,7 +172,7 @@ export default function VerifyPage() {
                   در حال تایید...
                 </span>
               ) : (
-                'تایید و ورود'
+                "تایید و ورود"
               )}
             </button>
           </form>
@@ -185,12 +196,15 @@ export default function VerifyPage() {
 
           {/* Back Link */}
           <div className="mt-4 text-center">
-            <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-800">
+            <Link
+              href="/auth/login"
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
               تغییر شماره موبایل
             </Link>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

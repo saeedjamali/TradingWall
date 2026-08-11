@@ -61,10 +61,11 @@ export async function POST(request) {
       success: true,
       message: 'ورود موفقیت‌آمیز',
       user: {
-        id: user._id,
+        id: user._id.toString(),
         phone: user.phone,
         publicName: user.publicName,
         role: user.role,
+        verified: user.verified,
       },
     })
     

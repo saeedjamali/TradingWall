@@ -163,7 +163,7 @@ export default function PreTradeChecklist({ userId }) {
                 strokeDasharray={`${2 * Math.PI * 20}`}
                 strokeDashoffset={`${2 * Math.PI * 20 * (1 - progressPercentage / 100)}`}
                 className={`transition-all ${
-                  progressPercentage === 100 ? 'text-green-500' : 'text-blue-500'
+                  progressPercentage === 100 ? 'text-profit' : 'text-primary-500'
                 }`}
               />
             </svg>
@@ -196,7 +196,7 @@ export default function PreTradeChecklist({ userId }) {
         <div className="px-6 pb-4 border-t border-gray-100">
           <div className="space-y-4 mt-4">
             {checklists.map((checklist) => (
-              <div key={checklist._id} className="border-r-4 border-blue-500 pr-3">
+              <div key={checklist._id} className="border-r-4 border-primary-500 pr-3">
                 <h4 className="font-semibold text-gray-800 mb-2">{checklist.title}</h4>
                 <div className="space-y-2">
                   {checklist.items && checklist.items.length > 0 ? (

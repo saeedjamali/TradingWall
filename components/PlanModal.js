@@ -276,7 +276,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
         <div className="grid grid-cols-2 gap-3">
 
           {/* Max Trades */}
-          <div>
+          <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <Term en="Max Trades" fa="حداکثر معامله" />
             </label>
@@ -302,6 +302,9 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
               placeholder="100"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
             />
+            <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              حداکثر ضرر مجاز هر معامله به دلار (مثلاً ۱۰$)
+            </p>
           </div>
 
           {/* Max Loss % */}
@@ -317,6 +320,9 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
               placeholder="5"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
             />
+            <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              حداکثر ضرر مجاز نسبت به سرمایه (مثلاً ۲٪)
+            </p>
           </div>
 
           {/* Target Profit */}

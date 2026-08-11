@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Trade from '@/models/Trade'
+import Symbol from '@/models/Symbol'
 import { parseMetaTraderFile } from '@/utils/parseMetaTrader'
+import { assertActiveSymbol, seedDefaultSymbols } from '@/utils/symbolSeed'
 
 export async function POST(request) {
   try {
@@ -53,12 +55,27 @@ export async function POST(request) {
       )
     }
     
+    // Ensure default symbols exist for validation
+    if ((await Symbol.countDocuments()) === 0) {
+      await seedDefaultSymbols(Symbol, { onlyIfEmpty: true })
+    }
+
     // Save trades to database
     const savedTrades = []
     const errors = []
     
     for (const trade of result.trades) {
       try {
+        const symbolCheck = await assertActiveSymbol(Symbol, trade.symbol)
+        if (!symbolCheck.ok) {
+          errors.push({
+            trade: trade.positionId,
+            error: symbolCheck.error,
+          })
+          continue
+        }
+        trade.symbol = symbolCheck.code
+
         // Check if trade already exists
         const existingTrade = await Trade.findOne({
           userId,

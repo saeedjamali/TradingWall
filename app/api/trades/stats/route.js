@@ -19,7 +19,7 @@ export async function GET(request) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     
-    if (!userId) {
+    if (!userId || userId === 'undefined' || userId === 'null') {
       return NextResponse.json(
         { error: 'کاربر مشخص نشده است' },
         { status: 400 }

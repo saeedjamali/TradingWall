@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Trade from '@/models/Trade'
+import Symbol from '@/models/Symbol'
+import { assertActiveSymbol } from '@/utils/symbolSeed'
 
 // GET: Fetch single trade
 export async function GET(request, { params }) {
@@ -66,6 +68,14 @@ export async function PUT(request, { params }) {
         { error: 'معامله یافت نشد' },
         { status: 404 }
       )
+    }
+
+    if (updateData.symbol) {
+      const symbolCheck = await assertActiveSymbol(Symbol, updateData.symbol)
+      if (!symbolCheck.ok) {
+        return NextResponse.json({ error: symbolCheck.error }, { status: 400 })
+      }
+      updateData.symbol = symbolCheck.code
     }
     
     // Update trade

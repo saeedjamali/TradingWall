@@ -35,7 +35,10 @@ export async function POST(request) {
     }
 
     // Create uploads directory based on type
-    const subDir = type === 'profile' ? 'profiles' : 'plans'
+    const subDir =
+      type === 'profile' ? 'profiles' :
+      type === 'message' ? 'messages' :
+      'plans'
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', subDir)
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true })

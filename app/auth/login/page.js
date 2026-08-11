@@ -1,92 +1,97 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import Button from '@/components/Button'
-import Input from '@/components/Input'
-import { LoadingSpinner } from '@/components/Loading'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import Button from "@/components/Button";
+import Input from "@/components/Input";
+import { LoadingSpinner } from "@/components/Loading";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [loginMethod, setLoginMethod] = useState('otp') // 'otp' or 'password'
-  const [phone, setPhone] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const router = useRouter();
+  const [loginMethod, setLoginMethod] = useState("otp"); // 'otp' or 'password'
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      if (loginMethod === 'otp') {
+      if (loginMethod === "otp") {
         // Send OTP
-        const response = await fetch('/api/auth/send-otp', {
-          method: 'POST',
+        const response = await fetch("/api/auth/send-otp", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ phone }),
-        })
+        });
 
-        const data = await response.json()
+        const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'خطا در ارسال کد')
+          throw new Error(data.error || "خطا در ارسال کد");
         }
 
         // Redirect to verify page with phone number
-        router.push(`/auth/verify?phone=${phone}`)
+        router.push(`/auth/verify?phone=${phone}`);
       } else {
         // Login with password
-        const response = await fetch('/api/auth/login-password', {
-          method: 'POST',
+        const response = await fetch("/api/auth/login-password", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ phone, password }),
-        })
+        });
 
-        const data = await response.json()
+        const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'خطایی رخ داد')
+          throw new Error(data.error || "خطایی رخ داد");
         }
 
         // Store user and token
-        localStorage.setItem('user', JSON.stringify(data.user))
-        const oneWeekFromNow = new Date().getTime() + (7 * 24 * 60 * 60 * 1000)
-        localStorage.setItem('tokenExpiry', oneWeekFromNow.toString())
+        localStorage.setItem("user", JSON.stringify(data.user));
+        const oneWeekFromNow = new Date().getTime() + 7 * 24 * 60 * 60 * 1000;
+        localStorage.setItem("tokenExpiry", oneWeekFromNow.toString());
 
         // Redirect to dashboard
-        router.push('/dashboard')
+        router.push("/dashboard");
       }
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Title */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex flex-col items-center gap-3 mb-4">
-            <div className="logo-badge">
-              <Image 
-                src="/icons/tradinggwall-icon.svg" 
-                alt="Trading Wall Logo" 
-                width={80} 
+          <Link
+            href="/"
+            className="inline-flex flex-col items-center gap-3 mb-4"
+          >
+            <div className="logo-">
+              <Image
+                src="/icons/tradingwall-icon-dark.png"
+                alt="Trading Wall Logo"
+                width={80}
                 height={80}
                 className="w-18 h-18 md:w-20 md:h-20"
               />
             </div>
-            <h1 className="text-4xl font-bold text-white tracking-tight trading-wall-logo">Trading Wall</h1>
+            <h1 className="text-4xl font-bold text-white tracking-tight trading-wall-logo">
+              Trading Wall
+            </h1>
           </Link>
           <p className="text-gray-400">ورود / ثبت نام</p>
         </div>
@@ -98,13 +103,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => {
-                setLoginMethod('otp')
-                setError('')
+                setLoginMethod("otp");
+                setError("");
               }}
               className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
-                loginMethod === 'otp'
-                  ? 'bg-white text-primary-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                loginMethod === "otp"
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               ورود با کد OTP
@@ -112,13 +117,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => {
-                setLoginMethod('password')
-                setError('')
+                setLoginMethod("password");
+                setError("");
               }}
               className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
-                loginMethod === 'password'
-                  ? 'bg-white text-primary-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                loginMethod === "password"
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               ورود با رمز عبور
@@ -127,7 +132,10 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label htmlFor="phone" className="block text-lg font-semibold text-gray-800 mb-2">
+              <label
+                htmlFor="phone"
+                className="block text-lg font-semibold text-gray-800 mb-2"
+              >
                 شماره موبایل
               </label>
               <input
@@ -143,9 +151,12 @@ export default function LoginPage() {
               />
             </div>
 
-            {loginMethod === 'password' && (
+            {loginMethod === "password" && (
               <div>
-                <label htmlFor="password" className="block text-lg font-semibold text-gray-800 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-lg font-semibold text-gray-800 mb-2"
+                >
                   رمز عبور
                 </label>
                 <input
@@ -174,10 +185,12 @@ export default function LoginPage() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {loginMethod === 'otp' ? 'در حال ارسال...' : 'در حال ورود...'}
+                  {loginMethod === "otp" ? "در حال ارسال..." : "در حال ورود..."}
                 </span>
+              ) : loginMethod === "otp" ? (
+                "ارسال کد تایید"
               ) : (
-                loginMethod === 'otp' ? 'ارسال کد تایید' : 'ورود'
+                "ورود"
               )}
             </button>
           </form>
@@ -186,18 +199,21 @@ export default function LoginPage() {
           <div className="mt-6 text-center bg-blue-50 p-4 rounded-lg">
             <p className="text-gray-700 text-sm">
               💡 برای ورود یا ثبت نام، شماره موبایل خود را وارد کنید.
-              {loginMethod === 'otp' && ' کد تایید برای شما ارسال خواهد شد.'}
+              {loginMethod === "otp" && " کد تایید برای شما ارسال خواهد شد."}
             </p>
           </div>
 
           {/* Back to Home */}
           <div className="mt-4 text-center">
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-800">
+            <Link
+              href="/"
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
               بازگشت به صفحه اصلی
             </Link>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

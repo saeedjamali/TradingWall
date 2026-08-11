@@ -40,6 +40,11 @@ const UserSchema = new mongoose.Schema({
     default: false, // Blue tick
   },
   privacySettings: {
+    // Master switch: if false, wall is inaccessible to others
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
     showCalendar: {
       type: Boolean,
       default: false,
@@ -55,6 +60,11 @@ const UserSchema = new mongoose.Schema({
     showSetups: {
       type: Boolean,
       default: true,
+    },
+    // Allow other users to send job proposals on public wall
+    allowJobOffers: {
+      type: Boolean,
+      default: false,
     },
   },
   createdAt: {

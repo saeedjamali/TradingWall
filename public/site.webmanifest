@@ -1,0 +1,27 @@
+{
+  "name": "Trading Wall",
+  "short_name": "Trading Wall",
+  "description": "پلتفرم تحلیل و مدیریت معاملات",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "/icons/tradingwall-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/tradingwall-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/tradingwall-icon-dark.png",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

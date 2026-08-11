@@ -83,7 +83,17 @@ export async function PUT(request) {
     return NextResponse.json({
       success: true,
       message: 'پروفایل با موفقیت به‌روز شد',
-      user,
+      user: {
+        id: user._id.toString(),
+        phone: user.phone,
+        publicName: user.publicName,
+        role: user.role,
+        verified: user.verified,
+        profileImage: user.profileImage,
+        province: user.province,
+        city: user.city,
+        privacySettings: user.privacySettings,
+      },
     })
     
   } catch (error) {

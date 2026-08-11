@@ -1,117 +1,191 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts'
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  LabelList,
+  ReferenceLine,
+} from 'recharts'
 
 export default function MonthlyChart({ trades, currentMonth }) {
-  // Get days in month
   const year = currentMonth.getFullYear()
   const month = currentMonth.getMonth()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  
-  // Prepare data for chart
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
   const chartData = []
-  
+  let monthWins = 0
+  let monthLosses = 0
+  let monthProfit = 0
+
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day)
-    const dayOfWeek = date.getDay()
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-    
-    // Filter trades for this day
-    const dayTrades = trades.filter(trade => {
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6
+
+    const dayTrades = (trades || []).filter((trade) => {
       const tradeDate = new Date(trade.closeTime)
-      return tradeDate.getDate() === day &&
-             tradeDate.getMonth() === month &&
-             tradeDate.getFullYear() === year
+      return (
+        tradeDate.getDate() === day &&
+        tradeDate.getMonth() === month &&
+        tradeDate.getFullYear() === year
+      )
     })
-    
-    const profit = dayTrades.reduce((sum, trade) => sum + trade.profit, 0)
-    const tradesCount = dayTrades.length
-    
+
+    const wins = dayTrades.filter((t) => t.profit > 0).length
+    const losses = dayTrades.filter((t) => t.profit < 0).length
+    const breakeven = dayTrades.filter((t) => t.profit === 0).length
+    const profit = dayTrades.reduce((sum, t) => sum + t.profit, 0)
+    const total = dayTrades.length
+
+    monthWins += wins
+    monthLosses += losses
+    monthProfit += profit
+
     chartData.push({
-      day: day,
-      profit: profit,
-      tradesCount: tradesCount,
-      isWeekend: isWeekend,
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      day,
+      wins,
+      losses,
+      breakeven,
+      profit: Number(profit.toFixed(2)),
+      total,
+      isWeekend,
+      dateLabel: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      // Only show count label when there are trades
+      countLabel: total > 0 ? String(total) : '',
     })
   }
-  
-  // Custom tooltip
+
   const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
+    if (!active || !payload?.length) return null
+    const data = payload[0].payload
+    if (data.total === 0 && data.isWeekend) {
       return (
-        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
-          <p className="font-bold text-sm">{data.date}</p>
-          <p className={`text-sm ${data.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            P/L: ${data.profit.toFixed(2)}
-          </p>
-          <p className="text-xs text-gray-600">{data.tradesCount} trades</p>
-          {data.isWeekend && (
-            <p className="text-xs text-red-500">Weekend</p>
-          )}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
+          <p className="font-bold">{data.dateLabel}</p>
+          <p className="text-gray-500 text-xs">Weekend</p>
         </div>
       )
     }
-    return null
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm space-y-1">
+        <p className="font-bold">{data.dateLabel}</p>
+        <p className="text-green-600">✓ موفق: {data.wins}</p>
+        <p className="text-red-600">✗ ناموفق: {data.losses}</p>
+        {data.breakeven > 0 && (
+          <p className="text-yellow-600">= سر به سر: {data.breakeven}</p>
+        )}
+        <p className="text-gray-700 font-medium">تعداد: {data.total}</p>
+        <p className={`font-bold ${data.profit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+          برایند: ${data.profit.toFixed(2)}
+        </p>
+      </div>
+    )
   }
-  
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-bold mb-4">Monthly Performance Chart</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis 
-            dataKey="day" 
-            tick={{ fontSize: 12 }}
-            interval={2}
-            label={{ value: 'Day of Month', position: 'insideBottom', offset: -10, fontSize: 12 }}
-          />
-          <YAxis 
-            tick={{ fontSize: 12 }}
-            label={{ value: 'Profit/Loss ($)', angle: -90, position: 'insideLeft', fontSize: 12 }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine y={0} stroke="#6b7280" strokeWidth={2} />
-          <Bar dataKey="profit" radius={[4, 4, 0, 0]}>
-            {chartData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={
-                  entry.isWeekend 
-                    ? '#d1d5db'  // Gray for weekends
-                    : entry.profit > 0 
-                    ? '#10b981'  // Green for profit
-                    : entry.profit < 0 
-                    ? '#ef4444'  // Red for loss
-                    : '#fbbf24'  // Yellow for break-even
-                } 
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-      
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-4 justify-center text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span>Profit</span>
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6 h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4 shrink-0">
+        <div>
+          <h3 className="text-lg md:text-xl font-bold text-gray-800">عملکرد روزانه ماه</h3>
+          <p className="text-xs md:text-sm text-gray-500">{monthName} · موفق / ناموفق + برایند</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 rounded"></div>
-          <span>Loss</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-400 rounded"></div>
-          <span>Break-even</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-300 rounded"></div>
-          <span>Weekend / No Trades</span>
+        <div className="flex flex-wrap gap-3 text-xs md:text-sm">
+          <span className="text-green-700 font-medium">✓ {monthWins} موفق</span>
+          <span className="text-red-600 font-medium">✗ {monthLosses} ناموفق</span>
+          <span className={`font-bold ${monthProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+            ${monthProfit.toFixed(2)}
+          </span>
         </div>
       </div>
+
+      <div className="flex-1 min-h-[280px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 20, right: 8, left: 0, bottom: 8 }}
+            barCategoryGap="20%"
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e5e7eb' }}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              yAxisId="count"
+              allowDecimals={false}
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tickLine={false}
+              axisLine={false}
+              width={28}
+            />
+            <YAxis
+              yAxisId="pnl"
+              orientation="right"
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tickLine={false}
+              axisLine={false}
+              width={40}
+              tickFormatter={(v) => `$${v}`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              verticalAlign="top"
+              height={28}
+              iconType="circle"
+              wrapperStyle={{ fontSize: 12 }}
+            />
+            <ReferenceLine yAxisId="pnl" y={0} stroke="#9ca3af" strokeDasharray="4 4" />
+            <Bar
+              yAxisId="count"
+              dataKey="wins"
+              name="موفق"
+              stackId="trades"
+              fill="#10b981"
+              radius={[0, 0, 0, 0]}
+              maxBarSize={18}
+            />
+            <Bar
+              yAxisId="count"
+              dataKey="losses"
+              name="ناموفق"
+              stackId="trades"
+              fill="#ef4444"
+              radius={[3, 3, 0, 0]}
+              maxBarSize={18}
+            >
+              <LabelList
+                dataKey="countLabel"
+                position="top"
+                style={{ fontSize: 10, fill: '#374151', fontWeight: 600 }}
+              />
+            </Bar>
+            <Line
+              yAxisId="pnl"
+              type="monotone"
+              dataKey="profit"
+              name="برایند ($)"
+              stroke="#1e3a8a"
+              strokeWidth={2}
+              dot={{ r: 3, fill: '#1e3a8a', strokeWidth: 0 }}
+              activeDot={{ r: 5 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <p className="text-center text-xs text-gray-400 mt-2 shrink-0">
+        ستون = تعداد معاملات موفق/ناموفق · خط = برایند دلاری روز · عدد بالای ستون = کل معاملات
+      </p>
     </div>
   )
 }
