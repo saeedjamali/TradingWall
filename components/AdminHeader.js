@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/symbols", label: "نمادها", icon: "📈" },
   { href: "/admin/setups", label: "ستاپ‌ها", icon: "⚙️" },
   { href: "/admin/messages", label: "نظرات", icon: "💬" },
+  { href: "/admin/demo-data", label: "دیتای دمو", icon: "🧪" },
 ];
 
 export default function AdminHeader({ user }) {

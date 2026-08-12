@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Setup from '@/models/Setup'
 import { requireAdmin } from '@/utils/adminAuth'
+import { seedDefaultSetups } from '@/utils/setupSeed'
 
 // GET - List standard setups
 export async function GET(request) {
@@ -28,17 +29,24 @@ export async function GET(request) {
   }
 }
 
-// POST - Create standard setup
+// POST - Create standard setup OR seed defaults
 export async function POST(request) {
   try {
     await connectDB()
 
     const body = await request.json()
-    const { adminUserId, title, description } = body
+    const { adminUserId, action, title, description } = body
 
     const admin = await requireAdmin(adminUserId)
     if (!admin) {
       return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 403 })
+    }
+
+    if (action === 'seed') {
+      const result = await seedDefaultSetups(Setup, {
+        onlyIfEmpty: body.onlyIfEmpty === true,
+      })
+      return NextResponse.json({ success: true, ...result })
     }
 
     if (!title?.trim()) {

@@ -15,6 +15,7 @@ export default function AdminSetupsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [seeding, setSeeding] = useState(false)
   const [formData, setFormData] = useState({ title: '', description: '' })
 
   useEffect(() => {
@@ -122,6 +123,41 @@ export default function AdminSetupsPage() {
     }
   }
 
+  const handleSeed = async () => {
+    if (
+      !confirm(
+        'ستاپ‌های استاندارد پیش‌فرض بارگذاری شوند؟ موارد تکراری (هم‌عنوان) رد می‌شوند.',
+      )
+    ) {
+      return
+    }
+
+    setSeeding(true)
+    try {
+      const response = await fetch('/api/admin/setups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.id,
+          action: 'seed',
+          onlyIfEmpty: false,
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(data.message || 'بارگذاری انجام شد')
+        fetchSetups(user.id)
+      } else {
+        alert(data.error || 'خطا در بارگذاری ستاپ‌ها')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('خطا در بارگذاری ستاپ‌ها')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   if (!user) {
     return <Loading text="در حال بارگذاری..." />
   }
@@ -138,9 +174,14 @@ export default function AdminSetupsPage() {
               جداول ثابت که برای همه کاربران قابل انتخاب است
             </p>
           </div>
-          {!showForm && (
-            <Button onClick={() => setShowForm(true)}>➕ افزودن ستاپ</Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleSeed} disabled={seeding}>
+              {seeding ? 'در حال تغذیه...' : '🌱 تغذیه پیش‌فرض'}
+            </Button>
+            {!showForm && (
+              <Button onClick={() => setShowForm(true)}>➕ افزودن ستاپ</Button>
+            )}
+          </div>
         </div>
 
         {showForm && (
@@ -183,9 +224,14 @@ export default function AdminSetupsPage() {
           <div className="bg-white rounded-lg shadow-md p-12 text-center text-gray-500">
             <p className="text-4xl mb-3">⚙️</p>
             <p>هنوز ستاپ استانداردی تعریف نشده است</p>
-            <Button className="mt-4" onClick={() => setShowForm(true)}>
-              افزودن اولین ستاپ
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2 mt-4">
+              <Button onClick={handleSeed} disabled={seeding}>
+                {seeding ? 'در حال تغذیه...' : '🌱 تغذیه پیش‌فرض'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowForm(true)}>
+                افزودن دستی
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

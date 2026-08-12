@@ -89,7 +89,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-8">
           <Link href="/admin/users" className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-transparent hover:border-blue-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">👥</div>
@@ -136,6 +136,16 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="font-bold text-lg">ستاپ‌های استاندارد</h3>
                 <p className="text-sm text-gray-600">جداول ثابت سیستم</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/admin/demo-data" className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-transparent hover:border-rose-200">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-rose-100 rounded-lg flex items-center justify-center text-2xl">🧪</div>
+              <div>
+                <h3 className="font-bold text-lg">دیتای دمو</h3>
+                <p className="text-sm text-gray-600">۱۰ تریدر + معاملات سالانه برای لیدربورد</p>
               </div>
             </div>
           </Link>

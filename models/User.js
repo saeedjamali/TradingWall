@@ -43,6 +43,10 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true, // false = deactivated by admin
   },
+  isDemo: {
+    type: Boolean,
+    default: false, // seeded demo accounts (safe to bulk-delete)
+  },
   privacySettings: {
     // Master switch: if false, wall is inaccessible to others
     isPublic: {
@@ -85,5 +89,6 @@ const UserSchema = new mongoose.Schema({
 
 // Indexes
 UserSchema.index({ createdAt: -1 })
+UserSchema.index({ isDemo: 1 })
 
 export default mongoose.models.User || mongoose.model('User', UserSchema)
