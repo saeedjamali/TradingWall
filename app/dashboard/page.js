@@ -534,6 +534,13 @@ export default function DashboardPage() {
               currentMonth={currentMonth}
               userId={user?.id}
               monthTrades={monthTrades}
+              onTradeUpdated={(tradeId, patch) => {
+                setMonthTrades((prev) =>
+                  (prev || []).map((t) =>
+                    t._id === tradeId ? { ...t, ...patch } : t,
+                  ),
+                );
+              }}
             />
           </div>
 
@@ -680,7 +687,12 @@ function StatCard({ title, value, icon, accent = "sky", valueTone = "neutral" })
   );
 }
 
-function TradingCalendar({ currentMonth, userId, monthTrades = [] }) {
+function TradingCalendar({
+  currentMonth,
+  userId,
+  monthTrades = [],
+  onTradeUpdated,
+}) {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -1376,6 +1388,14 @@ function TradingCalendar({ currentMonth, userId, monthTrades = [] }) {
         date={selectedDate}
         trades={selectedDayTrades}
         userId={userId}
+        onTradesUpdated={(tradeId, patch) => {
+          setSelectedDayTrades((prev) =>
+            (prev || []).map((t) =>
+              t._id === tradeId ? { ...t, ...patch } : t,
+            ),
+          );
+          onTradeUpdated?.(tradeId, patch);
+        }}
       />
     </div>
   );

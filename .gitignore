@@ -26,7 +26,11 @@ yarn-error.log*
 .env*.local
 .env
 
-# uploaded files
+# uploaded files (root — outside public for production)
+/uploads/**
+!/uploads/.gitkeep
+!/uploads/**/.gitkeep
+!/uploads/README.md
 /public/uploads/
 
 # vercel

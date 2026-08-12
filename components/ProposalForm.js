@@ -62,6 +62,14 @@ export default function ProposalForm({
   const handleImage = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const { validateImageFile, MAX_IMAGE_LABEL } = await import('@/utils/uploadLimits')
+    const check = validateImageFile(file)
+    if (!check.ok) {
+      setError(check.error || `حداکثر حجم ${MAX_IMAGE_LABEL}`)
+      return
+    }
+
     setUploading(true)
     setError('')
     try {
@@ -197,7 +205,9 @@ export default function ProposalForm({
         />
       </div>
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>تصویر (اختیاری)</label>
+        <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>
+          تصویر (اختیاری — حداکثر ۳ مگابایت)
+        </label>
         <input
           type="file"
           accept="image/*"

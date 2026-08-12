@@ -122,10 +122,18 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
     const file = e.target.files?.[0]
     if (!file) return
 
+    const { validateImageFile } = await import('@/utils/uploadLimits')
+    const check = validateImageFile(file)
+    if (!check.ok) {
+      alert(check.error)
+      return
+    }
+
     setUploadingImage(true)
     try {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('type', 'plan')
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',
@@ -385,6 +393,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             <Term en="Trade Screenshot" fa="تصویر معامله" />
+            <span className="text-xs text-gray-500 font-normal mr-1">(حداکثر ۳ مگابایت)</span>
           </label>
           <div className="space-y-2">
             {!formData.tradeImage ? (

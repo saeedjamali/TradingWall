@@ -79,6 +79,12 @@ export default function AdminMessagesPage() {
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    const { validateImageFile } = await import('@/utils/uploadLimits')
+    const check = validateImageFile(file)
+    if (!check.ok) {
+      alert(check.error)
+      return
+    }
     setUploading(true)
     try {
       const fd = new FormData()

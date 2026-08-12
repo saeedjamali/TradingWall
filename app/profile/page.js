@@ -330,9 +330,10 @@ export default function ProfilePage() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("حجم تصویر نباید بیشتر از 5 مگابایت باشد");
+    const { validateImageFile } = await import("@/utils/uploadLimits");
+    const check = validateImageFile(file);
+    if (!check.ok) {
+      alert(check.error);
       return;
     }
 
@@ -340,6 +341,7 @@ export default function ProfilePage() {
     try {
       const formData = new FormData();
       formData.append("image", file);
+      formData.append("type", "profile");
       formData.append("userId", user.id);
 
       const response = await fetch("/api/upload/image", {
@@ -686,7 +688,7 @@ export default function ProfilePage() {
                           </div>
                         </label>
                         <p className="text-xs text-gray-500 mt-1">
-                          حداکثر 5 مگابایت - JPG, PNG
+                          حداکثر 3 مگابایت - JPG, PNG
                         </p>
                       </div>
                     </div>

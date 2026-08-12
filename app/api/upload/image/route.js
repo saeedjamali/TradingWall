@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
+import { writeFile } from 'fs/promises'
 import path from 'path'
-import { existsSync } from 'fs'
+import { ensureUploadDir, publicUploadUrl } from '@/utils/uploads'
+import {
+  IMAGE_MIME_TYPES,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_LABEL,
+} from '@/utils/uploadLimits'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(request) {
   try {
     const formData = await request.formData()
     const file = formData.get('image') || formData.get('file')
-    const type = formData.get('type') || 'profile' // 'profile' or 'plan'
-    
+    const type = formData.get('type') || 'profile' // profile | plan | message
+
     if (!file) {
       return NextResponse.json(
         { error: 'فایلی انتخاب نشده است' },
@@ -16,56 +24,39 @@ export async function POST(request) {
       )
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-    if (!validTypes.includes(file.type)) {
+    if (!IMAGE_MIME_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: 'فرمت فایل باید عکس باشد (jpg, png, gif, webp)' },
         { status: 400 }
       )
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
+    if (file.size > MAX_IMAGE_BYTES) {
       return NextResponse.json(
-        { error: 'حجم فایل نباید بیشتر از 5 مگابایت باشد' },
+        { error: `حجم فایل نباید بیشتر از ${MAX_IMAGE_LABEL} باشد` },
         { status: 400 }
       )
     }
 
-    // Create uploads directory based on type
-    const subDir =
-      type === 'profile' ? 'profiles' :
-      type === 'message' ? 'messages' :
-      'plans'
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', subDir)
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
-    }
+    const { dir, subDir } = await ensureUploadDir(type)
 
-    // Generate unique filename
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(7)
-    const extension = file.name.split('.').pop()
-    const filename = `${type}_${timestamp}_${randomString}.${extension}`
-    
-    const filepath = path.join(uploadsDir, filename)
-    
-    // Convert file to buffer and save
+    const extension = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)
+      ? extension
+      : 'jpg'
+    const filename = `${type}_${timestamp}_${randomString}.${safeExt}`
+    const filepath = path.join(dir, filename)
+
     const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filepath, buffer)
-    
-    // Return the public URL
-    const publicUrl = `/uploads/${subDir}/${filename}`
-    
+    await writeFile(filepath, Buffer.from(bytes))
+
     return NextResponse.json({
       success: true,
       message: 'فایل با موفقیت آپلود شد',
-      url: publicUrl,
+      url: publicUploadUrl(subDir, filename),
     })
-    
   } catch (error) {
     console.error('Upload Image Error:', error)
     return NextResponse.json(

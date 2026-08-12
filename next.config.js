@@ -2,9 +2,10 @@
 const nextConfig = {
   experimental: {
     serverActions: {
-      enabled: true
-    }
-  }
+      enabled: true,
+      bodySizeLimit: '4mb',
+    },
+  },
 }
 
 module.exports = nextConfig

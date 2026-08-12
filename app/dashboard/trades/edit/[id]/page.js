@@ -18,6 +18,7 @@ export default function EditTradePage() {
   const [selectedSetups, setSelectedSetups] = useState([])
   const [showAddSetup, setShowAddSetup] = useState(false)
   const [newSetup, setNewSetup] = useState({ title: '', description: '' })
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [formData, setFormData] = useState({
     symbol: '',
     type: 'buy',
@@ -32,6 +33,7 @@ export default function EditTradePage() {
     swap: '',
     profit: '',
     notes: '',
+    tradeImage: '',
   })
 
   useEffect(() => {
@@ -125,6 +127,7 @@ export default function EditTradePage() {
           swap: trade.swap || '',
           profit: trade.profit || '',
           notes: trade.notes || '',
+          tradeImage: trade.tradeImage || '',
         })
         setSelectedSetups(trade.setupIds?.map(s => s._id || s) || [])
       } else {
@@ -161,6 +164,7 @@ export default function EditTradePage() {
           commission: formData.commission ? parseFloat(formData.commission) : 0,
           swap: formData.swap ? parseFloat(formData.swap) : 0,
           profit: parseFloat(formData.profit),
+          tradeImage: formData.tradeImage || null,
           setupIds: selectedSetups,
         }),
       })
@@ -187,6 +191,43 @@ export default function EditTradePage() {
       ...prev,
       [name]: value
     }))
+  }
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    const { validateImageFile } = await import('@/utils/uploadLimits')
+    const check = validateImageFile(file)
+    if (!check.ok) {
+      alert(check.error)
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      const uploadForm = new FormData()
+      uploadForm.append('image', file)
+      uploadForm.append('type', 'trade')
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: uploadForm,
+      })
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'خطا در آپلود تصویر')
+      }
+
+      setFormData((prev) => ({ ...prev, tradeImage: data.url }))
+    } catch (error) {
+      console.error('Error uploading trade image:', error)
+      alert(error.message || 'خطا در آپلود تصویر')
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   if (loading) {
@@ -399,6 +440,88 @@ export default function EditTradePage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 placeholder="یادداشت‌های اضافی..."
               />
+            </div>
+
+            {/* Trade Screenshot */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Trade Screenshot
+                <span className="text-xs text-gray-500 font-normal mr-1">
+                  (حداکثر ۳ مگابایت)
+                </span>
+              </label>
+              {!formData.tradeImage ? (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <label
+                    className={`flex-1 flex items-center justify-center px-3 py-3 border-2 border-dashed rounded-lg transition-colors ${
+                      uploadingImage
+                        ? 'border-gray-200 bg-gray-50 cursor-wait text-gray-500'
+                        : 'border-gray-300 cursor-pointer hover:border-primary-500 text-gray-600'
+                    }`}
+                  >
+                    <span className="text-sm">
+                      {uploadingImage ? '⏳ در حال آپلود...' : '📤 آپلود تصویر'}
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tradeImage}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        tradeImage: e.target.value,
+                      }))
+                    }
+                    placeholder="یا لینک تصویر را وارد کنید"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  />
+                </div>
+              ) : (
+                <div className="border rounded-lg p-3 bg-gray-50 relative">
+                  <img
+                    src={formData.tradeImage}
+                    alt="Trade screenshot"
+                    className="max-h-48 mx-auto rounded-lg object-contain"
+                    onError={(e) => {
+                      e.target.alt = 'خطا در بارگذاری تصویر'
+                    }}
+                  />
+                  <div className="flex justify-center gap-2 mt-3">
+                    <label
+                      className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-colors ${
+                        uploadingImage
+                          ? 'bg-gray-300 text-gray-600 cursor-wait'
+                          : 'bg-slate-600 text-white hover:bg-slate-700'
+                      }`}
+                    >
+                      {uploadingImage ? '...' : '🖼️ تغییر تصویر'}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, tradeImage: '' }))
+                      }
+                      className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
+                    >
+                      حذف تصویر
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Setups Section */}
