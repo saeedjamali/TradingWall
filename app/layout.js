@@ -2,6 +2,15 @@ import "./globals.css";
 import { Vazirmatn, Orbitron } from "next/font/google";
 import SiteFooter from "@/components/SiteFooter";
 import ActiveSessionGuard from "@/components/ActiveSessionGuard";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import {
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_NAME_FA,
+  SITE_TAGLINE,
+  getSiteUrl,
+} from "@/utils/site";
 
 const vazir = Vazirmatn({
   subsets: ["latin", "arabic"],
@@ -15,9 +24,51 @@ const orbitron = Orbitron({
   display: "swap",
 });
 
+const siteUrl = getSiteUrl();
+const googleVerification =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined;
+
 export const metadata = {
-  title: "Trading Wall | دیوار معاملاتی",
-  description: "پلتفرم تحلیل و مدیریت معاملات",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: `${SITE_NAME} | ${SITE_NAME_FA}`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: siteUrl }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "finance",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "fa_IR",
+    alternateLocale: ["en_US"],
+    url: siteUrl,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} | ${SITE_NAME_FA}`,
+    description: SITE_TAGLINE,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} | ${SITE_NAME_FA}`,
+    description: SITE_TAGLINE,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -36,7 +87,11 @@ export const metadata = {
         sizes: "48x48",
         type: "image/png",
       },
-      { url: "/icons/tradingwall-icon-dark.png", type: "image/svg+xml" },
+      {
+        url: "/icons/tradingwall-icon-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
     ],
     apple: [
       {
@@ -48,17 +103,27 @@ export const metadata = {
     shortcut: "/favicon.ico",
   },
   manifest: "/site.webmanifest",
+  ...(googleVerification
+    ? { verification: { google: googleVerification } }
+    : {}),
+};
+
+export const viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0b1220" },
+    { media: "(prefers-color-scheme: light)", color: "#1e3a8a" },
+  ],
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl">
-      <head>
-        <meta name="theme-color" content="#1e3a8a" />
-      </head>
       <body
         className={`${vazir.variable} ${orbitron.variable} antialiased min-h-screen flex flex-col`}
       >
+        <SeoJsonLd />
         <ActiveSessionGuard />
         <div className="flex-1 flex flex-col">{children}</div>
         <SiteFooter />

@@ -135,7 +135,14 @@ export default function SiteFooter() {
 
         <div className="mt-8 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
           <p>© {year} Trading Wall · تمامی حقوق محفوظ است</p>
-          <p className="flex items-center gap-2">
+          <p className="flex items-center gap-2 flex-wrap justify-center">
+            <a
+              href="mailto:info@tradingwall.ir"
+              className="hover:text-primary-300 transition-colors"
+            >
+              info@tradingwall.ir
+            </a>
+            <span className="text-gray-600">·</span>
             <span className="inline-flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500/80" />
               Bull

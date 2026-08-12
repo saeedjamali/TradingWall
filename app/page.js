@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProposalForm from "@/components/ProposalForm";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import Modal from "@/components/Modal";
 import { getSessionUser } from "@/utils/session";
 import { FEEDBACK_CATEGORY_VALUES } from "@/utils/feedbackCategories";
 
@@ -17,6 +18,7 @@ export default function Home() {
   const [supportCategory, setSupportCategory] = useState("other");
   const [supportPhone, setSupportPhone] = useState("");
   const [supportReason, setSupportReason] = useState("");
+  const [showMt5Guide, setShowMt5Guide] = useState(false);
 
   useEffect(() => {
     setUser(getSessionUser());
@@ -168,16 +170,19 @@ export default function Home() {
         {/* Hero Section */}
         <section className="container mx-auto px-4 py-20 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            دیوار معاملاتی
+            Trading Wall | دیوار معاملاتی
           </h1>
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-            پلتفرم حرفه‌ای تحلیل و مدیریت معاملات شما
-            <br />
-            معاملات خود را ثبت کنید، آنالیز کنید و عملکرد خود را بهبود دهید
+          <p className="text-xl text-gray-300 mb-4 max-w-2xl mx-auto">
+            ژورنال معاملاتی فارسی برای ثبت ترید، تحلیل عملکرد، لیدربورد وین‌ریت و
+            سود، و دیوار عمومی تریدرها
+          </p>
+          <p className="text-base text-gray-400 mb-12 max-w-2xl mx-auto">
+            معاملات خود را ثبت کنید، ستاپ‌ها را مدیریت کنید و با تقویم معاملاتی
+            انضباط خود را بسنجید
           </p>
 
           {/* Upload Section */}
-          <div className="max-w-xl mx-auto mb-20">
+          <div className="max-w-xl mx-auto mb-20 text-center">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
               <div className="mb-6">
                 <svg
@@ -197,9 +202,20 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-white mb-4">
                 بارگذاری معاملات
               </h3>
-              <p className="text-gray-300 mb-6">
-                فایل گزارش متاتریدر یا فایل الگوی خالی را بارگذاری کنید
+              <p className="text-gray-300 text-sm md:text-base mb-4 leading-relaxed">
+                گزارش History را از MetaTrader ۵ دریافت کنید، یا الگوی Excel را
+                خودتان تکمیل نمایید (مناسب TradingView و سایر پلتفرم‌ها). امکان
+                افزودن معاملات به‌صورت یکجا یا روزانه وجود دارد و معاملات تکراری
+                به‌صورت خودکار حذف می‌شوند.
               </p>
+              <button
+                type="button"
+                onClick={() => setShowMt5Guide(true)}
+                className="mb-6 text-sm text-primary-300 hover:text-primary-200 underline underline-offset-4"
+              >
+                راهنمای خروجی از MT5
+              </button>
+
               {user ? (
                 <Link
                   href="/dashboard/trades/upload"
@@ -242,6 +258,31 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          <Modal
+            isOpen={showMt5Guide}
+            onClose={() => setShowMt5Guide(false)}
+            title="راهنمای خروجی Excel از History در MT5"
+            size="lg"
+          >
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                در MetaTrader ۵ از Toolbox به تب History بروید، راست‌کلیک کنید و
+                Report ← Open XML را بزنید. می‌توانید All History، بازه ماهانه
+                یا Custom Period را انتخاب کنید.
+              </p>
+              <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                <Image
+                  src="/guides/mt5-history-export-guide.png"
+                  alt="آموزش گرفتن خروجی Excel از History در MetaTrader 5"
+                  width={1280}
+                  height={720}
+                  className="w-full h-auto"
+                  sizes="(max-width: 640px) 100vw, 640px"
+                />
+              </div>
+            </div>
+          </Modal>
 
           {/* Leaderboards Section */}
           <div className="mt-16">

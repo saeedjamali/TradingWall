@@ -1,27 +1,33 @@
 {
-  "name": "Trading Wall",
+  "name": "Trading Wall | دیوار معاملاتی",
   "short_name": "Trading Wall",
-  "description": "پلتفرم تحلیل و مدیریت معاملات",
+  "description": "ژورنال معاملاتی، لیدربورد تریدرها و دیوار عمومی عملکرد",
+  "lang": "fa-IR",
+  "dir": "rtl",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#111827",
+  "background_color": "#0b1220",
   "theme_color": "#1e3a8a",
+  "categories": ["finance", "productivity"],
   "icons": [
     {
       "src": "/icons/tradingwall-icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/tradingwall-icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/tradingwall-icon-dark.png",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "/icons/tradingwall-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
