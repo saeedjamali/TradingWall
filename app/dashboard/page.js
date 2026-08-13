@@ -976,6 +976,7 @@ function TradingCalendar({
                   0,
                 );
                 const dayWins = dayTrades.filter((t) => t.profit > 0).length;
+                const dayLosses = dayTrades.filter((t) => t.profit < 0).length;
                 const dayWinRate =
                   dayTrades.length > 0
                     ? ((dayWins / dayTrades.length) * 100).toFixed(0)
@@ -1051,7 +1052,7 @@ function TradingCalendar({
                     key={`day-${day}`}
                     onClick={() => handleDayClick(date, dayTrades)}
                     className={`
-                  border rounded-xl p-1 md:p-2.5 min-h-[88px] md:min-h-[128px] transition-all relative flex flex-col overflow-hidden group
+                  border rounded-xl p-1 md:p-2.5 min-h-[78px] md:min-h-[128px] transition-all relative flex flex-col overflow-hidden group
                   ${isWeekend ? "cursor-not-allowed" : "cursor-pointer hover:shadow-md hover:-translate-y-0.5"}
                   ${isWeekend ? "bg-slate-200/70 border-slate-300 opacity-80" : ""}
                   ${!isWeekend && isProfit ? "bg-emerald-100 border-emerald-300 hover:bg-emerald-200/80" : ""}
@@ -1118,24 +1119,47 @@ function TradingCalendar({
                       </div>
                     )}
 
-                    {/* Mobile: compact — P&L + مشاهده button */}
+                    {/* Mobile: compact — P&L, W/L, view icon */}
                     {dayTrades.length > 0 && (
-                      <div className="md:hidden flex flex-col flex-1 justify-between mt-0.5 gap-0.5">
+                      <div className="md:hidden flex flex-col flex-1 mt-0.5 relative">
                         <div
                           className={`text-xs font-bold leading-tight tabular-nums ${isProfit ? "text-emerald-700" : isLoss ? "text-rose-700" : "text-amber-700"}`}
                         >
                           {dayProfit >= 0 ? "+" : ""}
                           {dayProfit.toFixed(0)}
                         </div>
-                        <div className="text-[10px] text-slate-500">
-                          {dayTrades.length}t · {dayWinRate}%
+                        <div className="text-[10px] font-semibold tabular-nums mt-0.5 leading-tight">
+                          <span className="text-emerald-700">W{dayWins}</span>
+                          <span className="text-slate-400 mx-0.5">/</span>
+                          <span className="text-rose-700">L{dayLosses}</span>
                         </div>
                         <button
                           type="button"
                           onClick={(e) => handleViewTrades(date, dayTrades, e)}
-                          className="mt-0.5 w-full rounded-md bg-primary-600 px-0.5 py-1 text-[10px] font-semibold text-white active:bg-primary-700"
+                          title="مشاهده معاملات"
+                          aria-label="مشاهده معاملات"
+                          className="absolute bottom-0 left-0 flex h-5 w-5 items-center justify-center rounded bg-primary-600 text-white active:bg-primary-700"
                         >
-                          مشاهده
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
                         </button>
                       </div>
                     )}
