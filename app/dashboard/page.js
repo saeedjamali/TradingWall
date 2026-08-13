@@ -529,6 +529,25 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* راهنمای استفاده از تقویم */}
+            <div
+              dir="rtl"
+              className="mb-4 rounded-xl border border-sky-200 bg-sky-50/90 px-3 py-2.5 text-xs text-sky-900 leading-relaxed"
+            >
+              <p className="font-semibold mb-1">راهنمای تقویم</p>
+              <ul className="space-y-1 list-disc list-inside text-sky-800/90">
+                <li>
+                  با کلیک روی هر روز، پنجرهٔ <strong>پلن معاملاتی</strong> باز
+                  می‌شود.
+                </li>
+                <li>
+                  با کلیک روی آیکون چشم / «مشاهده»، می‌توانید{" "}
+                  <strong>معاملات آن روز</strong> را ببینید و برای هر معامله{" "}
+                  <strong>ستاپ</strong> و <strong>تصویر</strong> ثبت کنید.
+                </li>
+              </ul>
+            </div>
+
             {/* Calendar Grid */}
             <TradingCalendar
               currentMonth={currentMonth}
@@ -1073,11 +1092,45 @@ function TradingCalendar({
                       </div>
                     )}
 
-                    {/* Day number */}
-                    <div
-                      className={`font-bold text-left text-xs md:text-sm ${isWeekend ? "text-slate-400" : "text-slate-700"}`}
-                    >
-                      {day}
+                    {/* Day number + mobile view icon (top-right) */}
+                    <div className="flex items-start justify-between gap-0.5">
+                      <div
+                        className={`font-bold text-left text-xs md:text-sm ${isWeekend ? "text-slate-400" : "text-slate-700"}`}
+                      >
+                        {day}
+                      </div>
+                      {dayTrades.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) =>
+                            handleViewTrades(date, dayTrades, e)
+                          }
+                          title="مشاهده معاملات"
+                          aria-label="مشاهده معاملات"
+                          className="md:hidden flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary-600 text-white active:bg-primary-700"
+                        >
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </div>
 
                     {/* Desktop: hierarchy — P&L hero, then meta */}
@@ -1119,9 +1172,9 @@ function TradingCalendar({
                       </div>
                     )}
 
-                    {/* Mobile: compact — P&L, W/L, view icon */}
+                    {/* Mobile: P&L + W/L + WR */}
                     {dayTrades.length > 0 && (
-                      <div className="md:hidden flex flex-col flex-1 mt-0.5 relative">
+                      <div className="md:hidden flex flex-col flex-1 mt-0.5">
                         <div
                           className={`text-xs font-bold leading-tight tabular-nums ${isProfit ? "text-emerald-700" : isLoss ? "text-rose-700" : "text-amber-700"}`}
                         >
@@ -1133,34 +1186,9 @@ function TradingCalendar({
                           <span className="text-slate-400 mx-0.5">/</span>
                           <span className="text-rose-700">L{dayLosses}</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => handleViewTrades(date, dayTrades, e)}
-                          title="مشاهده معاملات"
-                          aria-label="مشاهده معاملات"
-                          className="absolute bottom-0 left-0 flex h-5 w-5 items-center justify-center rounded bg-primary-600 text-white active:bg-primary-700"
-                        >
-                          <svg
-                            className="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2.5}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2.5}
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                        </button>
+                        <div className="text-[10px] text-slate-600 mt-0.5 tabular-nums">
+                          WR {dayWinRate}%
+                        </div>
                       </div>
                     )}
                     {isWeekend && dayTrades.length === 0 && (
