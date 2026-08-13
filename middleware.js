@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 
-/** Enamad verification file — must answer at /74164599.txt */
+/** Enamad: answer /74164599.txt even if static public serve fails */
 export function middleware(request) {
-  if (request.nextUrl.pathname === '/74164599.txt') {
+  const { pathname } = request.nextUrl
+
+  if (pathname === '/74164599.txt') {
     return new NextResponse('74164599', {
       status: 200,
       headers: {
@@ -16,5 +18,6 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/74164599.txt'],
+  // Explicit string + regex (dot can be tricky in matchers)
+  matcher: ['/74164599.txt', '/74164599\\.txt'],
 }

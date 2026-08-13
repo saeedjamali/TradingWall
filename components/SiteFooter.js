@@ -133,9 +133,9 @@ export default function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+        <div className="mt-8 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <p>© {year} Trading Wall · تمامی حقوق محفوظ است</p>
-          <p className="flex items-center gap-2 flex-wrap justify-center">
+          <p className="flex items-center gap-2 flex-wrap justify-center order-3 sm:order-none">
             <a
               href="mailto:info@tradingwall.ir"
               className="hover:text-primary-300 transition-colors"
@@ -157,6 +157,25 @@ export default function SiteFooter() {
               تحلیل، ژورنال، رقابت
             </span>
           </p>
+          {/* Enamad — بدون rel=noopener/noreferrer (الزام اینماد) */}
+          <div className="shrink-0 sm:ms-auto">
+            <a
+              referrerPolicy="origin"
+              target="_blank"
+              href="https://trustseal.enamad.ir/?id=7294545&Code=uGy6iTNSKt6P4v1iIJWK2692LAgf4fAO"
+            >
+              <img
+                referrerPolicy="origin"
+                src="https://trustseal.enamad.ir/logo.aspx?id=7294545&Code=uGy6iTNSKt6P4v1iIJWK2692LAgf4fAO"
+                alt="نماد اعتماد الکترونیکی"
+                style={{ cursor: "pointer" }}
+                code="uGy6iTNSKt6P4v1iIJWK2692LAgf4fAO"
+                width={125}
+                height={125}
+                className="w-[72px] h-auto md:w-[88px]"
+              />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
