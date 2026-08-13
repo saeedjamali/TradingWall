@@ -6,17 +6,8 @@ const nextConfig = {
       bodySizeLimit: '4mb',
     },
   },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-        ],
-      },
-    ]
-  },
+  // Avoid custom global headers on /_next/static — can interfere with
+  // production static asset serving on some hosts.
 }
 
 module.exports = nextConfig

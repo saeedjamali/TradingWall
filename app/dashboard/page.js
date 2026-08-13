@@ -1051,7 +1051,7 @@ function TradingCalendar({
                     key={`day-${day}`}
                     onClick={() => handleDayClick(date, dayTrades)}
                     className={`
-                  border rounded-xl p-1 md:p-2.5 min-h-[70px] md:min-h-[128px] transition-all relative flex flex-col overflow-hidden group
+                  border rounded-xl p-1 md:p-2.5 min-h-[88px] md:min-h-[128px] transition-all relative flex flex-col overflow-hidden group
                   ${isWeekend ? "cursor-not-allowed" : "cursor-pointer hover:shadow-md hover:-translate-y-0.5"}
                   ${isWeekend ? "bg-slate-200/70 border-slate-300 opacity-80" : ""}
                   ${!isWeekend && isProfit ? "bg-emerald-100 border-emerald-300 hover:bg-emerald-200/80" : ""}
@@ -1118,9 +1118,9 @@ function TradingCalendar({
                       </div>
                     )}
 
-                    {/* Mobile: compact — P&L hero */}
+                    {/* Mobile: compact — P&L + مشاهده button */}
                     {dayTrades.length > 0 && (
-                      <div className="md:hidden flex flex-col flex-1 justify-between mt-0.5">
+                      <div className="md:hidden flex flex-col flex-1 justify-between mt-0.5 gap-0.5">
                         <div
                           className={`text-xs font-bold leading-tight tabular-nums ${isProfit ? "text-emerald-700" : isLoss ? "text-rose-700" : "text-amber-700"}`}
                         >
@@ -1130,6 +1130,13 @@ function TradingCalendar({
                         <div className="text-[10px] text-slate-500">
                           {dayTrades.length}t · {dayWinRate}%
                         </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleViewTrades(date, dayTrades, e)}
+                          className="mt-0.5 w-full rounded-md bg-primary-600 px-0.5 py-1 text-[10px] font-semibold text-white active:bg-primary-700"
+                        >
+                          مشاهده
+                        </button>
                       </div>
                     )}
                     {isWeekend && dayTrades.length === 0 && (

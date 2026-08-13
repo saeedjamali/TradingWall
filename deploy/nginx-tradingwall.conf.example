@@ -1,16 +1,24 @@
-# نمونه کانفیگ Nginx برای tradingwall.ir + تایید اینماد
-# فایل را مثلاً اینجا بگذارید: /etc/nginx/sites-available/tradingwall.ir
+# Nginx for tradingwall.ir
+# IMPORTANT: replace /var/www/TradingWall with your real project path
 
 server {
     listen 80;
     server_name tradingwall.ir www.tradingwall.ir;
 
-    # مهم: قبل از location / باشد — بدون رفتن به Next.js
+    # Enamad
     location = /74164599.txt {
         default_type text/plain;
         add_header Content-Type "text/plain; charset=utf-8";
         add_header Cache-Control "no-store";
         return 200 '74164599';
+    }
+
+    # Critical: serve build assets from disk (fixes Next.js 400 + MIME text/html)
+    location /_next/static/ {
+        alias /var/www/TradingWall/.next/static/;
+        access_log off;
+        expires 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
     location / {
@@ -25,6 +33,3 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 }
-
-# اگر SSL با Certbot دارید، همین location = /74164599.txt را
-# عیناً داخل بلاک listen 443 هم کپی کنید.
