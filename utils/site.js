@@ -33,10 +33,10 @@ function normalizeOrigin(url) {
     .replace(/\/$/, '')
 }
 
-function isLocalOrigin(url) {
+export function isLocalOrigin(url) {
   if (!url) return true
   try {
-    const { hostname } = new URL(url)
+    const { hostname } = new URL(url.includes('://') ? url : `http://${url}`)
     return (
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
@@ -49,35 +49,65 @@ function isLocalOrigin(url) {
 }
 
 /**
+ * Resolve public site origin from an incoming Host header (preferred for sitemap/robots).
+ */
+export function siteUrlFromHostHeader(hostHeader, protoHeader) {
+  const host = String(hostHeader || '')
+    .split(',')[0]
+    .trim()
+    .replace(/:\d+$/, '') // drop port if any
+
+  if (!host || isLocalOrigin(host)) return null
+
+  const protoRaw = String(protoHeader || 'https')
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+  const proto = protoRaw === 'http' ? 'http' : 'https'
+
+  return `${proto}://${host}`
+}
+
+/**
  * Canonical site origin for sitemap / robots / Open Graph.
- * In production, localhost values are ignored so Google never gets bad URLs.
- * NEXT_PUBLIC_SITE_URL is baked at build time — set it before `npm run build` on the server.
+ * Never emit localhost when NODE_ENV=production.
  */
 export function getSiteUrl() {
-  const isProd = process.env.NODE_ENV === 'production'
   const fromEnv = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL)
 
-  if (fromEnv) {
-    if (isProd && isLocalOrigin(fromEnv)) {
-      return PRODUCTION_SITE_URL
-    }
+  if (fromEnv && !isLocalOrigin(fromEnv)) {
     return fromEnv
   }
 
-  const vercel = normalizeOrigin(process.env.VERCEL_URL)
-  if (vercel && !isLocalOrigin(vercel.startsWith('http') ? vercel : `https://${vercel}`)) {
-    return vercel.startsWith('http') ? vercel : `https://${vercel}`
-  }
-
-  if (isProd) {
+  if (process.env.NODE_ENV === 'production') {
     return PRODUCTION_SITE_URL
   }
 
-  return 'http://localhost:3000'
+  return fromEnv || 'http://localhost:3000'
 }
 
-export function absoluteUrl(path = '/') {
-  const base = getSiteUrl()
-  if (!path || path === '/') return base
-  return `${base}${path.startsWith('/') ? path : `/${path}`}`
+/**
+ * Best-effort public URL for SEO routes (sitemap/robots).
+ * Uses request Host when not localhost, else getSiteUrl().
+ */
+export async function resolveSiteUrl() {
+  try {
+    const { headers } = await import('next/headers')
+    const h = await headers()
+    const fromRequest = siteUrlFromHostHeader(
+      h.get('x-forwarded-host') || h.get('host'),
+      h.get('x-forwarded-proto'),
+    )
+    if (fromRequest) return fromRequest
+  } catch {
+    // headers() unavailable (build time) — fall through
+  }
+
+  return getSiteUrl()
+}
+
+export function absoluteUrl(path = '/', base) {
+  const origin = normalizeOrigin(base || getSiteUrl())
+  if (!path || path === '/') return origin
+  return `${origin}${path.startsWith('/') ? path : `/${path}`}`
 }

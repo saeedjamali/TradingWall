@@ -13,7 +13,7 @@ export async function sendOTP(phone, code) {
         templateId: 100000, // TODO: Replace with your actual template ID from sms.ir panel
         parameters: [
           {
-            name: 'Code',
+            name: 'CODE',
             value: code
           }
         ]

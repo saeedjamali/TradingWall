@@ -1,11 +1,12 @@
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
-import { absoluteUrl, getSiteUrl } from '@/utils/site'
+import { absoluteUrl, resolveSiteUrl } from '@/utils/site'
 
-export const revalidate = 3600 // refresh sitemap hourly
+export const revalidate = 0 // always fresh — never cache wrong localhost URLs
+export const dynamic = 'force-dynamic'
 
 export default async function sitemap() {
-  const siteUrl = getSiteUrl()
+  const siteUrl = await resolveSiteUrl()
   const now = new Date()
 
   const staticRoutes = [
@@ -16,7 +17,7 @@ export default async function sitemap() {
       priority: 1,
     },
     {
-      url: absoluteUrl('/leaderboards'),
+      url: absoluteUrl('/leaderboards', siteUrl),
       lastModified: now,
       changeFrequency: 'hourly',
       priority: 0.9,
@@ -36,7 +37,7 @@ export default async function sitemap() {
       .lean()
 
     wallRoutes = publicUsers.map((u) => ({
-      url: absoluteUrl(`/wall/${u._id}`),
+      url: absoluteUrl(`/wall/${u._id}`, siteUrl),
       lastModified: u.updatedAt || now,
       changeFrequency: 'weekly',
       priority: 0.6,

@@ -1,7 +1,9 @@
-import { getSiteUrl } from '@/utils/site'
+import { resolveSiteUrl } from '@/utils/site'
 
-export default function robots() {
-  const siteUrl = getSiteUrl()
+export const dynamic = 'force-dynamic'
+
+export default async function robots() {
+  const siteUrl = await resolveSiteUrl()
 
   return {
     rules: [
