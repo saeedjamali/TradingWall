@@ -1,12 +1,16 @@
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
-import { absoluteUrl, resolveSiteUrl } from '@/utils/site'
+import { PRODUCTION_SITE_URL } from '@/utils/site'
 
-export const revalidate = 0 // always fresh — never cache wrong localhost URLs
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
+/**
+ * Sitemap always uses the live public domain.
+ * Do not derive from Host / localhost proxy — Google rejects those URLs.
+ */
 export default async function sitemap() {
-  const siteUrl = await resolveSiteUrl()
+  const siteUrl = PRODUCTION_SITE_URL
   const now = new Date()
 
   const staticRoutes = [
@@ -17,7 +21,7 @@ export default async function sitemap() {
       priority: 1,
     },
     {
-      url: absoluteUrl('/leaderboards', siteUrl),
+      url: `${siteUrl}/leaderboards`,
       lastModified: now,
       changeFrequency: 'hourly',
       priority: 0.9,
@@ -37,7 +41,7 @@ export default async function sitemap() {
       .lean()
 
     wallRoutes = publicUsers.map((u) => ({
-      url: absoluteUrl(`/wall/${u._id}`, siteUrl),
+      url: `${siteUrl}/wall/${u._id}`,
       lastModified: u.updatedAt || now,
       changeFrequency: 'weekly',
       priority: 0.6,

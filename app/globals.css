@@ -7,6 +7,17 @@
   --foreground: #171717;
 }
 
+/* Smaller base type on phones; desktop stays at browser default (16px) */
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
 [dir="rtl"] {
   direction: rtl;
 }
@@ -19,6 +30,8 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-vazir), system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 /* Shared dark page shell (same as homepage) */

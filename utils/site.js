@@ -24,7 +24,7 @@ export const SITE_KEYWORDS = [
   'trading leaderboard',
 ]
 
-/** Production canonical origin (no trailing slash) */
+/** Hard-coded public origin — used by sitemap/robots so Google never sees localhost */
 export const PRODUCTION_SITE_URL = 'https://tradingwall.ir'
 
 function normalizeOrigin(url) {
@@ -49,28 +49,19 @@ export function isLocalOrigin(url) {
 }
 
 /**
- * Resolve public site origin from an incoming Host header (preferred for sitemap/robots).
+ * Public URL for SEO files (sitemap.xml / robots.txt).
+ * Never returns localhost — Google rejects those URLs.
  */
-export function siteUrlFromHostHeader(hostHeader, protoHeader) {
-  const host = String(hostHeader || '')
-    .split(',')[0]
-    .trim()
-    .replace(/:\d+$/, '') // drop port if any
-
-  if (!host || isLocalOrigin(host)) return null
-
-  const protoRaw = String(protoHeader || 'https')
-    .split(',')[0]
-    .trim()
-    .toLowerCase()
-  const proto = protoRaw === 'http' ? 'http' : 'https'
-
-  return `${proto}://${host}`
+export function getSeoSiteUrl() {
+  const fromEnv = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL)
+  if (fromEnv && !isLocalOrigin(fromEnv)) {
+    return fromEnv
+  }
+  return PRODUCTION_SITE_URL
 }
 
 /**
- * Canonical site origin for sitemap / robots / Open Graph.
- * Never emit localhost when NODE_ENV=production.
+ * General site origin (metadata, OG, etc.)
  */
 export function getSiteUrl() {
   const fromEnv = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL)
@@ -86,24 +77,9 @@ export function getSiteUrl() {
   return fromEnv || 'http://localhost:3000'
 }
 
-/**
- * Best-effort public URL for SEO routes (sitemap/robots).
- * Uses request Host when not localhost, else getSiteUrl().
- */
+/** @deprecated use getSeoSiteUrl for sitemap/robots */
 export async function resolveSiteUrl() {
-  try {
-    const { headers } = await import('next/headers')
-    const h = await headers()
-    const fromRequest = siteUrlFromHostHeader(
-      h.get('x-forwarded-host') || h.get('host'),
-      h.get('x-forwarded-proto'),
-    )
-    if (fromRequest) return fromRequest
-  } catch {
-    // headers() unavailable (build time) — fall through
-  }
-
-  return getSiteUrl()
+  return getSeoSiteUrl()
 }
 
 export function absoluteUrl(path = '/', base) {
