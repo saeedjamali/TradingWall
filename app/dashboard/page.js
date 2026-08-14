@@ -924,36 +924,31 @@ function TradingCalendar({
 
   return (
     <div dir="ltr">
-      {/* Horizontal scroll on mobile so 8 columns stay readable */}
+      {/* Horizontal scroll on mobile — wider day cells for full desktop-like data */}
       <div className="overflow-x-auto -mx-1 px-1 pb-2">
-        <div className="min-w-[560px] md:min-w-0">
+        <div className="min-w-[740px] sm:min-w-[820px] md:min-w-0">
           {/* Week days header + Weekly Summary column */}
-          <div className="grid grid-cols-8 gap-1 md:gap-2 mb-2">
+          <div className="grid grid-cols-8 gap-1.5 md:gap-2 mb-2">
             {weekDays.map((day, idx) => (
               <div
                 key={idx}
-                className={`text-center font-bold py-1 md:py-2 text-xs md:text-sm ${
+                className={`text-center font-bold py-1.5 md:py-2 text-[11px] md:text-sm ${
                   day === "Sat" || day === "Sun"
                     ? "text-red-500"
                     : "text-gray-600"
                 }`}
               >
-                {/* short name on mobile */}
-                <span className="md:hidden">{day.slice(0, 1)}</span>
-                <span className="hidden md:inline">{day}</span>
+                <span>{day}</span>
                 {(day === "Sat" || day === "Sun") && (
-                  <span
-                    className="hidden md:block text-xs"
-                    title="Market Closed"
-                  >
+                  <span className="block text-[10px] md:text-xs" title="Market Closed">
                     🔒
                   </span>
                 )}
               </div>
             ))}
-            <div className="text-center font-bold text-primary-600 py-1 md:py-2 text-xs md:text-sm">
+            <div className="text-center font-bold text-primary-600 py-1.5 md:py-2 text-[11px] md:text-sm">
               <span className="hidden md:inline">Week Total</span>
-              <span className="md:hidden">W</span>
+              <span className="md:hidden">Week</span>
             </div>
           </div>
 
@@ -961,14 +956,14 @@ function TradingCalendar({
           {weeks.map((week, weekIndex) => (
             <div
               key={`week-${weekIndex}`}
-              className="grid grid-cols-8 gap-1 md:gap-2 mb-1 md:mb-2"
+              className="grid grid-cols-8 gap-1.5 md:gap-2 mb-1.5 md:mb-2"
             >
               {week.map((day, dayIndex) => {
                 if (day === null) {
                   return (
                     <div
                       key={`empty-${weekIndex}-${dayIndex}`}
-                      className="min-h-[60px] md:min-h-[100px]"
+                      className="min-h-[118px] md:min-h-[128px]"
                     ></div>
                   );
                 }
@@ -1071,7 +1066,7 @@ function TradingCalendar({
                     key={`day-${day}`}
                     onClick={() => handleDayClick(date, dayTrades)}
                     className={`
-                  border rounded-xl p-1 md:p-2.5 min-h-[78px] md:min-h-[128px] transition-all relative flex flex-col overflow-hidden group
+                  border rounded-xl p-1.5 md:p-2.5 min-h-[118px] md:min-h-[128px] transition-all relative flex flex-col overflow-hidden group
                   ${isWeekend ? "cursor-not-allowed" : "cursor-pointer hover:shadow-md hover:-translate-y-0.5"}
                   ${isWeekend ? "bg-slate-200/70 border-slate-300 opacity-80" : ""}
                   ${!isWeekend && isProfit ? "bg-emerald-100 border-emerald-300 hover:bg-emerald-200/80" : ""}
@@ -1082,17 +1077,16 @@ function TradingCalendar({
                   ${isDisciplined ? "ring-1 md:ring-2 ring-primary-400" : ""}
                 `}
                   >
-                    {/* Weekend indicator — hidden on mobile */}
                     {isWeekend && (
                       <div
-                        className="hidden md:block absolute top-1 left-1 text-slate-500"
+                        className="absolute top-1 left-1 text-slate-500 text-[10px] md:text-sm"
                         title="Market Closed"
                       >
                         🔒
                       </div>
                     )}
 
-                    {/* Day number + mobile view icon (top-right) */}
+                    {/* Day number + mobile view icon */}
                     <div className="flex items-start justify-between gap-0.5">
                       <div
                         className={`font-bold text-left text-xs md:text-sm ${isWeekend ? "text-slate-400" : "text-slate-700"}`}
@@ -1133,66 +1127,58 @@ function TradingCalendar({
                       )}
                     </div>
 
-                    {/* Desktop: hierarchy — P&L hero, then meta */}
+                    {/* Same data on mobile + desktop */}
                     {dayTrades.length > 0 && (
-                      <div className="hidden md:flex text-left flex-col flex-1 mt-1">
+                      <div className="flex text-left flex-col flex-1 mt-1 min-w-0">
                         <div
-                          className={`text-base font-bold tabular-nums leading-tight ${isProfit ? "text-emerald-700" : isLoss ? "text-rose-700" : "text-amber-700"}`}
+                          className={`text-[13px] md:text-base font-bold tabular-nums leading-tight ${isProfit ? "text-emerald-700" : isLoss ? "text-rose-700" : "text-amber-700"}`}
                         >
                           {dayProfit >= 0 ? "+" : "-"}$
                           {Math.abs(dayProfit).toFixed(2)}
                         </div>
-                        <div className="mt-1 space-y-0.5 text-[11px] text-slate-600">
-                          <div>{dayTrades.length} trades</div>
+                        <div className="mt-1 space-y-0.5 text-[10px] md:text-[11px] text-slate-600">
+                          <div>
+                            {dayTrades.length} trades ·{" "}
+                            <span className="text-emerald-700 font-semibold">
+                              W{dayWins}
+                            </span>
+                            <span className="text-slate-400">/</span>
+                            <span className="text-rose-700 font-semibold">
+                              L{dayLosses}
+                            </span>
+                          </div>
                           <div>WR: {dayWinRate}%</div>
                         </div>
                         <div className="mt-auto pt-1.5">
                           {isDisciplined && (
-                            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-100 text-primary-700 px-1.5 py-0.5 text-[10px] font-medium">
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-100 text-primary-700 px-1.5 py-0.5 text-[9px] md:text-[10px] font-medium">
                               ✓ منظم
                             </span>
                           )}
                           {isUndisciplined && hasPlan && (
-                            <span className="inline-flex items-center gap-0.5 rounded-full bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[10px] font-medium">
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[9px] md:text-[10px] font-medium">
                               ⚠ {undisciplinedCount} نامنظم
                             </span>
                           )}
                           {isUndisciplined && !hasPlan && (
-                            <span className="inline-flex items-center gap-0.5 rounded-full bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[10px] font-medium">
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-orange-100 text-orange-700 px-1.5 py-0.5 text-[9px] md:text-[10px] font-medium">
                               بدون پلن
                             </span>
                           )}
                           <button
-                            onClick={(e) => handleViewTrades(date, dayTrades, e)}
-                            className="mt-1 block w-full text-left text-[11px] font-medium text-primary-600 opacity-70 group-hover:opacity-100 hover:underline transition-opacity"
+                            type="button"
+                            onClick={(e) =>
+                              handleViewTrades(date, dayTrades, e)
+                            }
+                            className="hidden md:block mt-1 w-full text-left text-[11px] font-medium text-primary-600 opacity-70 group-hover:opacity-100 hover:underline transition-opacity"
                           >
                             مشاهده →
                           </button>
                         </div>
                       </div>
                     )}
-
-                    {/* Mobile: P&L + W/L + WR */}
-                    {dayTrades.length > 0 && (
-                      <div className="md:hidden flex flex-col flex-1 mt-0.5">
-                        <div
-                          className={`text-xs font-bold leading-tight tabular-nums ${isProfit ? "text-emerald-700" : isLoss ? "text-rose-700" : "text-amber-700"}`}
-                        >
-                          {dayProfit >= 0 ? "+" : ""}
-                          {dayProfit.toFixed(0)}
-                        </div>
-                        <div className="text-[10px] font-semibold tabular-nums mt-0.5 leading-tight">
-                          <span className="text-emerald-700">W{dayWins}</span>
-                          <span className="text-slate-400 mx-0.5">/</span>
-                          <span className="text-rose-700">L{dayLosses}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-600 mt-0.5 tabular-nums">
-                          WR {dayWinRate}%
-                        </div>
-                      </div>
-                    )}
                     {isWeekend && dayTrades.length === 0 && (
-                      <div className="hidden md:block text-xs text-slate-500 text-center mt-2">
+                      <div className="text-[10px] md:text-xs text-slate-500 text-center mt-2">
                         Weekend
                       </div>
                     )}
@@ -1228,6 +1214,7 @@ function TradingCalendar({
                   0,
                 );
                 const weekWins = weekTrades.filter((t) => t.profit > 0).length;
+                const weekLosses = weekTrades.filter((t) => t.profit < 0).length;
                 const weekWinRate =
                   weekTrades.length > 0
                     ? ((weekWins / weekTrades.length) * 100).toFixed(1)
@@ -1276,25 +1263,27 @@ function TradingCalendar({
                 return (
                   <div
                     className={`
-                border-2 rounded-xl p-1 md:p-3 min-h-[60px] md:min-h-[128px] font-semibold
+                border-2 rounded-xl p-1.5 md:p-3 min-h-[118px] md:min-h-[128px] font-semibold
                 ${isWeekProfit ? "bg-emerald-100 border-emerald-400" : ""}
                 ${isWeekLoss ? "bg-rose-100 border-rose-400" : ""}
                 ${isWeekBreakEven ? "bg-amber-100 border-amber-400" : ""}
                 ${!hasWeekTrades ? "bg-slate-50 border-slate-300" : ""}
               `}
                   >
-                    {/* Desktop: full detail */}
-                    <div className="hidden md:block text-xs space-y-1 text-left">
+                    <div className="text-[10px] md:text-xs space-y-1 text-left">
                       {hasWeekTrades ? (
                         <>
                           <div
-                            className={`font-bold text-sm tabular-nums ${isWeekProfit ? "text-emerald-700" : isWeekLoss ? "text-rose-700" : "text-amber-700"}`}
+                            className={`font-bold text-[13px] md:text-sm tabular-nums ${isWeekProfit ? "text-emerald-700" : isWeekLoss ? "text-rose-700" : "text-amber-700"}`}
                           >
                             {weekProfit >= 0 ? "+" : "-"}$
                             {Math.abs(weekProfit).toFixed(2)}
                           </div>
                           <div className="text-slate-600">
-                            {weekTrades.length} trades
+                            {weekTrades.length} trades ·{" "}
+                            <span className="text-emerald-700">W{weekWins}</span>
+                            /
+                            <span className="text-rose-700">L{weekLosses}</span>
                           </div>
                           <div className="text-slate-600">
                             WR: {weekWinRate}%
@@ -1302,7 +1291,7 @@ function TradingCalendar({
                           {(weekCompliantTrades > 0 ||
                             weekUndisciplinedTrades > 0 ||
                             weekNoPlanTrades > 0) && (
-                            <div className="text-xs pt-1 border-t border-gray-300 space-y-0.5">
+                            <div className="text-[10px] md:text-xs pt-1 border-t border-gray-300 space-y-0.5">
                               {weekCompliantTrades > 0 && (
                                 <div className="text-blue-700">
                                   ✓ {weekCompliantTrades}
@@ -1322,24 +1311,6 @@ function TradingCalendar({
                         </div>
                       )}
                     </div>
-                    {/* Mobile: compact */}
-                    <div className="md:hidden flex flex-col items-center justify-center h-full text-xs">
-                      {hasWeekTrades ? (
-                        <>
-                          <div
-                            className={`font-bold tabular-nums ${isWeekProfit ? "text-emerald-700" : isWeekLoss ? "text-rose-700" : "text-amber-700"}`}
-                          >
-                            {weekProfit >= 0 ? "+" : ""}
-                            {weekProfit.toFixed(0)}
-                          </div>
-                          <div className="text-slate-500">
-                            {weekTrades.length}t
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-slate-400">-</div>
-                      )}
-                    </div>
                   </div>
                 );
               })()}
@@ -1347,7 +1318,7 @@ function TradingCalendar({
           ))}
 
           {/* Month Summary Row */}
-          <div className="grid grid-cols-8 gap-1 md:gap-2 mt-2 md:mt-4 pt-2 md:pt-4 border-t-2 border-slate-200">
+          <div className="grid grid-cols-8 gap-1.5 md:gap-2 mt-2 md:mt-4 pt-2 md:pt-4 border-t-2 border-slate-200">
             <div className="col-span-7 text-right font-bold text-sm md:text-lg text-slate-700 flex items-center justify-end pr-2">
               Month Total:
             </div>
@@ -1382,7 +1353,7 @@ function TradingCalendar({
                     {(monthCompliantTrades > 0 ||
                       monthUndisciplinedTrades > 0 ||
                       monthNoPlanTrades > 0) && (
-                      <div className="text-xs pt-2 border-t border-gray-400 space-y-1 hidden md:block">
+                      <div className="text-xs pt-2 border-t border-gray-400 space-y-1">
                         {monthCompliantTrades > 0 && (
                           <div
                             className="text-blue-700 font-semibold"
