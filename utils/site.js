@@ -24,22 +24,53 @@ export const SITE_KEYWORDS = [
   'trading leaderboard',
 ]
 
+/** Production canonical origin (no trailing slash) */
+export const PRODUCTION_SITE_URL = 'https://tradingwall.ir'
+
+function normalizeOrigin(url) {
+  return String(url || '')
+    .trim()
+    .replace(/\/$/, '')
+}
+
+function isLocalOrigin(url) {
+  if (!url) return true
+  try {
+    const { hostname } = new URL(url)
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname.endsWith('.local')
+    )
+  } catch {
+    return /localhost|127\.0\.0\.1/i.test(url)
+  }
+}
+
 /**
- * Production canonical origin, without trailing slash.
- * Set NEXT_PUBLIC_SITE_URL in production (e.g. https://tradingwall.ir).
+ * Canonical site origin for sitemap / robots / Open Graph.
+ * In production, localhost values are ignored so Google never gets bad URLs.
+ * NEXT_PUBLIC_SITE_URL is baked at build time — set it before `npm run build` on the server.
  */
 export function getSiteUrl() {
-  const fromEnv = (process.env.NEXT_PUBLIC_SITE_URL || '').trim().replace(/\/$/, '')
-  if (fromEnv) return fromEnv
+  const isProd = process.env.NODE_ENV === 'production'
+  const fromEnv = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL)
 
-  const vercel = (process.env.VERCEL_URL || '').trim().replace(/\/$/, '')
-  if (vercel) {
+  if (fromEnv) {
+    if (isProd && isLocalOrigin(fromEnv)) {
+      return PRODUCTION_SITE_URL
+    }
+    return fromEnv
+  }
+
+  const vercel = normalizeOrigin(process.env.VERCEL_URL)
+  if (vercel && !isLocalOrigin(vercel.startsWith('http') ? vercel : `https://${vercel}`)) {
     return vercel.startsWith('http') ? vercel : `https://${vercel}`
   }
 
-  // Documented production domain (README)
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://tradingwall.ir'
+  if (isProd) {
+    return PRODUCTION_SITE_URL
   }
 
   return 'http://localhost:3000'
