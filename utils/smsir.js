@@ -1,8 +1,8 @@
-import axios from 'axios'
+import axios from "axios";
 
-const SMS_IR_API_KEY = process.env.SMS_IR_API_KEY
-const SMS_IR_LINE_NUMBER = process.env.SMS_IR_LINE_NUMBER
-const SMS_IR_BASE_URL = 'https://api.sms.ir'
+const SMS_IR_API_KEY = process.env.SMS_IR_API_KEY;
+const SMS_IR_LINE_NUMBER = process.env.SMS_IR_LINE_NUMBER;
+const SMS_IR_BASE_URL = "https://api.sms.ir";
 
 export async function sendOTP(phone, code) {
   try {
@@ -10,32 +10,32 @@ export async function sendOTP(phone, code) {
       `${SMS_IR_BASE_URL}/v1/send/verify`,
       {
         mobile: phone,
-        templateId: 100000, // TODO: Replace with your actual template ID from sms.ir panel
+        templateId: 904211, // TODO: Replace with your actual template ID from sms.ir panel
         parameters: [
           {
-            name: 'CODE',
-            value: code
-          }
-        ]
+            name: "CODE",
+            value: code,
+          },
+        ],
       },
       {
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': SMS_IR_API_KEY,
-        }
-      }
-    )
+          "Content-Type": "application/json",
+          "x-api-key": SMS_IR_API_KEY,
+        },
+      },
+    );
 
     return {
       success: true,
-      data: response.data
-    }
+      data: response.data,
+    };
   } catch (error) {
-    console.error('SMS.ir Error:', error.response?.data || error.message)
+    console.error("SMS.ir Error:", error.response?.data || error.message);
     return {
       success: false,
-      error: error.response?.data?.message || 'خطا در ارسال پیامک'
-    }
+      error: error.response?.data?.message || "خطا در ارسال پیامک",
+    };
   }
 }
 
@@ -46,25 +46,25 @@ export async function sendCustomSMS(phone, message) {
       {
         lineNumber: SMS_IR_LINE_NUMBER,
         messageText: message,
-        mobiles: [phone]
+        mobiles: [phone],
       },
       {
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': SMS_IR_API_KEY,
-        }
-      }
-    )
+          "Content-Type": "application/json",
+          "x-api-key": SMS_IR_API_KEY,
+        },
+      },
+    );
 
     return {
       success: true,
-      data: response.data
-    }
+      data: response.data,
+    };
   } catch (error) {
-    console.error('SMS.ir Error:', error.response?.data || error.message)
+    console.error("SMS.ir Error:", error.response?.data || error.message);
     return {
       success: false,
-      error: error.response?.data?.message || 'خطا در ارسال پیامک'
-    }
+      error: error.response?.data?.message || "خطا در ارسال پیامک",
+    };
   }
 }
