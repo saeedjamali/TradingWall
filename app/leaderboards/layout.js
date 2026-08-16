@@ -1,12 +1,12 @@
 export const metadata = {
   title: 'لیدربورد تریدرها',
   description:
-    'برترین تریدرهای Trading Wall بر اساس وین‌ریت و سود — رتبه‌بندی هفتگی، ماهانه و سالانه.',
+    'برترین تریدرهای دیوار معاملاتی بر اساس وین‌ریت و سود — رتبه‌بندی هفتگی، ماهانه و سالانه.',
   alternates: {
     canonical: '/leaderboards',
   },
   openGraph: {
-    title: 'لیدربورد تریدرها | Trading Wall',
+    title: 'لیدربورد تریدرها',
     description:
       'مشاهده برترین وین‌ریت و سودده‌ترین تریدرها در بازه‌های هفته، ماه و سال.',
     url: '/leaderboards',

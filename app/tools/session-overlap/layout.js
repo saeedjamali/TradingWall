@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'همپوشانی سشن‌های فارکس | سیدنی توکیو لندن نیویورک | Trading Wall',
+  title: 'همپوشانی سشن‌های فارکس | سیدنی، توکیو، لندن و نیویورک',
   description:
     'همپوشانی همه سشن‌های فارکس: سیدنی×توکیو، توکیو×لندن، لندن×نیویورک، نیویورک×سیدنی و سایر تقاطع‌ها به وقت تهران و GMT.',
   keywords: [
@@ -13,8 +13,8 @@ export const metadata = {
   ],
   alternates: { canonical: '/tools/session-overlap' },
   openGraph: {
-    title: 'همپوشانی سشن لندن–نیویورک | Trading Wall',
-    description: 'بازه مشترک لندن و نیویورک با نمایش به وقت تهران',
+    title: 'همپوشانی سشن‌های فارکس',
+    description: 'تقاطع همه بازارها با نمایش به وقت تهران',
     url: '/tools/session-overlap',
     type: 'website',
     locale: 'fa_IR',

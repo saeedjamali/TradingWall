@@ -3,7 +3,7 @@ import Image from 'next/image'
 import TradingCalculatorsTool from '@/components/tools/TradingCalculatorsTool'
 
 export const metadata = {
-  title: 'ماشین‌حساب فارکس | پیپ، سود زیان، مبدل لات | Trading Wall',
+  title: 'ماشین‌حساب فارکس | پیپ، سود زیان و مبدل لات',
   description:
     'ماشین‌حساب رایگان فارکس: محاسبه پیپ Entry–SL–TP، سود و زیان تقریبی، مبدل لات استاندارد/مینی/میکرو و واحد حساب دلار و سنت.',
   keywords: [
@@ -16,7 +16,7 @@ export const metadata = {
   ],
   alternates: { canonical: '/tools/calculators' },
   openGraph: {
-    title: 'ماشین‌حساب‌های فارکس | Trading Wall',
+    title: 'ماشین‌حساب‌های فارکس',
     description: 'پیپ، PnL، مبدل لات و واحد حساب در یک صفحه',
     url: '/tools/calculators',
     type: 'website',

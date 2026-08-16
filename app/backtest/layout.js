@@ -1,20 +1,19 @@
 export const metadata = {
-  title: 'بک‌تست معاملاتی | ژورنال بک‌تست فارکس | Trading Wall',
+  title: 'بک‌تست معاملاتی | ژورنال بک‌تست فارکس',
   description:
-    'ثبت بک‌تست روزانه با نماد، ستاپ، تعداد TP و SL، گزارش عملکرد ماهانه و تقویم بک‌تست در Trading Wall.',
+    'ثبت بک‌تست روزانه با نماد، ستاپ، تعداد TP و SL، گزارش عملکرد ماهانه و تقویم بک‌تست در دیوار معاملاتی.',
   keywords: [
     'بک تست فارکس',
     'ژورنال بک تست',
     'backtest journal',
     'ثبت بک تست',
     'گزارش بک تست',
-    'Trading Wall backtest',
   ],
   alternates: {
     canonical: '/backtest',
   },
   openGraph: {
-    title: 'بک‌تست معاملاتی | Trading Wall',
+    title: 'بک‌تست معاملاتی',
     description:
       'تقویم بک‌تست، ثبت چند بک‌تست در روز، گزارش TP/SL و عملکرد ستاپ‌ها',
     url: '/backtest',
@@ -23,7 +22,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'بک‌تست معاملاتی | Trading Wall',
+    title: 'بک‌تست معاملاتی',
     description: 'ژورنال بک‌تست با گزارش TP/SL و ستاپ‌ها',
   },
   robots: {
@@ -37,7 +36,7 @@ export default function BacktestLayout({ children }) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'بک‌تست Trading Wall',
+    name: 'بک‌تست دیوار معاملاتی',
     applicationCategory: 'FinanceApplication',
     operatingSystem: 'Web',
     description:

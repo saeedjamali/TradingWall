@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 export const metadata = {
-  title: 'ابزار معامله فارکس | ساعت سشن، ماشین‌حساب، بک‌تست | Trading Wall',
+  title: 'ابزار معامله فارکس | ساعت سشن، ماشین‌حساب و بک‌تست',
   description:
     'ابزارهای رایگان فارکس: ساعت سشن و تهران، همپوشانی لندن–نیویورک، ماشین‌حساب پیپ و ریسک، مبدل لات، راهنمای جفت‌ارز و بک‌تست.',
   keywords: [
@@ -12,11 +12,11 @@ export const metadata = {
     'ماشین حساب ریسک',
     'همپوشانی سشن',
     'مبدل لات',
-    'Trading Wall tools',
+    'ابزار معامله',
   ],
   alternates: { canonical: '/tools' },
   openGraph: {
-    title: 'ابزار معامله | Trading Wall',
+    title: 'ابزار معامله',
     description:
       'ساعت سشن، ماشین‌حساب‌ها، همپوشانی لندن–نیویورک و راهنمای جفت‌ارز',
     url: '/tools',
@@ -25,7 +25,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ابزار معامله | Trading Wall',
+    title: 'ابزار معامله',
     description: 'مجموعه ابزارهای رایگان معامله‌گری',
   },
   robots: {
@@ -85,7 +85,7 @@ export default function ToolsHubPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'ابزار معامله Trading Wall',
+    name: 'ابزار معامله دیوار معاملاتی',
     description:
       'ابزارهای رایگان فارکس شامل ساعت سشن، ماشین‌حساب پیپ و ریسک، همپوشانی سشن و راهنمای جفت‌ارز',
     url: 'https://tradingwall.ir/tools',

@@ -6,7 +6,6 @@ import SeoJsonLd from "@/components/SeoJsonLd";
 import {
   SITE_DESCRIPTION,
   SITE_KEYWORDS,
-  SITE_NAME,
   SITE_NAME_FA,
   SITE_TAGLINE,
   getSiteUrl,
@@ -31,15 +30,15 @@ const googleVerification =
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${SITE_NAME} | ${SITE_NAME_FA}`,
-    template: `%s | ${SITE_NAME}`,
+    default: SITE_NAME_FA,
+    template: `%s | ${SITE_NAME_FA}`,
   },
   description: SITE_DESCRIPTION,
   keywords: SITE_KEYWORDS,
-  applicationName: SITE_NAME,
-  authors: [{ name: SITE_NAME, url: siteUrl }],
-  creator: SITE_NAME,
-  publisher: SITE_NAME,
+  applicationName: SITE_NAME_FA,
+  authors: [{ name: SITE_NAME_FA, url: siteUrl }],
+  creator: SITE_NAME_FA,
+  publisher: SITE_NAME_FA,
   category: "finance",
   alternates: {
     canonical: "/",
@@ -49,13 +48,13 @@ export const metadata = {
     locale: "fa_IR",
     alternateLocale: ["en_US"],
     url: siteUrl,
-    siteName: SITE_NAME,
-    title: `${SITE_NAME} | ${SITE_NAME_FA}`,
+    siteName: SITE_NAME_FA,
+    title: SITE_NAME_FA,
     description: SITE_TAGLINE,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} | ${SITE_NAME_FA}`,
+    title: SITE_NAME_FA,
     description: SITE_TAGLINE,
   },
   robots: {
@@ -71,36 +70,14 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
       {
-        url: "/icons/tradingwall-icon-16x16.png",
-        sizes: "16x16",
+        url: "/icons/tradingwall-icon-dark.png",
         type: "image/png",
-      },
-      {
-        url: "/icons/tradingwall-icon-32x32.png",
-        sizes: "32x32",
-        type: "image/png",
-      },
-      {
-        url: "/icons/tradingwall-icon-48x48.png",
-        sizes: "48x48",
-        type: "image/png",
-      },
-      {
-        url: "/icons/tradingwall-icon-192x192.png",
-        sizes: "192x192",
-        type: "image/png",
+        sizes: "512x512",
       },
     ],
-    apple: [
-      {
-        url: "/icons/tradingwall-icon-180x180.png",
-        sizes: "180x180",
-        type: "image/png",
-      },
-    ],
-    shortcut: "/favicon.ico",
+    shortcut: [{ url: "/icons/tradingwall-icon-dark.png", type: "image/png" }],
+    apple: [{ url: "/icons/tradingwall-icon-dark.png", type: "image/png" }],
   },
   manifest: "/site.webmanifest",
   ...(googleVerification

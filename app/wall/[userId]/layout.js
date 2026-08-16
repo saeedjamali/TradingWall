@@ -6,7 +6,7 @@ export async function generateMetadata({ params }) {
   const { userId } = await params
   const fallback = {
     title: 'دیوار معاملاتی کاربر',
-    description: 'مشاهده تقویم معاملاتی، دستاوردها و ستاپ‌های تریدر در Trading Wall.',
+    description: 'مشاهده تقویم معاملاتی، دستاوردها و ستاپ‌های تریدر در دیوار معاملاتی.',
     robots: { index: false, follow: false },
   }
 
@@ -30,8 +30,8 @@ export async function generateMetadata({ params }) {
     const name = user.publicName || 'تریدر'
     const location = [user.city, user.province].filter(Boolean).join('، ')
     const description = location
-      ? `دیوار معاملاتی ${name} از ${location} — ژورنال، دستاوردها و عملکرد در Trading Wall.`
-      : `دیوار معاملاتی ${name} — ژورنال، دستاوردها و عملکرد در Trading Wall.`
+      ? `دیوار معاملاتی ${name} از ${location} — ژورنال، دستاوردها و عملکرد در دیوار معاملاتی.`
+      : `دیوار معاملاتی ${name} — ژورنال، دستاوردها و عملکرد در دیوار معاملاتی.`
 
     const ogImage = user.profileImage || absoluteUrl('/icons/tradingwall-icon-512x512.png')
 
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }) {
         canonical: `/wall/${userId}`,
       },
       openGraph: {
-        title: `دیوار معاملاتی ${name} | Trading Wall`,
+        title: `دیوار معاملاتی ${name}`,
         description,
         url: `/wall/${userId}`,
         type: 'profile',

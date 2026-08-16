@@ -1,7 +1,7 @@
 export const metadata = {
-  title: 'ماشین‌حساب ریسک و حجم معامله فارکس | Trading Wall',
+  title: 'ماشین‌حساب ریسک و حجم معامله فارکس',
   description:
-    'محاسبه رایگان حجم لات، مبلغ ریسک، فاصله پیپ SL و نسبت RR برای معاملات فارکس — ابزار ریسک Trading Wall.',
+    'محاسبه رایگان حجم لات، مبلغ ریسک، فاصله پیپ SL و نسبت RR برای معاملات فارکس — ابزار ریسک دیوار معاملاتی.',
   keywords: [
     'ماشین حساب ریسک',
     'محاسبه لات',
@@ -13,7 +13,7 @@ export const metadata = {
     canonical: '/tools/risk-calculator',
   },
   openGraph: {
-    title: 'ماشین‌حساب ریسک فارکس | Trading Wall',
+    title: 'ماشین‌حساب ریسک فارکس',
     description: 'محاسبه حجم لات و ریسک معامله با Entry، SL و درصد ریسک',
     url: '/tools/risk-calculator',
     type: 'website',
