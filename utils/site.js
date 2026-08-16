@@ -20,6 +20,10 @@ export const SITE_KEYWORDS = [
   'وین ریت',
   'ترید فارکس',
   'تقویم معاملاتی',
+  'بک تست فارکس',
+  'ابزار فارکس',
+  'ساعت بازار فارکس',
+  'ماشین حساب ریسک',
   'trading journal',
   'trading leaderboard',
 ]

@@ -13,6 +13,11 @@ function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phone = searchParams.get("phone");
+  const nextRaw = searchParams.get("next");
+  const nextPath =
+    nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
+      ? nextRaw
+      : "/dashboard";
 
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -73,8 +78,8 @@ function VerifyContent() {
       const oneWeekFromNow = new Date().getTime() + 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
       localStorage.setItem("tokenExpiry", oneWeekFromNow.toString());
 
-      // Redirect to dashboard
-      router.push("/dashboard");
+      // Redirect after login
+      router.push(nextPath);
     } catch (err) {
       if (isInactiveAccountError(err.message)) {
         router.push(

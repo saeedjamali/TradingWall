@@ -9,7 +9,14 @@ export default async function robots() {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/leaderboards', '/wall/'],
+        allow: [
+          '/',
+          '/leaderboards',
+          '/wall/',
+          '/tools',
+          '/tools/',
+          '/backtest',
+        ],
         disallow: [
           '/admin/',
           '/dashboard/',
@@ -21,7 +28,14 @@ export default async function robots() {
       },
       {
         userAgent: 'Googlebot',
-        allow: ['/', '/leaderboards', '/wall/'],
+        allow: [
+          '/',
+          '/leaderboards',
+          '/wall/',
+          '/tools',
+          '/tools/',
+          '/backtest',
+        ],
         disallow: [
           '/admin/',
           '/dashboard/',

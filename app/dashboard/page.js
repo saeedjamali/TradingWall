@@ -184,10 +184,16 @@ export default function DashboardPage() {
                 دیوار معاملاتی
               </Link>
               <Link
-                href="/dashboard/backtest"
+                href="/backtest"
                 className="hidden md:inline text-white/70 hover:text-white px-2 transition-colors"
               >
                 بک‌تست
+              </Link>
+              <Link
+                href="/tools"
+                className="hidden md:inline text-white/70 hover:text-white px-2 transition-colors"
+              >
+                ابزار معامله
               </Link>
               <Link
                 href="/dashboard/trades"
@@ -231,7 +237,7 @@ export default function DashboardPage() {
                 </svg>
               </Link>
               <Link
-                href="/dashboard/backtest"
+                href="/backtest"
                 title="بک‌تست"
                 className="md:hidden p-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
               >

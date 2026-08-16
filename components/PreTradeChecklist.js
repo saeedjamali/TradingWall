@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 export default function PreTradeChecklist({ userId }) {
   const [checklists, setChecklists] = useState([])
@@ -19,7 +20,7 @@ export default function PreTradeChecklist({ userId }) {
     try {
       const response = await fetch(`/api/checklists?userId=${userId}`)
       const data = await response.json()
-      
+
       if (data.success) {
         setChecklists(data.checklists || [])
       }
@@ -33,9 +34,11 @@ export default function PreTradeChecklist({ userId }) {
   const fetchStatus = async () => {
     try {
       const today = new Date().toISOString().split('T')[0]
-      const response = await fetch(`/api/checklists/status?userId=${userId}&date=${today}`)
+      const response = await fetch(
+        `/api/checklists/status?userId=${userId}&date=${today}`,
+      )
       const data = await response.json()
-      
+
       if (data.success) {
         setStatus(data.status)
       }
@@ -77,9 +80,12 @@ export default function PreTradeChecklist({ userId }) {
 
     try {
       const today = new Date().toISOString().split('T')[0]
-      const response = await fetch(`/api/checklists/status?userId=${userId}&date=${today}`, {
-        method: 'DELETE',
-      })
+      const response = await fetch(
+        `/api/checklists/status?userId=${userId}&date=${today}`,
+        {
+          method: 'DELETE',
+        },
+      )
 
       const data = await response.json()
 
@@ -94,12 +100,16 @@ export default function PreTradeChecklist({ userId }) {
   const isItemChecked = (checklistId, itemIndex) => {
     if (!status || !status.checkedItems) return false
     return status.checkedItems.some(
-      item => item.checklistId === checklistId && item.itemIndex === itemIndex
+      (item) =>
+        item.checklistId === checklistId && item.itemIndex === itemIndex,
     )
   }
 
   const getTotalItems = () => {
-    return checklists.reduce((sum, checklist) => sum + (checklist.items?.length || 0), 0)
+    return checklists.reduce(
+      (sum, checklist) => sum + (checklist.items?.length || 0),
+      0,
+    )
   }
 
   const getCheckedCount = () => {
@@ -122,32 +132,42 @@ export default function PreTradeChecklist({ userId }) {
 
   const totalItems = getTotalItems()
   const checkedCount = getCheckedCount()
-  const progressPercentage = totalItems > 0 ? (checkedCount / totalItems) * 100 : 0
+  const progressPercentage =
+    totalItems > 0 ? (checkedCount / totalItems) * 100 : 0
+  const pct = Math.round(progressPercentage)
+  const radius = 18
+  const circumference = 2 * Math.PI * radius
 
   return (
     <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
-      {/* Header - Clickable to toggle */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+        className="w-full px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 hover:bg-gray-50 transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">✅</span>
-          <div className="text-right">
-            <h3 className="text-lg font-bold text-gray-800">چک‌لیست قبل از معامله</h3>
-            <p className="text-sm text-gray-600">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <span className="text-xl sm:text-2xl shrink-0">✅</span>
+          <div className="text-right min-w-0">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-800 truncate">
+              چک‌لیست قبل از معامله
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 truncate">
               {checkedCount} از {totalItems} مورد انجام شده
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Progress Circle */}
-          <div className="relative w-12 h-12">
-            <svg className="w-12 h-12 transform -rotate-90">
+
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 shrink-0">
+            <svg
+              className="w-full h-full -rotate-90"
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+            >
               <circle
                 cx="24"
                 cy="24"
-                r="20"
+                r={radius}
                 stroke="currentColor"
                 strokeWidth="4"
                 fill="none"
@@ -156,26 +176,29 @@ export default function PreTradeChecklist({ userId }) {
               <circle
                 cx="24"
                 cy="24"
-                r="20"
+                r={radius}
                 stroke="currentColor"
                 strokeWidth="4"
                 fill="none"
-                strokeDasharray={`${2 * Math.PI * 20}`}
-                strokeDashoffset={`${2 * Math.PI * 20 * (1 - progressPercentage / 100)}`}
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference * (1 - progressPercentage / 100)}
                 className={`transition-all ${
-                  progressPercentage === 100 ? 'text-profit' : 'text-primary-500'
+                  progressPercentage === 100
+                    ? 'text-profit'
+                    : 'text-primary-500'
                 }`}
               />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-gray-700">
-                {Math.round(progressPercentage)}%
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="text-[10px] sm:text-xs font-bold text-gray-700 leading-none tabular-nums">
+                {pct}%
               </span>
             </div>
           </div>
           <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${
-              isOpen ? 'transform rotate-180' : ''
+            className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform shrink-0 ${
+              isOpen ? 'rotate-180' : ''
             }`}
             fill="none"
             stroke="currentColor"
@@ -191,13 +214,17 @@ export default function PreTradeChecklist({ userId }) {
         </div>
       </button>
 
-      {/* Content - Collapsible */}
       {isOpen && (
-        <div className="px-6 pb-4 border-t border-gray-100">
+        <div className="px-3 sm:px-6 pb-4 border-t border-gray-100">
           <div className="space-y-4 mt-4">
             {checklists.map((checklist) => (
-              <div key={checklist._id} className="border-r-4 border-primary-500 pr-3">
-                <h4 className="font-semibold text-gray-800 mb-2">{checklist.title}</h4>
+              <div
+                key={checklist._id}
+                className="border-r-4 border-primary-500 pr-3"
+              >
+                <h4 className="font-semibold text-gray-800 mb-2">
+                  {checklist.title}
+                </h4>
                 <div className="space-y-2">
                   {checklist.items && checklist.items.length > 0 ? (
                     checklist.items.map((item, index) => (
@@ -209,7 +236,7 @@ export default function PreTradeChecklist({ userId }) {
                           type="checkbox"
                           checked={isItemChecked(checklist._id, index)}
                           onChange={() => toggleItem(checklist._id, index)}
-                          className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 shrink-0"
                         />
                         <span
                           className={`text-sm ${
@@ -223,27 +250,29 @@ export default function PreTradeChecklist({ userId }) {
                       </label>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-400 pr-2">هیچ آیتمی وجود ندارد</p>
+                    <p className="text-sm text-gray-400 pr-2">
+                      هیچ آیتمی وجود ندارد
+                    </p>
                   )}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Actions */}
-          <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
+          <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-2 sm:gap-3">
             <button
+              type="button"
               onClick={resetChecklist}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+              className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
             >
               🔄 ریست چک‌لیست
             </button>
-            <a
+            <Link
               href="/profile/checklists"
-              className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+              className="px-3 sm:px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
             >
               ⚙️ مدیریت چک‌لیست‌ها
-            </a>
+            </Link>
           </div>
         </div>
       )}

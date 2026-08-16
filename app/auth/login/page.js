@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Button from "@/components/Button";
@@ -12,8 +12,14 @@ import {
   isInactiveAccountError,
 } from "@/utils/supportRedirect";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextRaw = searchParams.get("next");
+  const nextPath =
+    nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
+      ? nextRaw
+      : "/dashboard";
   const [loginMethod, setLoginMethod] = useState("otp"); // 'otp' or 'password'
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -57,7 +63,9 @@ export default function LoginPage() {
         }
 
         // Redirect to verify page with phone number
-        router.push(`/auth/verify?phone=${phone}`);
+        const q = new URLSearchParams({ phone });
+        if (nextPath !== "/dashboard") q.set("next", nextPath);
+        router.push(`/auth/verify?${q.toString()}`);
       } else {
         // Login with password
         const response = await fetch("/api/auth/login-password", {
@@ -80,8 +88,7 @@ export default function LoginPage() {
         const oneWeekFromNow = new Date().getTime() + 7 * 24 * 60 * 60 * 1000;
         localStorage.setItem("tokenExpiry", oneWeekFromNow.toString());
 
-        // Redirect to dashboard
-        router.push("/dashboard");
+        router.push(nextPath);
       }
     } catch (err) {
       if (redirectInactiveToSupport(err.message)) return;
@@ -249,5 +256,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+          <div className="text-white text-center">در حال بارگذاری...</div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -26,6 +26,48 @@ export default async function sitemap() {
       changeFrequency: 'hourly',
       priority: 0.9,
     },
+    {
+      url: `${siteUrl}/tools`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
+      url: `${siteUrl}/tools/market-clock`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/tools/risk-calculator`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/tools/calculators`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/tools/session-overlap`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.75,
+    },
+    {
+      url: `${siteUrl}/tools/pair-guide`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.75,
+    },
+    {
+      url: `${siteUrl}/backtest`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
   ]
 
   let wallRoutes = []
