@@ -452,7 +452,36 @@ function endOfUtcMonth(d) {
 
 /**
  * Holiday alerts for today / remaining week / remaining month
+ * Includes forex holidays, NY bank holidays, and weekends (Sat/Sun).
  */
+export function getWeekendClosures(fromDate, toTime) {
+  const list = []
+  const cursor = new Date(
+    Date.UTC(
+      fromDate.getUTCFullYear(),
+      fromDate.getUTCMonth(),
+      fromDate.getUTCDate(),
+    ),
+  )
+  const end = toTime
+
+  while (cursor.getTime() <= end) {
+    const wd = cursor.getUTCDay()
+    if (wd === 0 || wd === 6) {
+      const isSat = wd === 6
+      list.push({
+        date: new Date(cursor),
+        name: isSat ? 'شنبه — تعطیلی آخر هفته' : 'یکشنبه — تعطیلی آخر هفته',
+        type: 'weekend',
+        kind: 'آخر هفته',
+        note: 'بازار فارکس در شنبه و یکشنبه بسته است',
+      })
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+  return list
+}
+
 export function getHolidayAlerts(date = new Date()) {
   const year = date.getUTCFullYear()
   const all = [
@@ -470,6 +499,9 @@ export function getHolidayAlerts(date = new Date()) {
   const todayStart = startOfUtcDay(date)
   const weekEnd = endOfUtcWeek(date)
   const monthEnd = endOfUtcMonth(date)
+
+  // Weekends through end of month (covers today/week/month filters)
+  all.push(...getWeekendClosures(date, monthEnd))
 
   const inRange = (h, end) => {
     const t = startOfUtcDay(h.date)
