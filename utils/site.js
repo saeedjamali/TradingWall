@@ -5,10 +5,10 @@
 export const SITE_NAME = 'Trading Wall'
 export const SITE_NAME_FA = 'دیوار معاملاتی'
 export const SITE_TAGLINE =
-  'ژورنال معاملاتی، لیدربورد تریدرها و دیوار عمومی عملکرد — مدیریت معاملات، ستاپ و انضباط'
+  'ژورنال معاملاتی فارسی، لیدربورد تریدرها، دیوار عمومی، ابزار معامله و بک‌تست فارکس'
 
 export const SITE_DESCRIPTION =
-  'Trading Wall پلتفرم فارسی ژورنال و تحلیل معاملات است. ثبت ترید، تقویم معاملاتی، لیدربورد وین‌ریت و سود، و دیوار عمومی تریدرها.'
+  'Trading Wall پلتفرم فارسی ژورنال و تحلیل معاملات است: ثبت ترید، تقویم معاملاتی، لیدربورد وین‌ریت و سود، دیوار عمومی تریدرها، ابزار معامله (ساعت سشن، ماشین‌حساب ریسک و پیپ) و بک‌تست معاملاتی.'
 
 export const SITE_KEYWORDS = [
   'Trading Wall',
@@ -21,11 +21,16 @@ export const SITE_KEYWORDS = [
   'ترید فارکس',
   'تقویم معاملاتی',
   'بک تست فارکس',
+  'ژورنال بک تست',
+  'ابزار معامله',
   'ابزار فارکس',
   'ساعت بازار فارکس',
   'ماشین حساب ریسک',
+  'همپوشانی سشن',
   'trading journal',
   'trading leaderboard',
+  'forex backtest',
+  'forex tools',
 ]
 
 /** Hard-coded public origin — used by sitemap/robots so Google never sees localhost */

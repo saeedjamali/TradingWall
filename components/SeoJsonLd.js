@@ -44,6 +44,23 @@ export default function SeoJsonLd() {
       },
     },
     keywords: SITE_KEYWORDS.join(', '),
+    hasPart: [
+      {
+        '@type': 'CollectionPage',
+        name: 'ابزار معامله',
+        url: absoluteUrl('/tools'),
+      },
+      {
+        '@type': 'WebPage',
+        name: 'بک‌تست معاملاتی',
+        url: absoluteUrl('/backtest'),
+      },
+      {
+        '@type': 'WebPage',
+        name: 'لیدربورد تریدرها',
+        url: absoluteUrl('/leaderboards'),
+      },
+    ],
   }
 
   const software = {
@@ -60,6 +77,32 @@ export default function SeoJsonLd() {
     description: SITE_DESCRIPTION,
     url: siteUrl,
     inLanguage: 'fa-IR',
+    featureList: [
+      'ژورنال معاملاتی',
+      'تقویم معاملاتی',
+      'لیدربورد وین‌ریت و سود',
+      'دیوار عمومی تریدرها',
+      'ابزار معامله فارکس',
+      'بک‌تست معاملاتی',
+      'ماشین‌حساب ریسک و پیپ',
+      'ساعت سشن‌های بازار',
+    ],
+    hasPart: [
+      {
+        '@type': 'WebApplication',
+        name: 'ابزار معامله Trading Wall',
+        url: absoluteUrl('/tools'),
+        description:
+          'ساعت سشن، همپوشانی بازارها، ماشین‌حساب ریسک و پیپ، راهنمای جفت‌ارز',
+      },
+      {
+        '@type': 'WebApplication',
+        name: 'بک‌تست Trading Wall',
+        url: absoluteUrl('/backtest'),
+        description:
+          'ثبت بک‌تست روزانه، گزارش TP/SL و عملکرد ستاپ‌ها',
+      },
+    ],
   }
 
   return (

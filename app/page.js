@@ -200,13 +200,34 @@ export default function Home() {
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Trading Wall | دیوار معاملاتی
           </h1>
-          <p className="text-xl text-gray-300 mb-4 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 mb-4 max-w-3xl mx-auto leading-relaxed" dir="rtl">
             ژورنال معاملاتی فارسی برای ثبت ترید، تحلیل عملکرد، لیدربورد وین‌ریت و
-            سود، و دیوار عمومی تریدرها
+            سود، دیوار عمومی تریدرها،{' '}
+            <Link
+              href="/tools"
+              className="font-bold text-white underline underline-offset-4 decoration-cyan-400/60 hover:text-cyan-300"
+            >
+              ابزار معامله
+            </Link>{' '}
+            و{' '}
+            <Link
+              href="/backtest"
+              className="font-bold text-white underline underline-offset-4 decoration-amber-400/60 hover:text-amber-300"
+            >
+              بک‌تست
+            </Link>
           </p>
-          <p className="text-base text-gray-400 mb-12 max-w-2xl mx-auto">
-            معاملات خود را ثبت کنید، ستاپ‌ها را مدیریت کنید و با تقویم معاملاتی
-            انضباط خود را بسنجید
+          <p className="text-base text-gray-400 mb-12 max-w-2xl mx-auto" dir="rtl">
+            معاملات خود را ثبت کنید، ستاپ‌ها را مدیریت کنید، با تقویم معاملاتی
+            انضباط بسنجید و از{' '}
+            <Link href="/tools" className="font-semibold text-gray-200 hover:text-white">
+              ابزارهای فارکس
+            </Link>{' '}
+            و{' '}
+            <Link href="/backtest" className="font-semibold text-gray-200 hover:text-white">
+              ژورنال بک‌تست
+            </Link>{' '}
+            استفاده کنید
           </p>
 
           {/* Upload Section */}
@@ -435,7 +456,7 @@ export default function Home() {
 
         {/* Features Section */}
         <section className="container mx-auto px-4 py-20">
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
             <FeatureCard
               icon="📊"
               title="تحلیل جامع"
@@ -450,6 +471,18 @@ export default function Home() {
               icon="🏆"
               title="رقابت سالم"
               description="مقایسه عملکرد با سایر معامله‌گران و کسب رتبه در جداول"
+            />
+            <FeatureCard
+              icon="🛠️"
+              title="ابزار معامله"
+              description="ساعت سشن‌ها، همپوشانی بازارها، ماشین‌حساب ریسک و پیپ، راهنمای جفت‌ارز"
+              href="/tools"
+            />
+            <FeatureCard
+              icon="📈"
+              title="بک‌تست"
+              description="ثبت بک‌تست روزانه، گزارش TP/SL و عملکرد ستاپ‌ها در تقویم بک‌تست"
+              href="/backtest"
             />
           </div>
         </section>
@@ -532,12 +565,25 @@ function HomeLeaderboardCard({ title, minTrades, board, loading }) {
   );
 }
 
-function FeatureCard({ icon, title, description }) {
-  return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-colors">
+function FeatureCard({ icon, title, description, href }) {
+  const inner = (
+    <>
       <div className="text-4xl mb-4">{icon}</div>
       <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
       <p className="text-gray-300">{description}</p>
-    </div>
-  );
+    </>
+  )
+
+  const className =
+    'bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-colors h-full block'
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {inner}
+      </Link>
+    )
+  }
+
+  return <div className={className}>{inner}</div>
 }
