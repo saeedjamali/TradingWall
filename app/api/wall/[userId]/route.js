@@ -6,6 +6,7 @@ import Plan from '@/models/Plan'
 import Achievement from '@/models/Achievement'
 import Activity from '@/models/Activity'
 import Setup from '@/models/Setup'
+import Backtest from '@/models/Backtest'
 import { requireAdmin } from '@/utils/adminAuth'
 
 /**
@@ -39,6 +40,7 @@ export async function GET(request, { params }) {
     const privacy = {
       isPublic: false,
       showCalendar: false,
+      showBacktestCalendar: false,
       showAchievements: true,
       showActivities: true,
       showSetups: true,
@@ -75,6 +77,7 @@ export async function GET(request, { params }) {
 
     // Admin can see every section even when owner hid them
     const showCalendar = isAdminView || !!privacy.showCalendar
+    const showBacktestCalendar = isAdminView || !!privacy.showBacktestCalendar
     const showAchievements = isAdminView || !!privacy.showAchievements
     const showActivities = isAdminView || !!privacy.showActivities
     const showSetups = isAdminView || !!privacy.showSetups
@@ -96,12 +99,14 @@ export async function GET(request, { params }) {
       privacy: {
         isPublic: !!privacy.isPublic,
         showCalendar,
+        showBacktestCalendar,
         showAchievements,
         showActivities,
         showSetups,
         allowJobOffers: isAdminView ? false : !!privacy.allowJobOffers,
       },
       calendar: null,
+      backtestCalendar: null,
       achievements: null,
       activities: null,
       setups: null,
@@ -132,6 +137,25 @@ export async function GET(request, { params }) {
         month: month + 1,
         trades,
         plans,
+      }
+    }
+
+    if (showBacktestCalendar) {
+      const backtests = await Backtest.find({
+        userId,
+        date: { $gte: monthStart, $lte: monthEnd },
+      })
+        .select(
+          'date symbol timeframe direction session setupIds tpHits slHits risk resultPnL tradeImage lesson',
+        )
+        .populate('setupIds', 'title')
+        .sort({ date: -1, createdAt: -1 })
+        .lean()
+
+      payload.backtestCalendar = {
+        year,
+        month: month + 1,
+        backtests,
       }
     }
 

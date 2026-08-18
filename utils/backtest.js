@@ -13,6 +13,7 @@ export const BACKTEST_SESSIONS = [
 
 export const BACKTEST_TIMEFRAMES = [
   'M1',
+  'M2',
   'M5',
   'M15',
   'M30',
@@ -218,3 +219,125 @@ export function buildBacktestReports(backtests) {
     directionRows: sortRows(byDirection),
   }
 }
+
+/**
+ * Aggregate chart/market-reality rows (separate from backtest WR)
+ */
+export function buildMarketRealityReports(items) {
+  const empty = () => ({ count: 0, tp: 0, sl: 0, days: new Set() })
+  const bySetup = {}
+  const bySymbol = {}
+  const byTimeframe = {}
+  let tp = 0
+  let sl = 0
+
+  for (const item of items || []) {
+    const t = Math.max(0, Number(item.tpCount) || 0)
+    const s = Math.max(0, Number(item.slCount) || 0)
+    tp += t
+    sl += s
+
+    const day = new Date(item.date)
+    const dayKey = `${day.getFullYear()}-${day.getMonth() + 1}-${day.getDate()}`
+
+    const bump = (map, key, label) => {
+      if (!map[key]) map[key] = { ...empty(), key, label: label || key }
+      map[key].count += 1
+      map[key].tp += t
+      map[key].sl += s
+      map[key].days.add(dayKey)
+    }
+
+    const setup = item.setupId
+    const setupId = String(setup?._id || setup || '—')
+    const setupLabel = setup?.title || 'ستاپ'
+    bump(bySetup, setupId, setupLabel)
+    bump(bySymbol, item.symbol || '—', item.symbol || '—')
+    bump(byTimeframe, item.timeframe || '—', item.timeframe || '—')
+  }
+
+  const toRows = (obj) =>
+    Object.values(obj)
+      .map((r) => {
+        const hits = r.tp + r.sl
+        return {
+          key: r.key,
+          label: r.label,
+          count: r.count,
+          tp: r.tp,
+          sl: r.sl,
+          activeDays: r.days.size,
+          hitRate: hits > 0 ? (r.tp / hits) * 100 : null,
+        }
+      })
+      .sort((a, b) => b.tp - a.tp || b.count - a.count)
+
+  const hits = tp + sl
+  return {
+    count: (items || []).length,
+    tp,
+    sl,
+    hitRate: hits > 0 ? (tp / hits) * 100 : null,
+    setupRows: toRows(bySetup),
+    symbolRows: toRows(bySymbol),
+    timeframeRows: toRows(byTimeframe),
+  }
+}
+
+/** Flatten a backtest row for table / export */
+export function flattenBacktestForExport(b) {
+  const setups = (b.setupIds || [])
+    .map((s) => s.title || s)
+    .filter(Boolean)
+    .join(' | ')
+  const d = new Date(b.date)
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return {
+    date: dateStr,
+    symbol: b.symbol || '',
+    timeframe: b.timeframe || '',
+    direction: b.direction || '',
+    session: sessionLabel(b.session),
+    setups,
+    marketCondition: b.marketCondition || '',
+    entryReason: b.entryReason || '',
+    entry: b.entry ?? '',
+    sl: b.sl ?? '',
+    tp: b.tp ?? '',
+    risk: b.risk ?? '',
+    rr: b.rr ?? '',
+    tpHits: b.tpHits ?? 0,
+    slHits: b.slHits ?? 0,
+    resultPnL: b.resultPnL ?? '',
+    strengths: b.strengths || '',
+    weaknesses: b.weaknesses || '',
+    lesson: b.lesson || '',
+    notes: b.notes || '',
+    tradeImage: b.tradeImage || '',
+  }
+}
+
+export const BACKTEST_EXPORT_HEADERS = [
+  { key: 'date', label: 'تاریخ' },
+  { key: 'symbol', label: 'نماد' },
+  { key: 'timeframe', label: 'تایم‌فریم' },
+  { key: 'direction', label: 'جهت' },
+  { key: 'session', label: 'سشن' },
+  { key: 'setups', label: 'ستاپ‌ها' },
+  { key: 'marketCondition', label: 'شرایط بازار' },
+  { key: 'entryReason', label: 'دلیل ورود' },
+  { key: 'entry', label: 'ورود' },
+  { key: 'sl', label: 'SL قیمت' },
+  { key: 'tp', label: 'TP قیمت' },
+  { key: 'risk', label: 'ریسک $' },
+  { key: 'rr', label: 'RR' },
+  { key: 'tpHits', label: 'تعداد TP' },
+  { key: 'slHits', label: 'تعداد SL' },
+  { key: 'resultPnL', label: 'برایند $' },
+  { key: 'strengths', label: 'نقاط قوت' },
+  { key: 'weaknesses', label: 'نقاط ضعف' },
+  { key: 'lesson', label: 'درس' },
+  { key: 'notes', label: 'یادداشت' },
+  { key: 'tradeImage', label: 'تصویر' },
+]
+

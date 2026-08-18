@@ -69,6 +69,10 @@ const UserSchema = new mongoose.Schema({
       type: Boolean,
       default: true,
     },
+    showBacktestCalendar: {
+      type: Boolean,
+      default: false,
+    },
     // Allow other users to send job proposals on public wall
     allowJobOffers: {
       type: Boolean,

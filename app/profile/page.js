@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [privacySettings, setPrivacySettings] = useState({
     isPublic: false,
     showCalendar: false,
+    showBacktestCalendar: false,
     showAchievements: true,
     showActivities: true,
     showSetups: true,
@@ -98,6 +99,7 @@ export default function ProfilePage() {
         setPrivacySettings({
           isPublic: false,
           showCalendar: false,
+          showBacktestCalendar: false,
           showAchievements: true,
           showActivities: true,
           showSetups: true,
@@ -853,6 +855,17 @@ export default function ProfilePage() {
                         setPrivacySettings({
                           ...privacySettings,
                           showCalendar: checked,
+                        })
+                      }
+                    />
+                    <PrivacyToggle
+                      title="تقویم بک‌تست"
+                      description="نمایش فقط‌خواندنی تقویم بک‌تست‌های شما روی دیوار"
+                      checked={privacySettings.showBacktestCalendar}
+                      onChange={(checked) =>
+                        setPrivacySettings({
+                          ...privacySettings,
+                          showBacktestCalendar: checked,
                         })
                       }
                     />

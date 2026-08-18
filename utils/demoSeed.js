@@ -464,6 +464,7 @@ export async function seedDemoData(opts = {}) {
       privacySettings: {
         isPublic: true,
         showCalendar: true,
+        showBacktestCalendar: false,
         showAchievements: true,
         showActivities: true,
         showSetups: true,

@@ -7,9 +7,17 @@ import { useRouter } from 'next/navigation'
 import Loading from '@/components/Loading'
 import Modal from '@/components/Modal'
 import BacktestModal from '@/components/BacktestModal'
+import BacktestCharts from '@/components/BacktestCharts'
+import MarketRealityDayPanel from '@/components/MarketRealityDayPanel'
+import BacktestListModal from '@/components/BacktestListModal'
 import { UserName } from '@/components/VerifiedBadge'
 import { getSessionUser } from '@/utils/session'
-import { sameLocalDay, buildBacktestReports, sessionLabel } from '@/utils/backtest'
+import {
+  sameLocalDay,
+  buildBacktestReports,
+  buildMarketRealityReports,
+  sessionLabel,
+} from '@/utils/backtest'
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -44,11 +52,15 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
   const [backtests, setBacktests] = useState([])
+  const [marketRealities, setMarketRealities] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
   const [dayListOpen, setDayListOpen] = useState(false)
+  const [marketDayOpen, setMarketDayOpen] = useState(false)
+  const [listOpen, setListOpen] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('quick')
   const [editing, setEditing] = useState(null)
+  const [previewImage, setPreviewImage] = useState(null)
 
   useEffect(() => {
     const u = getSessionUser()
@@ -66,9 +78,14 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
       startDate: start.toISOString(),
       endDate: end.toISOString(),
     })
-    const res = await fetch(`/api/backtests?${params}`)
-    const data = await res.json()
-    if (data.success) setBacktests(data.backtests || [])
+    const [btRes, mrRes] = await Promise.all([
+      fetch(`/api/backtests?${params}`),
+      fetch(`/api/market-realities?${params}`),
+    ])
+    const btData = await btRes.json()
+    const mrData = await mrRes.json()
+    if (btData.success) setBacktests(btData.backtests || [])
+    if (mrData.success) setMarketRealities(mrData.marketRealities || [])
   }, [])
 
   useEffect(() => {
@@ -101,6 +118,23 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
   )
 
   const monthStats = useMemo(() => buildBacktestReports(backtests), [backtests])
+  const marketStats = useMemo(
+    () => buildMarketRealityReports(marketRealities),
+    [marketRealities],
+  )
+
+  const dayMarketItems = useCallback(
+    (day) => {
+      if (!day) return []
+      const date = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        day,
+      )
+      return marketRealities.filter((b) => sameLocalDay(b.date, date))
+    },
+    [marketRealities, currentMonth],
+  )
 
   const weekStats = useMemo(() => {
     const now = new Date()
@@ -136,6 +170,19 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
     if (dow === 0 || dow === 6) return
     setSelectedDate(date)
     setDayListOpen(true)
+  }
+
+  const openMarketDay = (day) => {
+    if (!day) return
+    const date = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day,
+    )
+    const dow = date.getDay()
+    if (dow === 0 || dow === 6) return
+    setSelectedDate(date)
+    setMarketDayOpen(true)
   }
 
   const openCreate = (mode = 'quick') => {
@@ -181,6 +228,9 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
   const weeks = buildWeeks(currentMonth)
   const selectedDayItems = selectedDate
     ? backtests.filter((b) => sameLocalDay(b.date, selectedDate))
+    : []
+  const selectedDayMarket = selectedDate
+    ? marketRealities.filter((b) => sameLocalDay(b.date, selectedDate))
     : []
 
   const monthTitle = currentMonth.toLocaleDateString('en-US', {
@@ -265,6 +315,44 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
       </header>
 
       <div className="container mx-auto px-4 py-6 md:py-8">
+        {/* Guide */}
+        <div
+          className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4 md:p-5 space-y-3"
+          dir="rtl"
+        >
+          <h2 className="text-base md:text-lg font-bold text-white">راهنمای صفحه بک‌تست</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div className="rounded-lg border border-primary-400/30 bg-primary-500/10 p-3">
+              <div className="flex items-center gap-2 font-bold text-primary-200 mb-1.5">
+                <span className="inline-flex w-7 h-7 items-center justify-center rounded-md bg-primary-600 text-white text-xs">
+                  BT
+                </span>
+                بک‌تست
+              </div>
+              <p className="text-white/70 text-xs md:text-sm leading-relaxed">
+                ثبت معاملاتی که خودتان روی چارت تست کرده‌اید: نماد، جهت، ستاپ، تعداد TP و SL.
+                وین‌ریت بک‌تست از همین داده‌ها ساخته می‌شود.
+              </p>
+            </div>
+            <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3">
+              <div className="flex items-center gap-2 font-bold text-amber-200 mb-1.5">
+                <span className="inline-flex w-7 h-7 items-center justify-center rounded-md bg-amber-500 text-white text-xs">
+                  M
+                </span>
+                فرصت بازار
+              </div>
+              <p className="text-white/70 text-xs md:text-sm leading-relaxed">
+                بعد از دیدن کامل چارت بگویید بازار روی کدام نماد / تایم‌فریم / ستاپ چند TP
+                می‌داد. این وین‌ریت واقعیت بازار است و از بک‌تست جداست.
+              </p>
+            </div>
+          </div>
+          <p className="text-[11px] md:text-xs text-white/50 leading-relaxed">
+            روی هر روز دو دکمه دارید: آبی = بک‌تست · نارنجی = فرصت بازار. در گزارش‌ها می‌توانید
+            وین‌ریت بک‌تست و واقعیت بازار هر ستاپ را کنار هم ببینید.
+          </p>
+        </div>
+
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" dir="rtl">
           <StatCard
@@ -312,11 +400,40 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white text-gray-900 shadow-lg p-3 md:p-6 mb-6">
-          <div className="text-center mb-4 relative px-10" dir="rtl">
-            <h2 className="text-xl md:text-2xl font-bold">تقویم بک‌تست</h2>
-            <p className="text-xs text-gray-500 mt-1">
-              روی هر روز کلیک کنید تا بک‌تست‌های همان روز را ببینید یا مورد جدید اضافه کنید
-            </p>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3" dir="rtl">
+            <div className="min-w-0">
+              <h2 className="text-xl md:text-2xl font-bold">تقویم بک‌تست</h2>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-primary-600 text-white">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </span>
+                  بک‌تست
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-amber-500 text-white">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </span>
+                  فرصت بازار
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setListOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 text-xs md:text-sm font-semibold hover:bg-slate-100 shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <span className="hidden sm:inline">لیست کامل و خروجی</span>
+              <span className="sm:hidden">لیست / خروجی</span>
+            </button>
           </div>
 
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -401,6 +518,7 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
                       const isWeekend =
                         date.getDay() === 0 || date.getDay() === 6
                       const items = dayItems(day)
+                      const marketDay = dayMarketItems(day)
                       const dayTp = items.reduce(
                         (s, b) => s + (b.tpHits || 0),
                         0,
@@ -413,32 +531,45 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
                         (s, b) => s + (b.resultPnL || 0),
                         0,
                       )
+                      const marketTp = marketDay.reduce(
+                        (s, b) => s + (b.tpCount || 0),
+                        0,
+                      )
                       const has = items.length > 0
+                      const hasMarket = marketDay.length > 0
                       const isProfit = has && dayPnl > 0
                       const isLoss = has && dayPnl < 0
 
                       return (
-                        <button
+                        <div
                           key={day}
-                          type="button"
-                          disabled={isWeekend}
-                          onClick={() => openDay(day)}
                           className={`
-                            text-left border rounded-xl p-1.5 min-h-[88px] md:min-h-[110px] transition-all flex flex-col
-                            ${isWeekend ? 'bg-slate-200/70 border-slate-300 cursor-not-allowed opacity-80' : 'cursor-pointer hover:shadow-md'}
+                            border rounded-xl p-1.5 min-h-[88px] md:min-h-[110px] flex flex-col
+                            ${isWeekend ? 'bg-slate-200/70 border-slate-300 opacity-80' : ''}
                             ${!isWeekend && isProfit ? 'bg-emerald-100 border-emerald-300' : ''}
                             ${!isWeekend && isLoss ? 'bg-rose-100 border-rose-300' : ''}
                             ${!isWeekend && has && dayPnl === 0 ? 'bg-amber-50 border-amber-200' : ''}
-                            ${!isWeekend && !has ? 'bg-slate-50 border-slate-200 hover:bg-slate-100' : ''}
+                            ${!isWeekend && !has && hasMarket ? 'bg-amber-50/80 border-amber-300' : ''}
+                            ${!isWeekend && !has && !hasMarket ? 'bg-slate-50 border-slate-200' : ''}
                           `}
                         >
-                          <div className="text-xs font-bold text-slate-700">
-                            {day}
+                          <div className="flex items-start justify-between gap-0.5 mb-0.5">
+                            <div className="text-xs font-bold text-slate-700">
+                              {day}
+                            </div>
+                            {hasMarket && (
+                              <span
+                                className="text-[9px] font-bold text-amber-700 bg-amber-200/80 px-1 rounded"
+                                title="فرصت بازار ثبت شده"
+                              >
+                                M
+                              </span>
+                            )}
                           </div>
                           {has && (
-                            <div className="mt-1 space-y-0.5 text-[10px]">
+                            <div className="space-y-0.5 text-[10px] flex-1">
                               <div className="font-semibold text-slate-700">
-                                {items.length} backtest
+                                {items.length} BT
                               </div>
                               <div>
                                 <span className="text-emerald-700">
@@ -463,7 +594,73 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
                               )}
                             </div>
                           )}
-                        </button>
+                          {!has && hasMarket && (
+                            <div className="text-[10px] text-amber-800 font-medium flex-1">
+                              بازار TP {marketTp}
+                            </div>
+                          )}
+                          {has && hasMarket && (
+                            <div className="text-[9px] text-amber-700 font-medium">
+                              بازار TP {marketTp}
+                            </div>
+                          )}
+                          {!isWeekend && (
+                            <div className="mt-auto pt-1 grid grid-cols-2 gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => openDay(day)}
+                                title="بک‌تست"
+                                aria-label="بک‌تست"
+                                className="flex items-center justify-center gap-1 text-[9px] md:text-[10px] font-semibold py-1.5 md:py-1 rounded-md bg-primary-600 text-white hover:bg-primary-700"
+                              >
+                                <svg
+                                  className="w-3.5 h-3.5 md:w-3 md:h-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                  />
+                                </svg>
+                                <span className="hidden md:inline">بک‌تست</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openMarketDay(day)}
+                                title="فرصت بازار"
+                                aria-label="فرصت بازار"
+                                className="flex items-center justify-center gap-1 text-[9px] md:text-[10px] font-semibold py-1.5 md:py-1 rounded-md bg-amber-500 text-white hover:bg-amber-600"
+                              >
+                                <svg
+                                  className="w-3.5 h-3.5 md:w-3 md:h-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
+                                <span className="hidden md:inline">فرصت</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
 
@@ -568,6 +765,12 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
 
         {/* Reports */}
         <div className="space-y-4 mb-8" dir="rtl">
+          <BacktestCharts
+            backtests={backtests}
+            monthStats={monthStats}
+            currentMonth={currentMonth}
+          />
+
           <div className="rounded-xl border border-white/10 bg-white/95 text-gray-900 p-4 md:p-5">
             <h3 className="font-bold text-lg mb-3">خلاصه عملکرد ماه</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
@@ -663,12 +866,140 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
             )}
           </div>
 
+          <SetupPerformancePanel rows={monthStats.setupRows} />
+          <MarketRealitySetupPanel
+            marketRows={marketStats.setupRows}
+            backtestRows={monthStats.setupRows}
+            marketStats={marketStats}
+          />
+
+          <div className="rounded-xl border border-white/10 bg-white/95 text-gray-900 p-4 md:p-5">
+            <h3 className="font-bold text-lg mb-3">خرید / فروش (Buy / Sell)</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {['buy', 'sell'].map((key) => {
+                const row =
+                  monthStats.directionRows.find((r) => r.key === key) || {
+                    key,
+                    label: key === 'buy' ? 'Buy' : 'Sell',
+                    count: 0,
+                    tp: 0,
+                    sl: 0,
+                    pnl: 0,
+                    withRisk: 0,
+                  }
+                const hits = row.tp + row.sl
+                const hitRate = hits > 0 ? (row.tp / hits) * 100 : 0
+                const tpPct = hits > 0 ? (row.tp / hits) * 100 : 0
+                const slPct = hits > 0 ? (row.sl / hits) * 100 : 0
+                const isBuy = key === 'buy'
+                const maxHits = Math.max(
+                  ...monthStats.directionRows.map((r) => r.tp + r.sl),
+                  1,
+                )
+                const tpBarW = hits > 0 ? (row.tp / maxHits) * 100 : 0
+                const slBarW = hits > 0 ? (row.sl / maxHits) * 100 : 0
+
+                return (
+                  <div
+                    key={key}
+                    className={`rounded-lg border p-4 ${
+                      isBuy
+                        ? 'bg-emerald-50/70 border-emerald-200'
+                        : 'bg-rose-50/70 border-rose-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div
+                          className={`text-lg font-extrabold ${
+                            isBuy ? 'text-emerald-800' : 'text-rose-800'
+                          }`}
+                        >
+                          {isBuy ? 'خرید' : 'فروش'}
+                        </div>
+                        <div
+                          className={`text-xs font-semibold tracking-wide ${
+                            isBuy ? 'text-emerald-600' : 'text-rose-600'
+                          }`}
+                        >
+                          {isBuy ? 'BUY' : 'SELL'}
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-600 bg-white/80 px-2 py-1 rounded-full border border-gray-100">
+                        {row.count} بک‌تست
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <div className="flex justify-between mb-1 text-xs text-gray-600">
+                          <span>Hit Rate (نرخ موفقیت)</span>
+                          <span className="font-bold tabular-nums text-gray-900">
+                            {hits > 0 ? `${hitRate.toFixed(1)}%` : '—'}
+                          </span>
+                        </div>
+                        <div className="h-2.5 rounded-full bg-white/80 border border-gray-100 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              isBuy ? 'bg-emerald-500' : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${hitRate}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1 text-xs">
+                          <span className="text-emerald-700 font-medium">TP</span>
+                          <span className="font-bold tabular-nums text-emerald-800">
+                            {row.tp}
+                            {hits > 0 ? ` · ${tpPct.toFixed(0)}%` : ''}
+                          </span>
+                        </div>
+                        <div className="h-2.5 rounded-full bg-white/80 border border-gray-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500 transition-all"
+                            style={{ width: `${tpBarW}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1 text-xs">
+                          <span className="text-rose-700 font-medium">SL</span>
+                          <span className="font-bold tabular-nums text-rose-800">
+                            {row.sl}
+                            {hits > 0 ? ` · ${slPct.toFixed(0)}%` : ''}
+                          </span>
+                        </div>
+                        <div className="h-2.5 rounded-full bg-white/80 border border-gray-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-rose-500 transition-all"
+                            style={{ width: `${slBarW}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-1 flex items-center justify-between border-t border-white/60">
+                        <span className="text-xs text-gray-500">برایند</span>
+                        <span
+                          className={`font-bold tabular-nums ${
+                            row.pnl >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                          }`}
+                        >
+                          {row.withRisk
+                            ? `${row.pnl >= 0 ? '+' : ''}$${row.pnl.toFixed(2)}`
+                            : '—'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ReportTable
-              title="عملکرد ستاپ‌ها"
-              empty="هنوز ستاپی روی بک‌تست‌ها ثبت نشده"
-              rows={monthStats.setupRows}
-            />
             <ReportTable
               title="عملکرد سشن‌ها"
               empty="داده‌ای برای سشن‌ها نیست"
@@ -685,57 +1016,15 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
               rows={monthStats.timeframeRows}
             />
           </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/95 text-gray-900 p-4 md:p-5">
-            <h3 className="font-bold text-lg mb-3">Buy / Sell</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {monthStats.directionRows.map((row) => {
-                const rate =
-                  row.tp + row.sl > 0
-                    ? ((row.tp / (row.tp + row.sl)) * 100).toFixed(1)
-                    : null
-                return (
-                  <div
-                    key={row.key}
-                    className="rounded-lg border border-gray-100 bg-gray-50 p-3"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className={`font-bold ${
-                          row.key === 'buy' ? 'text-emerald-700' : 'text-rose-700'
-                        }`}
-                      >
-                        {row.label}
-                      </span>
-                      <span className="text-xs text-gray-500">{row.count} بک‌تست</span>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      TP {row.tp} · SL {row.sl}
-                      {rate != null ? ` · HR ${rate}%` : ''}
-                    </div>
-                    <div
-                      className={`mt-1 font-bold tabular-nums text-sm ${
-                        row.pnl >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                      }`}
-                    >
-                      {row.withRisk
-                        ? `${row.pnl >= 0 ? '+' : ''}$${row.pnl.toFixed(2)}`
-                        : '—'}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Day list modal */}
+      {/* Day backtest modal */}
       <Modal
         isOpen={dayListOpen}
         onClose={() => {
           setDayListOpen(false)
-          setSelectedDate(null)
+          if (!marketDayOpen && !formOpen) setSelectedDate(null)
         }}
         title={
           selectedDate
@@ -824,11 +1113,34 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
                       )}
                     </div>
                     {b.tradeImage && (
-                      <img
-                        src={b.tradeImage}
-                        alt=""
-                        className="w-16 h-16 object-cover rounded border"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImage(b.tradeImage)}
+                        className="relative shrink-0 group"
+                        title="بزرگ‌نمایی تصویر"
+                      >
+                        <img
+                          src={b.tradeImage}
+                          alt=""
+                          className="w-16 h-16 object-cover rounded border group-hover:ring-2 group-hover:ring-primary-400"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center rounded bg-black/0 group-hover:bg-black/40 transition-colors">
+                          <svg
+                            className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 drop-shadow"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
+                            />
+                          </svg>
+                        </span>
+                      </button>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -853,6 +1165,71 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
           )}
         </div>
       </Modal>
+
+      {/* Market opportunity modal — separate from backtest */}
+      <Modal
+        isOpen={marketDayOpen}
+        onClose={() => {
+          setMarketDayOpen(false)
+          if (!dayListOpen && !formOpen) setSelectedDate(null)
+        }}
+        title={
+          selectedDate
+            ? `فرصت بازار · ${selectedDate.toLocaleDateString('fa-IR')}`
+            : 'فرصت بازار'
+        }
+        size="lg"
+      >
+        <MarketRealityDayPanel
+          userId={user.id}
+          date={selectedDate || new Date()}
+          items={selectedDayMarket}
+          onChanged={handleSaved}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        title="تصویر بک‌تست"
+        size="xl"
+        zIndexClass="z-[120]"
+      >
+        {previewImage && (
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-full flex justify-center bg-gray-950/5 rounded-lg p-2">
+              <img
+                src={previewImage}
+                alt="تصویر بک‌تست"
+                className="max-w-full max-h-[75vh] object-contain rounded"
+              />
+            </div>
+            <a
+              href={previewImage}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary-600 hover:underline"
+            >
+              باز کردن در تب جدید
+            </a>
+          </div>
+        )}
+      </Modal>
+
+      <BacktestListModal
+        isOpen={listOpen}
+        onClose={() => setListOpen(false)}
+        userId={user.id}
+        monthBacktests={backtests}
+        currentMonth={currentMonth}
+        onEdit={(b) => {
+          setListOpen(false)
+          openEdit(b)
+        }}
+        onDelete={async (b) => {
+          await handleDelete(b)
+        }}
+      />
 
       <BacktestModal
         isOpen={formOpen}
@@ -915,6 +1292,338 @@ function MiniStat({ label, value, color }) {
     <div className="rounded-lg bg-gray-50 border border-gray-100 p-2 text-center">
       <div className="text-[10px] text-gray-500">{label}</div>
       <div className={`text-lg font-bold tabular-nums ${color}`}>{value}</div>
+    </div>
+  )
+}
+
+function SetupPerformancePanel({ rows = [] }) {
+  const maxHits = Math.max(...rows.map((r) => r.tp + r.sl), 1)
+  const maxCount = Math.max(...rows.map((r) => r.count), 1)
+  const ranked = [...rows].sort((a, b) => {
+    const aHits = a.tp + a.sl
+    const bHits = b.tp + b.sl
+    const aRate = aHits > 0 ? a.tp / aHits : -1
+    const bRate = bHits > 0 ? b.tp / bHits : -1
+    if (bRate !== aRate) return bRate - aRate
+    return b.count - a.count
+  })
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/95 text-gray-900 p-4 md:p-5">
+      <div className="flex flex-wrap items-end justify-between gap-2 mb-4">
+        <div>
+          <h3 className="font-bold text-lg">عملکرد ستاپ‌ها</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            مقایسه Hit Rate، TP/SL و برایند هر ستاپ
+          </p>
+        </div>
+        {rows.length > 0 && (
+          <span className="text-xs text-gray-500 bg-gray-50 border border-gray-100 px-2 py-1 rounded-full">
+            {rows.length} ستاپ
+          </span>
+        )}
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="text-sm text-gray-500 py-6 text-center">
+          هنوز ستاپی روی بک‌تست‌ها ثبت نشده
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {ranked.map((row, index) => {
+            const hits = row.tp + row.sl
+            const hitRate = hits > 0 ? (row.tp / hits) * 100 : 0
+            const tpPct = hits > 0 ? (row.tp / hits) * 100 : 0
+            const slPct = hits > 0 ? (row.sl / hits) * 100 : 0
+            const unitNet = row.tp - row.sl
+            const tone =
+              hits === 0
+                ? 'neutral'
+                : hitRate >= 55
+                  ? 'good'
+                  : hitRate < 45
+                    ? 'bad'
+                    : 'mid'
+
+            const cardCls =
+              tone === 'good'
+                ? 'border-emerald-200 bg-emerald-50/60'
+                : tone === 'bad'
+                  ? 'border-rose-200 bg-rose-50/60'
+                  : 'border-gray-200 bg-gray-50/80'
+
+            const rankCls =
+              index === 0
+                ? 'bg-amber-400 text-amber-950'
+                : index === 1
+                  ? 'bg-gray-300 text-gray-800'
+                  : index === 2
+                    ? 'bg-orange-300 text-orange-950'
+                    : 'bg-white text-gray-600 border border-gray-200'
+
+            return (
+              <div
+                key={row.key}
+                className={`rounded-xl border p-4 ${cardCls}`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="min-w-0 flex items-start gap-2">
+                    <span
+                      className={`shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${rankCls}`}
+                    >
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-bold text-gray-900 truncate" title={row.label}>
+                        {row.label}
+                      </div>
+                      <div className="text-[11px] text-gray-500 mt-0.5">
+                        {row.count} بک‌تست
+                        <span className="mx-1 text-gray-300">·</span>
+                        <span
+                          className={
+                            unitNet > 0
+                              ? 'text-emerald-700'
+                              : unitNet < 0
+                                ? 'text-rose-700'
+                                : 'text-gray-600'
+                          }
+                        >
+                          {unitNet >= 0 ? '+' : ''}
+                          {unitNet} (TP−SL)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[10px] text-gray-500">Hit Rate</div>
+                    <div
+                      className={`text-lg font-extrabold tabular-nums ${
+                        tone === 'good'
+                          ? 'text-emerald-700'
+                          : tone === 'bad'
+                            ? 'text-rose-700'
+                            : 'text-indigo-700'
+                      }`}
+                    >
+                      {hits > 0 ? `${hitRate.toFixed(0)}%` : '—'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div>
+                    <div className="flex justify-between text-[11px] text-gray-600 mb-1">
+                      <span>نرخ موفقیت</span>
+                      <span className="font-semibold tabular-nums">
+                        {hits > 0 ? `${hitRate.toFixed(1)}%` : '—'}
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-white/90 border border-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          tone === 'good'
+                            ? 'bg-emerald-500'
+                            : tone === 'bad'
+                              ? 'bg-rose-500'
+                              : 'bg-indigo-500'
+                        }`}
+                        style={{ width: `${hitRate}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-emerald-700 font-medium">
+                        TP {row.tp}
+                        {hits > 0 ? ` (${tpPct.toFixed(0)}%)` : ''}
+                      </span>
+                      <span className="text-rose-700 font-medium">
+                        SL {row.sl}
+                        {hits > 0 ? ` (${slPct.toFixed(0)}%)` : ''}
+                      </span>
+                    </div>
+                    <div className="h-3 rounded-full bg-white/90 border border-gray-100 overflow-hidden flex">
+                      <div
+                        className="h-full bg-emerald-500 transition-all"
+                        style={{
+                          width: `${hits > 0 ? (row.tp / maxHits) * 100 : 0}%`,
+                        }}
+                      />
+                      <div
+                        className="h-full bg-rose-500 transition-all"
+                        style={{
+                          width: `${hits > 0 ? (row.sl / maxHits) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] text-gray-600 mb-1">
+                      <span>سهم از بک‌تست‌ها</span>
+                      <span className="font-semibold tabular-nums">
+                        {((row.count / maxCount) * 100).toFixed(0)}% نسبی
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/90 border border-gray-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-sky-500 transition-all"
+                        style={{ width: `${(row.count / maxCount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-between border-t border-white/70">
+                    <span className="text-[11px] text-gray-500">برایند دلاری</span>
+                    <span
+                      className={`text-sm font-bold tabular-nums ${
+                        row.pnl >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                      }`}
+                    >
+                      {row.withRisk
+                        ? `${row.pnl >= 0 ? '+' : ''}$${row.pnl.toFixed(2)}`
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MarketRealitySetupPanel({ marketRows = [], backtestRows = [], marketStats }) {
+  const btMap = Object.fromEntries(
+    (backtestRows || []).map((r) => [String(r.key), r]),
+  )
+
+  return (
+    <div className="rounded-xl border border-amber-300/40 bg-amber-50 text-gray-900 p-4 md:p-5">
+      <div className="flex flex-wrap items-end justify-between gap-2 mb-4">
+        <div>
+          <h3 className="font-bold text-lg text-amber-950">
+            وین‌ریت واقعیت بازار (ستاپ‌ها)
+          </h3>
+          <p className="text-xs text-amber-900/70 mt-0.5 leading-relaxed">
+            بر اساس فرصت‌هایی که بعد از بررسی چارت ثبت کرده‌اید — جدا از وین‌ریت بک‌تست
+          </p>
+        </div>
+        {marketStats?.count > 0 && (
+          <div className="text-xs text-amber-900 bg-white/70 border border-amber-200 px-2.5 py-1.5 rounded-full">
+            {marketStats.count} ثبت · TP {marketStats.tp}
+            {marketStats.hitRate != null
+              ? ` · WR ${marketStats.hitRate.toFixed(0)}%`
+              : ''}
+          </div>
+        )}
+      </div>
+
+      {marketRows.length === 0 ? (
+        <p className="text-sm text-amber-900/60 text-center py-6">
+          هنوز واقعیت بازاری ثبت نشده. روی هر روز تقویم بروید و بعد از دیدن چارت فرصت‌ها را وارد کنید.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {marketRows.map((row) => {
+            const bt = btMap[String(row.key)]
+            const btHits = bt ? bt.tp + bt.sl : 0
+            const btRate = btHits > 0 ? (bt.tp / btHits) * 100 : null
+            const capture =
+              row.tp > 0 && bt
+                ? Math.min(100, (bt.tp / row.tp) * 100)
+                : null
+            const hits = row.tp + row.sl
+
+            return (
+              <div
+                key={row.key}
+                className="rounded-xl border border-amber-200 bg-white p-3 md:p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                  <div>
+                    <div className="font-bold text-gray-900">{row.label}</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5">
+                      {row.count} ثبت · {row.activeDays} روز فعال
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-amber-800">WR بازار</div>
+                    <div className="text-xl font-extrabold tabular-nums text-amber-800">
+                      {row.hitRate != null ? `${row.hitRate.toFixed(0)}%` : '—'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-amber-900 font-medium">بازار (چارت)</span>
+                      <span className="tabular-nums">
+                        TP {row.tp} · SL {row.sl}
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-amber-100 overflow-hidden flex">
+                      {hits > 0 && (
+                        <>
+                          <div
+                            className="h-full bg-emerald-500"
+                            style={{ width: `${(row.tp / hits) * 100}%` }}
+                          />
+                          <div
+                            className="h-full bg-rose-500"
+                            style={{ width: `${(row.sl / hits) * 100}%` }}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-primary-800 font-medium">بک‌تست شما</span>
+                      <span className="tabular-nums">
+                        {bt
+                          ? `TP ${bt.tp} · SL ${bt.sl}${
+                              btRate != null ? ` · ${btRate.toFixed(0)}%` : ''
+                            }`
+                          : 'بدون بک‌تست'}
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden flex">
+                      {btHits > 0 && (
+                        <>
+                          <div
+                            className="h-full bg-emerald-500"
+                            style={{ width: `${(bt.tp / btHits) * 100}%` }}
+                          />
+                          <div
+                            className="h-full bg-rose-500"
+                            style={{ width: `${(bt.sl / btHits) * 100}%` }}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {capture != null && (
+                  <div className="mt-3 pt-2 border-t border-amber-100 flex items-center justify-between text-xs">
+                    <span className="text-gray-500">نرخ جذب فرصت (TP بک‌تست ÷ TP بازار)</span>
+                    <span className="font-bold tabular-nums text-amber-900">
+                      {capture.toFixed(0)}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

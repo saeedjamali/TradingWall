@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import Loading from "@/components/Loading";
 import WallCalendar from "@/components/WallCalendar";
+import WallBacktestCalendar from "@/components/WallBacktestCalendar";
 import ProposalForm from "@/components/ProposalForm";
 import { UserName } from "@/components/VerifiedBadge";
 import { MONTH_NAMES } from "@/utils/periods";
@@ -216,32 +217,33 @@ export default function UserWallPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
+        {(privacy.showCalendar || privacy.showBacktestCalendar) && (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => shiftMonth(-1)}
+              className="px-3 py-1.5 rounded-lg border bg-white text-sm hover:bg-gray-50"
+            >
+              ماه قبل
+            </button>
+            <span className="text-sm font-medium min-w-[8rem] text-center bg-white px-3 py-1.5 rounded-lg border">
+              {MONTH_NAMES[monthCursor.month - 1]} {monthCursor.year}
+            </span>
+            <button
+              type="button"
+              onClick={() => shiftMonth(1)}
+              className="px-3 py-1.5 rounded-lg border bg-white text-sm hover:bg-gray-50"
+            >
+              ماه بعد
+            </button>
+          </div>
+        )}
+
         {privacy.showCalendar && (
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                📅 تقویم معاملاتی
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => shiftMonth(-1)}
-                  className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50"
-                >
-                  ماه قبل
-                </button>
-                <span className="text-sm font-medium min-w-[8rem] text-center">
-                  {MONTH_NAMES[monthCursor.month - 1]} {monthCursor.year}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => shiftMonth(1)}
-                  className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50"
-                >
-                  ماه بعد
-                </button>
-              </div>
-            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              📅 تقویم معاملاتی
+            </h2>
             {loading ? (
               <Loading text="در حال بارگذاری تقویم..." />
             ) : (
@@ -250,6 +252,23 @@ export default function UserWallPage() {
                 month={data.calendar?.month || monthCursor.month}
                 trades={data.calendar?.trades || []}
                 plans={data.calendar?.plans || []}
+              />
+            )}
+          </section>
+        )}
+
+        {privacy.showBacktestCalendar && (
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              🧪 تقویم بک‌تست
+            </h2>
+            {loading ? (
+              <Loading text="در حال بارگذاری تقویم بک‌تست..." />
+            ) : (
+              <WallBacktestCalendar
+                year={data.backtestCalendar?.year || monthCursor.year}
+                month={data.backtestCalendar?.month || monthCursor.month}
+                backtests={data.backtestCalendar?.backtests || []}
               />
             )}
           </section>
@@ -419,6 +438,7 @@ export default function UserWallPage() {
         )}
 
         {!privacy.showCalendar &&
+          !privacy.showBacktestCalendar &&
           !privacy.showAchievements &&
           !privacy.showActivities &&
           !privacy.showSetups &&
