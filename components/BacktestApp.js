@@ -999,21 +999,30 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ReportTable
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <VisualReportPanel
               title="عملکرد سشن‌ها"
+              subtitle="مقایسه سشن‌های معاملاتی"
               empty="داده‌ای برای سشن‌ها نیست"
               rows={monthStats.sessionRows}
+              accent="indigo"
+              unitLabel="سشن"
             />
-            <ReportTable
+            <VisualReportPanel
               title="عملکرد نمادها"
+              subtitle="مقایسه نمادهای معامله‌شده"
               empty="نماد ثبت‌شده‌ای نیست"
               rows={monthStats.symbolRows}
+              accent="sky"
+              unitLabel="نماد"
             />
-            <ReportTable
+            <VisualReportPanel
               title="عملکرد تایم‌فریم"
+              subtitle="مقایسه تایم‌فریم‌ها"
               empty="تایم‌فریمی ثبت نشده"
               rows={monthStats.timeframeRows}
+              accent="violet"
+              unitLabel="TF"
             />
           </div>
         </div>
@@ -1628,39 +1637,185 @@ function MarketRealitySetupPanel({ marketRows = [], backtestRows = [], marketSta
   )
 }
 
-function ReportTable({ title, empty, rows }) {
+function VisualReportPanel({
+  title,
+  subtitle,
+  empty,
+  rows = [],
+  accent = 'indigo',
+  unitLabel = 'مورد',
+}) {
+  const themes = {
+    indigo: {
+      shell: 'border-indigo-200/60 bg-gradient-to-b from-indigo-50/90 to-white',
+      chip: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      bar: 'bg-indigo-500',
+      soft: 'border-indigo-100 bg-white/80',
+    },
+    sky: {
+      shell: 'border-sky-200/60 bg-gradient-to-b from-sky-50/90 to-white',
+      chip: 'bg-sky-100 text-sky-800 border-sky-200',
+      bar: 'bg-sky-500',
+      soft: 'border-sky-100 bg-white/80',
+    },
+    violet: {
+      shell: 'border-violet-200/60 bg-gradient-to-b from-violet-50/90 to-white',
+      chip: 'bg-violet-100 text-violet-800 border-violet-200',
+      bar: 'bg-violet-500',
+      soft: 'border-violet-100 bg-white/80',
+    },
+  }
+  const t = themes[accent] || themes.indigo
+  const maxHits = Math.max(...rows.map((r) => r.tp + r.sl), 1)
+  const ranked = [...rows].sort((a, b) => {
+    const aHits = a.tp + a.sl
+    const bHits = b.tp + b.sl
+    const aRate = aHits > 0 ? a.tp / aHits : -1
+    const bRate = bHits > 0 ? b.tp / bHits : -1
+    if (bRate !== aRate) return bRate - aRate
+    return b.count - a.count || b.pnl - a.pnl
+  })
+
   return (
-    <div className="rounded-xl border border-white/10 bg-white/95 text-gray-900 p-4 md:p-5">
-      <h3 className="font-bold text-lg mb-3">{title}</h3>
+    <div className={`rounded-xl border p-4 md:p-5 text-gray-900 ${t.shell}`}>
+      <div className="flex flex-wrap items-end justify-between gap-2 mb-4">
+        <div>
+          <h3 className="font-bold text-lg">{title}</h3>
+          {subtitle && (
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          )}
+        </div>
+        {rows.length > 0 && (
+          <span className={`text-xs px-2 py-1 rounded-full border ${t.chip}`}>
+            {rows.length} {unitLabel}
+          </span>
+        )}
+      </div>
+
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-500">{empty}</p>
+        <p className="text-sm text-gray-500 text-center py-8">{empty}</p>
       ) : (
-        <ul className="space-y-2 max-h-64 overflow-y-auto">
-          {rows.map((row) => {
-            const rate =
-              row.tp + row.sl > 0
-                ? ((row.tp / (row.tp + row.sl)) * 100).toFixed(0)
-                : null
+        <ul className="space-y-2.5 max-h-[28rem] overflow-y-auto pr-0.5">
+          {ranked.map((row, index) => {
+            const hits = row.tp + row.sl
+            const hitRate = hits > 0 ? (row.tp / hits) * 100 : 0
+            const unitNet = row.tp - row.sl
+            const tone =
+              hits === 0
+                ? 'mid'
+                : hitRate >= 55
+                  ? 'good'
+                  : hitRate < 45
+                    ? 'bad'
+                    : 'mid'
+
             return (
               <li
                 key={row.key}
-                className="flex items-center justify-between gap-2 text-sm border-b border-gray-100 pb-2"
+                className={`rounded-xl border p-3 ${t.soft}`}
               >
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{row.label}</div>
-                  <div className="text-xs text-gray-500">
-                    {row.count} بک‌تست · TP {row.tp} · SL {row.sl}
-                    {rate != null ? ` · ${rate}%` : ''}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`shrink-0 w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${
+                        index === 0
+                          ? 'bg-amber-400 text-amber-950'
+                          : index === 1
+                            ? 'bg-gray-300 text-gray-800'
+                            : index === 2
+                              ? 'bg-orange-300 text-orange-950'
+                              : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-gray-900 truncate" title={row.label}>
+                        {row.label}
+                      </div>
+                      <div className="text-[11px] text-gray-500">
+                        {row.count} بک‌تست
+                        <span className="mx-1 text-gray-300">·</span>
+                        <span
+                          className={
+                            unitNet > 0
+                              ? 'text-emerald-700'
+                              : unitNet < 0
+                                ? 'text-rose-700'
+                                : 'text-gray-600'
+                          }
+                        >
+                          {unitNet >= 0 ? '+' : ''}
+                          {unitNet} R
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[10px] text-gray-500">Hit Rate</div>
+                    <div
+                      className={`text-base font-extrabold tabular-nums ${
+                        tone === 'good'
+                          ? 'text-emerald-700'
+                          : tone === 'bad'
+                            ? 'text-rose-700'
+                            : 'text-gray-800'
+                      }`}
+                    >
+                      {hits > 0 ? `${hitRate.toFixed(0)}%` : '—'}
+                    </div>
                   </div>
                 </div>
-                <div
-                  className={`shrink-0 font-bold tabular-nums text-xs ${
-                    row.pnl >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                  }`}
-                >
-                  {row.withRisk
-                    ? `${row.pnl >= 0 ? '+' : ''}$${row.pnl.toFixed(0)}`
-                    : '—'}
+
+                <div className="space-y-2">
+                  <div>
+                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          tone === 'good'
+                            ? 'bg-emerald-500'
+                            : tone === 'bad'
+                              ? 'bg-rose-500'
+                              : t.bar
+                        }`}
+                        style={{ width: `${hitRate}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] mb-1">
+                      <span className="text-emerald-700 font-medium">TP {row.tp}</span>
+                      <span className="text-rose-700 font-medium">SL {row.sl}</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex">
+                      <div
+                        className="h-full bg-emerald-500 transition-all"
+                        style={{
+                          width: `${hits > 0 ? (row.tp / maxHits) * 100 : 0}%`,
+                        }}
+                      />
+                      <div
+                        className="h-full bg-rose-500 transition-all"
+                        style={{
+                          width: `${hits > 0 ? (row.sl / maxHits) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-gray-100/80">
+                    <span className="text-[11px] text-gray-500">برایند</span>
+                    <span
+                      className={`text-sm font-bold tabular-nums ${
+                        row.pnl >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                      }`}
+                    >
+                      {row.withRisk
+                        ? `${row.pnl >= 0 ? '+' : ''}$${row.pnl.toFixed(2)}`
+                        : '—'}
+                    </span>
+                  </div>
                 </div>
               </li>
             )
@@ -1670,3 +1825,4 @@ function ReportTable({ title, empty, rows }) {
     </div>
   )
 }
+

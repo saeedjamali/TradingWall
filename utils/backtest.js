@@ -132,7 +132,10 @@ export function buildBacktestReports(backtests) {
   const bySession = {}
   const bySymbol = {}
   const byTimeframe = {}
-  const byDirection = { buy: emptyBucket(), sell: emptyBucket() }
+  const byDirection = {
+    buy: { ...emptyBucket(), key: 'buy', label: 'Buy' },
+    sell: { ...emptyBucket(), key: 'sell', label: 'Sell' },
+  }
   const byDay = {}
 
   for (const b of backtests || []) {
@@ -152,6 +155,10 @@ export function buildBacktestReports(backtests) {
 
     const bump = (map, key, label) => {
       if (!map[key]) map[key] = { ...emptyBucket(), key, label: label || key }
+      else {
+        if (!map[key].key) map[key].key = key
+        if (!map[key].label) map[key].label = label || key
+      }
       map[key].count += 1
       map[key].tp += bTp
       map[key].sl += bSl
@@ -168,7 +175,9 @@ export function buildBacktestReports(backtests) {
     bump(bySession, b.session || 'other', sessionLabel(b.session))
     bump(bySymbol, b.symbol || '—', b.symbol || '—')
     bump(byTimeframe, b.timeframe || '—', b.timeframe || '—')
-    bump(byDirection, b.direction === 'sell' ? 'sell' : 'buy', b.direction === 'sell' ? 'Sell' : 'Buy')
+    const dir =
+      String(b.direction || 'buy').toLowerCase() === 'sell' ? 'sell' : 'buy'
+    bump(byDirection, dir, dir === 'sell' ? 'Sell' : 'Buy')
 
     const d = new Date(b.date)
     const dayKey = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
