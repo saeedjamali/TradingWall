@@ -68,6 +68,18 @@ export default async function sitemap() {
       changeFrequency: 'weekly',
       priority: 0.85,
     },
+    {
+      url: `${siteUrl}/challenges`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.85,
+    },
+    {
+      url: `${siteUrl}/challenges/browse`,
+      lastModified: now,
+      changeFrequency: 'hourly',
+      priority: 0.9,
+    },
   ]
 
   let wallRoutes = []

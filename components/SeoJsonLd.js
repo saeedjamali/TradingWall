@@ -57,6 +57,11 @@ export default function SeoJsonLd() {
       },
       {
         '@type': 'WebPage',
+        name: 'چالش بک‌تست / چالش معامله',
+        url: absoluteUrl('/challenges'),
+      },
+      {
+        '@type': 'WebPage',
         name: 'لیدربورد تریدرها',
         url: absoluteUrl('/leaderboards'),
       },
@@ -84,6 +89,8 @@ export default function SeoJsonLd() {
       'دیوار عمومی تریدرها',
       'ابزار معامله فارکس',
       'بک‌تست معاملاتی',
+      'چالش بک‌تست',
+      'چالش معامله',
       'ماشین‌حساب ریسک و پیپ',
       'ساعت سشن‌های بازار',
     ],
@@ -101,6 +108,13 @@ export default function SeoJsonLd() {
         url: absoluteUrl('/backtest'),
         description:
           'ثبت بک‌تست روزانه، گزارش TP/SL و عملکرد ستاپ‌ها',
+      },
+      {
+        '@type': 'WebApplication',
+        name: 'چالش بک‌تست و چالش معامله',
+        url: absoluteUrl('/challenges'),
+        description:
+          'چالش بک‌تست و چالش معامله برای شناسایی نقاط ضعف و قوت و تحلیل عملکرد — نه رتبه‌بندی',
       },
     ],
   }

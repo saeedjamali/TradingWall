@@ -68,3 +68,40 @@ export async function sendCustomSMS(phone, message) {
     };
   }
 }
+
+/** Challenge invite — template 316496 with FULLNAME + LINK */
+export async function sendChallengeInviteSMS(phone, fullName, link) {
+  try {
+    const response = await axios.post(
+      `${SMS_IR_BASE_URL}/v1/send/verify`,
+      {
+        mobile: phone,
+        templateId: 164409,
+        parameters: [
+          { name: "FULLNAME", value: String(fullName || "کاربر").slice(0, 40) },
+          { name: "LINK", value: String(link).slice(0, 200) },
+        ],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": SMS_IR_API_KEY,
+        },
+      },
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error(
+      "SMS.ir Challenge Invite Error:",
+      error.response?.data || error.message,
+    );
+    return {
+      success: false,
+      error: error.response?.data?.message || "خطا در ارسال پیامک دعوت",
+    };
+  }
+}

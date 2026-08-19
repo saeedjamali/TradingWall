@@ -1,0 +1,1040 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+import Loading from '@/components/Loading'
+import SymbolSelect from '@/components/SymbolSelect'
+import { UserName } from '@/components/VerifiedBadge'
+import { getSessionUser } from '@/utils/session'
+import { BACKTEST_TIMEFRAMES } from '@/utils/backtest'
+import {
+  formatDualDateRange,
+  formatTopSetupLabel,
+  getChallengeTypeMeta,
+  pickTopSetup,
+  resolveChallengeType,
+} from '@/utils/challenge'
+
+const PHASE_FA = {
+  upcoming: 'به‌زودی',
+  active: 'در حال برگزاری',
+  ended: 'پایان‌یافته',
+  cancelled: 'لغو شده',
+}
+
+function toInputDate(d) {
+  if (!d) return ''
+  const x = d instanceof Date ? d : new Date(d)
+  if (Number.isNaN(x.getTime())) return ''
+  const y = x.getFullYear()
+  const m = String(x.getMonth() + 1).padStart(2, '0')
+  const day = String(x.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function MetricCell({ value, good }) {
+  if (value == null || value === '') {
+    return <td className="px-2 py-2 text-center text-gray-400 text-xs">—</td>
+  }
+  const cls =
+    good === true
+      ? 'text-emerald-700'
+      : good === false
+        ? 'text-rose-700'
+        : 'text-gray-800'
+  return (
+    <td className={`px-2 py-2 text-center text-xs font-semibold tabular-nums ${cls}`}>
+      {value}
+    </td>
+  )
+}
+
+export default function ChallengeDetailPage() {
+  const params = useParams()
+  const code = params?.id
+  const router = useRouter()
+
+  const [user, setUser] = useState(null)
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [joining, setJoining] = useState(false)
+  const [invitePhone, setInvitePhone] = useState('')
+  const [inviteBusy, setInviteBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editBusy, setEditBusy] = useState(false)
+  const [editForm, setEditForm] = useState(null)
+
+  useEffect(() => {
+    setUser(getSessionUser())
+  }, [])
+
+  const load = useCallback(async () => {
+    if (!code) return
+    setLoading(true)
+    setError('')
+    try {
+      const session = getSessionUser()
+      const qs = new URLSearchParams()
+      if (session?.id) qs.set('viewerId', session.id)
+      const res = await fetch(`/api/challenges/${code}?${qs}`)
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'خطا در دریافت چالش')
+      }
+      setData(json)
+      const ch = json.challenge
+      setEditForm({
+        title: ch.title || '',
+        description: ch.description || '',
+        symbol: ch.symbol || '',
+        timeframe: ch.timeframe || '',
+        backtestRangeStart: toInputDate(ch.backtestRangeStart),
+        backtestRangeEnd: toInputDate(ch.backtestRangeEnd),
+        challengeStartAt: toInputDate(ch.challengeStartAt),
+        challengeEndAt: toInputDate(ch.challengeEndAt),
+        maxParticipants:
+          ch.maxParticipants == null ? '' : String(ch.maxParticipants),
+        unlimited: ch.maxParticipants == null,
+        requireApproval: !!ch.requireApproval,
+        rules: ch.rules || '',
+      })
+    } catch (err) {
+      setError(err.message || 'خطا')
+      setData(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [code])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const inviteUrl = useMemo(() => {
+    if (typeof window === 'undefined' || !data?.challenge?.inviteCode) return ''
+    return `${window.location.origin}/challenges/${data.challenge.inviteCode}`
+  }, [data?.challenge?.inviteCode])
+
+  const handleJoin = async () => {
+    if (!user?.id) {
+      router.push(`/auth/login?next=/challenges/${code}`)
+      return
+    }
+    setJoining(true)
+    try {
+      const res = await fetch(`/api/challenges/${code}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || 'خطا در عضویت')
+      alert(json.message || 'عضویت انجام شد')
+      await load()
+    } catch (err) {
+      alert(err.message || 'خطا')
+    } finally {
+      setJoining(false)
+    }
+  }
+
+  const handleModerate = async (participantId, action) => {
+    if (!user?.id) return
+    try {
+      const res = await fetch(`/api/challenges/${code}/moderate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, participantId, action }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || 'خطا')
+      await load()
+    } catch (err) {
+      alert(err.message || 'خطا')
+    }
+  }
+
+  const handleInviteSms = async (e) => {
+    e.preventDefault()
+    if (!user?.id) return
+    setInviteBusy(true)
+    try {
+      const res = await fetch(`/api/challenges/${code}/invite-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, phone: invitePhone }),
+      })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error || 'ارسال ناموفق')
+      alert('پیامک دعوت ارسال شد')
+      setInvitePhone('')
+    } catch (err) {
+      alert(err.message || 'خطا در ارسال پیامک')
+    } finally {
+      setInviteBusy(false)
+    }
+  }
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      alert(inviteUrl)
+    }
+  }
+
+  const endChallenge = async () => {
+    if (!user?.id || !confirm('چالش پایان یابد؟')) return
+    const res = await fetch(`/api/challenges/${code}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, status: 'ended' }),
+    })
+    const json = await res.json()
+    if (!json.success) alert(json.error || 'خطا')
+    else await load()
+  }
+
+  const deleteChallenge = async () => {
+    if (!user?.id) return
+    if (
+      !confirm(
+        'چالش برای همیشه حذف شود؟ این کار فقط وقتی ممکن است که هنوز کسی جز شما عضو نشده باشد.',
+      )
+    ) {
+      return
+    }
+    try {
+      const res = await fetch(`/api/challenges/${code}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || 'حذف ناموفق')
+      router.push('/challenges')
+    } catch (err) {
+      alert(err.message || 'خطا در حذف')
+    }
+  }
+
+  const saveEdit = async (e) => {
+    e.preventDefault()
+    if (!user?.id || !editForm) return
+    const tradeChallenge = resolveChallengeType(data?.challenge) === 'trade'
+    const todayMin = toInputDate(new Date())
+    const windowStart = tradeChallenge
+      ? editForm.backtestRangeStart
+      : editForm.challengeStartAt
+    const windowEnd = tradeChallenge
+      ? editForm.backtestRangeEnd
+      : editForm.challengeEndAt
+    if (windowStart < todayMin || windowEnd < todayMin) {
+      alert('تاریخ شروع و پایان چالش نمی‌تواند قبل از امروز باشد')
+      return
+    }
+    setEditBusy(true)
+    try {
+      const res = await fetch(`/api/challenges/${code}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          title: editForm.title,
+          description: editForm.description,
+          symbol: editForm.symbol,
+          timeframe: editForm.timeframe,
+          backtestRangeStart: editForm.backtestRangeStart,
+          backtestRangeEnd: editForm.backtestRangeEnd,
+          challengeStartAt: tradeChallenge
+            ? editForm.backtestRangeStart
+            : editForm.challengeStartAt,
+          challengeEndAt: tradeChallenge
+            ? editForm.backtestRangeEnd
+            : editForm.challengeEndAt,
+          maxParticipants: editForm.unlimited
+            ? null
+            : Number(editForm.maxParticipants) || 20,
+          requireApproval: editForm.requireApproval,
+          rules: editForm.rules,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || 'ذخیره ناموفق')
+      setEditing(false)
+      await load()
+    } catch (err) {
+      alert(err.message || 'خطا در ذخیره')
+    } finally {
+      setEditBusy(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loading text="در حال بارگذاری چالش..." />
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4" dir="rtl">
+        <div className="text-center">
+          <p className="text-rose-600 mb-4">{error || 'چالش یافت نشد'}</p>
+          <Link href="/challenges" className="text-primary-600 hover:underline">
+            بازگشت
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const c = data.challenge
+  const viewer = data.viewer
+  const standings = data.standings || []
+  const typeMeta = getChallengeTypeMeta(resolveChallengeType(c))
+  const isTrade = resolveChallengeType(c) === 'trade'
+  const canEditOrDelete = !!(data.canEditOrDelete || viewer?.canEditOrDelete)
+  const activityRange = formatDualDateRange(c.backtestRangeStart, c.backtestRangeEnd)
+  const windowRange = formatDualDateRange(c.challengeStartAt, c.challengeEndAt)
+  const canJoin =
+    c.phase !== 'ended' &&
+    c.phase !== 'cancelled' &&
+    (!viewer || (!viewer.isParticipant && viewer.participationStatus !== 'pending'))
+
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+        <div className="container mx-auto px-4 py-8 max-w-6xl" dir="rtl">
+          <Link href="/challenges/browse" className="text-sm text-primary-300 hover:underline">
+            ← همه چالش‌ها
+          </Link>
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-5">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                    isTrade
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-400/25'
+                      : 'bg-emerald-500/15 text-emerald-300 border-emerald-400/25'
+                  }`}
+                >
+                  {typeMeta.label}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-300">
+                  {PHASE_FA[c.phase] || c.status}
+                </span>
+                {(data.resultsFrozen || c.resultsFrozen || c.phase === 'ended') && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/20">
+                    نتایج قفل‌شده
+                  </span>
+                )}
+                {c.requireApproval ? (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200 border border-amber-400/20">
+                    خصوصی — با تایید سازنده
+                  </span>
+                ) : (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-300">
+                    عمومی — بدون تایید
+                  </span>
+                )}
+              </div>
+
+              <h1 className="text-2xl md:text-3xl font-bold leading-snug">{c.title}</h1>
+
+              {c.description ? (
+                <p className="mt-2 text-sm text-gray-400 max-w-2xl line-clamp-2">
+                  {c.description}
+                </p>
+              ) : null}
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <MetaChip>
+                  <span className="text-gray-500">نماد</span>
+                  <span className="text-emerald-300 font-bold" dir="ltr">
+                    {c.symbol}
+                    {c.timeframe ? ` · ${c.timeframe}` : ''}
+                  </span>
+                </MetaChip>
+                <MetaChip>
+                  <span className="text-gray-500">هدف روزانه</span>
+                  <span className="text-white font-semibold">
+                    هر روز ≥ ۱ {isTrade ? 'معامله' : 'بک‌تست'}
+                    {c.activityDayCount
+                      ? ` · ${c.activityDayCount} روز`
+                      : ''}
+                  </span>
+                </MetaChip>
+                <MetaChip>
+                  <span className="text-gray-500">ظرفیت</span>
+                  <span className="text-white font-semibold">
+                    {c.maxParticipants == null
+                      ? 'نامحدود'
+                      : `${c.approvedCount || 0}/${c.maxParticipants}`}
+                  </span>
+                </MetaChip>
+                {c.creator && (
+                  <MetaChip>
+                    <span className="text-gray-500">سازنده</span>
+                    <UserName
+                      name={c.creator.publicName}
+                      verified={c.creator.verified}
+                      className="text-white text-xs"
+                      badgeClassName="w-3.5 h-3.5 text-blue-400"
+                    />
+                  </MetaChip>
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-2 max-w-2xl">
+                <RangeCard
+                  label={isTrade ? 'بازه معاملات / بازه چالش' : 'بازه چارت'}
+                  range={activityRange}
+                />
+                {!isTrade && (
+                  <RangeCard label="بازه چالش (مهلت انجام)" range={windowRange} />
+                )}
+              </div>
+
+              {viewer?.isParticipant && (() => {
+                const mine = standings.find(
+                  (s) => String(s.userId) === String(viewer.id || user?.id),
+                )
+                if (!mine) return null
+                const pct = mine.progressPct ?? 0
+                return (
+                  <div className="mt-4 max-w-2xl rounded-xl border border-white/10 bg-white/[0.05] p-3">
+                    <div className="flex items-center justify-between gap-2 text-xs mb-2">
+                      <span className="text-gray-400">پیشرفت شما در چالش</span>
+                      <span className="font-bold text-emerald-300 tabular-nums">
+                        {pct}%
+                        <span className="text-gray-500 font-normal mr-1">
+                          ({mine.coveredDays ?? 0}/{mine.totalDays ?? c.activityDayCount ?? '—'} روز)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          pct >= 100 ? 'bg-emerald-400' : 'bg-primary-500'
+                        }`}
+                        style={{ width: `${Math.min(100, pct)}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
+                      {typeMeta.progressHint}
+                    </p>
+                  </div>
+                )
+              })()}
+            </div>
+
+            <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
+              {canJoin && (
+                <button
+                  type="button"
+                  onClick={handleJoin}
+                  disabled={joining}
+                  className="px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 font-semibold text-sm disabled:opacity-50"
+                >
+                  {!user
+                    ? 'ورود و پیوستن به چالش'
+                    : joining
+                      ? '…'
+                      : c.requireApproval
+                        ? 'درخواست عضویت'
+                        : 'پیوستن به چالش'}
+                </button>
+              )}
+              {viewer?.participationStatus === 'pending' && (
+                <p className="text-xs text-amber-200 text-center">در انتظار تایید سازنده</p>
+              )}
+              {viewer?.isParticipant && (
+                <Link
+                  href={isTrade ? '/dashboard' : '/backtest'}
+                  className="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-center text-sm font-semibold hover:bg-white/15"
+                >
+                  {isTrade ? 'تقویم معاملاتی' : 'تقویم بک‌تست'}
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl space-y-6" dir="rtl">
+        <section className="bg-sky-50 border border-sky-100 rounded-xl p-4 text-sm text-sky-900/90 leading-relaxed space-y-2">
+          <h2 className="font-bold text-sky-950">راهنمای بازه</h2>
+          {isTrade ? (
+            <p>
+              <strong>بازه چالش = بازه معاملات:</strong> فقط معاملات واقعی بسته‌شده در این بازه
+              (و روی نماد چالش) شمرده می‌شوند. هر معامله باید در روز خودش انجام شود؛ نمی‌توان
+              معاملات یک ماه را در یک هفته جلو جلو بست. با پایان تاریخ یا اعلام پایان توسط
+              سازنده، نتایج ثابت می‌شوند.
+            </p>
+          ) : (
+            <p>
+              <strong>بازه چارت</strong> روزهای تاریخی است که باید برای هر کدام حداقل یک بک‌تست
+              ثبت شود. <strong>بازه چالش</strong> مهلت انجام است و می‌تواند کوتاه‌تر باشد —
+              مثلاً یک ماه چارت را در یک هفته بک‌تست کنید. با پایان بازه چالش یا اعلام پایان
+              توسط سازنده، نتایج ثابت می‌شوند.
+            </p>
+          )}
+        </section>
+
+        {c.rules && (
+          <section className="bg-white rounded-xl border border-gray-100 p-5">
+            <h2 className="font-bold text-gray-900 mb-2">قوانین</h2>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap">{c.rules}</p>
+          </section>
+        )}
+
+        {viewer?.isCreator && (
+          <section className="bg-white rounded-xl border border-amber-100 p-5 space-y-4">
+            <h2 className="font-bold text-gray-900">مدیریت چالش (سازنده)</h2>
+
+            <div className="flex flex-wrap gap-2 items-center">
+              <input
+                readOnly
+                value={inviteUrl}
+                className="flex-1 min-w-[200px] rounded-lg border border-gray-200 px-3 py-2 text-xs"
+              />
+              <button
+                type="button"
+                onClick={copyLink}
+                className="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-semibold"
+              >
+                {copied ? 'کپی شد' : 'کپی لینک دعوت'}
+              </button>
+              {canEditOrDelete && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setEditing((v) => !v)}
+                    className="px-3 py-2 rounded-lg border border-sky-200 text-sky-800 text-xs font-semibold bg-sky-50"
+                  >
+                    {editing ? 'بستن ویرایش' : 'ویرایش چالش'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deleteChallenge}
+                    className="px-3 py-2 rounded-lg border border-rose-300 text-rose-800 text-xs font-semibold bg-rose-50"
+                  >
+                    حذف چالش
+                  </button>
+                </>
+              )}
+              {c.phase !== 'ended' && (
+                <button
+                  type="button"
+                  onClick={endChallenge}
+                  className="px-3 py-2 rounded-lg border border-rose-200 text-rose-700 text-xs font-semibold"
+                >
+                  پایان چالش
+                </button>
+              )}
+            </div>
+
+            {canEditOrDelete && (
+              <p className="text-[11px] text-gray-500">
+                ویرایش و حذف فقط تا قبل از عضویت نفر بعدی ممکن است.
+              </p>
+            )}
+
+            {editing && canEditOrDelete && editForm && (
+              <form
+                onSubmit={saveEdit}
+                className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 space-y-3"
+              >
+                <h3 className="text-sm font-bold text-gray-900">ویرایش چالش</h3>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-1">عنوان</label>
+                  <input
+                    required
+                    value={editForm.title}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, title: e.target.value })
+                    }
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-1">توضیح</label>
+                  <textarea
+                    rows={2}
+                    value={editForm.description}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, description: e.target.value })
+                    }
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] text-gray-500 mb-1">نماد</label>
+                    <SymbolSelect
+                      value={editForm.symbol}
+                      onChange={(symbol) =>
+                        setEditForm({ ...editForm, symbol })
+                      }
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-500 mb-1">
+                      تایم‌فریم پیشنهادی
+                    </label>
+                    <select
+                      value={editForm.timeframe}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, timeframe: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    >
+                      <option value="">اختیاری</option>
+                      {BACKTEST_TIMEFRAMES.map((tf) => (
+                        <option key={tf} value={tf}>
+                          {tf}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 leading-relaxed">
+                  <strong>{typeMeta.minLabel}:</strong> {typeMeta.progressHint}
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-700 mb-1">
+                    {isTrade ? 'بازه معاملات / بازه چالش' : 'بازه چارت'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] text-gray-500 mb-1">از</label>
+                      <input
+                        type="date"
+                        required
+                        min={isTrade ? toInputDate(new Date()) : undefined}
+                        value={editForm.backtestRangeStart}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            backtestRangeStart: e.target.value,
+                          })
+                        }
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-gray-500 mb-1">تا</label>
+                      <input
+                        type="date"
+                        required
+                        min={isTrade ? toInputDate(new Date()) : undefined}
+                        value={editForm.backtestRangeEnd}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            backtestRangeEnd: e.target.value,
+                          })
+                        }
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+                {!isTrade && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-gray-700 mb-1">
+                      بازه چالش (مهلت انجام بک‌تست)
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] text-gray-500 mb-1">
+                          شروع چالش
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          min={toInputDate(new Date())}
+                          value={editForm.challengeStartAt}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              challengeStartAt: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-gray-500 mb-1">
+                          پایان چالش
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          min={toInputDate(new Date())}
+                          value={editForm.challengeEndAt}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              challengeEndAt: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={editForm.unlimited}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, unlimited: e.target.checked })
+                    }
+                  />
+                  بدون سقف شرکت‌کننده
+                </label>
+                {!editForm.unlimited && (
+                  <input
+                    type="number"
+                    min="2"
+                    value={editForm.maxParticipants}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        maxParticipants: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    placeholder="حداکثر افراد"
+                  />
+                )}
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-1">دسترسی</label>
+                  <select
+                    value={editForm.requireApproval ? 'private' : 'public'}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        requireApproval: e.target.value === 'private',
+                      })
+                    }
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  >
+                    <option value="public">عمومی — پیوستن بدون تایید</option>
+                    <option value="private">خصوصی — پیوستن با تایید سازنده</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-500 mb-1">قوانین</label>
+                  <textarea
+                    rows={2}
+                    value={editForm.rules}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, rules: e.target.value })
+                    }
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={editBusy}
+                  className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold disabled:opacity-50"
+                >
+                  {editBusy ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+                </button>
+              </form>
+            )}
+
+            <form onSubmit={handleInviteSms} className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-[11px] text-gray-500 mb-1">
+                  دعوت با پیامک (شماره همراه)
+                </label>
+                <input
+                  value={invitePhone}
+                  onChange={(e) => setInvitePhone(e.target.value)}
+                  placeholder="09123456789"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={inviteBusy || !invitePhone}
+                className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {inviteBusy ? '…' : 'ارسال پیامک دعوت'}
+              </button>
+            </form>
+
+            {data.participants?.some((p) => p.status === 'pending') && (
+              <div>
+                <h3 className="text-sm font-bold mb-2">درخواست‌های عضویت</h3>
+                <ul className="space-y-2">
+                  {data.participants
+                    .filter((p) => p.status === 'pending')
+                    .map((p) => (
+                      <li
+                        key={p.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm"
+                      >
+                        <span>{p.user?.publicName || 'کاربر'}</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleModerate(p.id, 'approve')}
+                            className="px-2 py-1 rounded bg-emerald-600 text-white text-xs"
+                          >
+                            تایید
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleModerate(p.id, 'reject')}
+                            className="px-2 py-1 rounded bg-rose-50 text-rose-700 text-xs"
+                          >
+                            رد
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
+
+        <section className="bg-white rounded-xl border border-gray-100 p-4 md:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-2 mb-4">
+            <div>
+              <h2 className="font-bold text-lg text-gray-900">جدول تحلیل نقاط ضعف و قوت</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                برای یادگیری و تحلیل — نه رتبه‌بندی. ستون‌ها = شرکت‌کنندگان · سطرها = شاخص‌ها (
+                {isTrade
+                  ? `معاملات واقعی ${c.symbol} در بازه معاملات`
+                  : `بک‌تست‌های ${c.symbol} در بازه چارت`}
+                )
+              </p>
+              {(data.resultsFrozen || c.resultsFrozen || c.phase === 'ended') && (
+                <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 inline-block">
+                  نتایج این چالش قفل شده‌اند و با ثبت دادهٔ جدید تغییر نمی‌کنند
+                  {c.resultsFrozenAt || data.resultsFrozenAt
+                    ? ` · از ${new Date(c.resultsFrozenAt || data.resultsFrozenAt).toLocaleDateString('fa-IR')}`
+                    : ''}
+                </p>
+              )}
+            </div>
+            {!user && (
+              <Link
+                href={`/auth/login?next=/challenges/${code}`}
+                className="text-sm text-primary-600 font-semibold"
+              >
+                برای شرکت وارد شوید
+              </Link>
+            )}
+          </div>
+
+          {!data.canViewResults ? (
+            <p className="text-sm text-gray-500 text-center py-10">
+              نتایج این چالش خصوصی است — فقط شرکت‌کنندگان تاییدشده می‌توانند جدول را ببینند.
+              {!viewer?.isParticipant && canJoin && (
+                <span className="block mt-2">برای دیدن نتایج، به چالش بپیوندید.</span>
+              )}
+            </p>
+          ) : standings.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-10">
+              هنوز داده‌ای برای تحلیل ثبت نشده است
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="sticky right-0 z-10 bg-gray-50 px-3 py-2 text-right text-xs font-bold text-gray-600 border-b min-w-[120px]">
+                      شاخص
+                    </th>
+                    {standings.map((s) => (
+                      <th
+                        key={s.userId}
+                        className="px-3 py-2 text-center border-b min-w-[110px]"
+                      >
+                        <Link
+                          href={`/wall/${s.userId}`}
+                          className="font-bold text-primary-700 hover:underline text-xs"
+                        >
+                          <UserName
+                            name={s.publicName}
+                            verified={s.verified}
+                            badgeClassName="w-3.5 h-3.5 text-blue-500"
+                          />
+                        </Link>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <StandingRow
+                    label="پیشرفت چالش"
+                    standings={standings}
+                    get={(s) =>
+                      s.progressPct != null
+                        ? `${s.progressPct}% (${s.coveredDays ?? 0}/${s.totalDays ?? '—'})`
+                        : '—'
+                    }
+                    goodFn={(s) => (s.progressPct || 0) >= 100}
+                  />
+                  <StandingRow
+                    label={typeMeta.entriesLabel}
+                    standings={standings}
+                    get={(s) => s.count}
+                  />
+                  <StandingRow
+                    label={isTrade ? 'برد' : 'TP'}
+                    standings={standings}
+                    get={(s) => (isTrade ? s.wins : s.tp)}
+                    good
+                  />
+                  <StandingRow
+                    label={isTrade ? 'باخت' : 'SL'}
+                    standings={standings}
+                    get={(s) => (isTrade ? s.losses : s.sl)}
+                    good={false}
+                  />
+                  <StandingRow
+                    label={isTrade ? 'برایند (برد−باخت)' : 'برایند (TP−SL)'}
+                    standings={standings}
+                    get={(s) => `${s.unitNet >= 0 ? '+' : ''}${s.unitNet}`}
+                    goodFn={(s) => s.unitNet > 0}
+                  />
+                  <StandingRow
+                    label="Hit Rate / وین‌ریت"
+                    standings={standings}
+                    get={(s) =>
+                      s.hitRate != null ? `${s.hitRate.toFixed(1)}%` : '—'
+                    }
+                  />
+                  <StandingRow
+                    label="Profit Factor"
+                    standings={standings}
+                    get={(s) =>
+                      s.profitFactor == null
+                        ? '—'
+                        : s.profitFactor === Infinity
+                          ? '∞'
+                          : s.profitFactor.toFixed(2)
+                    }
+                  />
+                  {!isTrade && (
+                    <StandingRow
+                      label="Expectancy"
+                      standings={standings}
+                      get={(s) =>
+                        s.expectancy != null
+                          ? `${s.expectancy >= 0 ? '+' : ''}${s.expectancy.toFixed(2)} R`
+                          : '—'
+                      }
+                    />
+                  )}
+                  <StandingRow
+                    label={isTrade ? 'سود/زیان $' : 'برایند $'}
+                    standings={standings}
+                    get={(s) =>
+                      s.withRisk
+                        ? `${s.pnl >= 0 ? '+' : ''}${Number(s.pnl).toFixed(0)}`
+                        : '—'
+                    }
+                    goodFn={(s) => s.withRisk && s.pnl > 0}
+                  />
+                  <StandingRow label="Buy (تعداد)" standings={standings} get={(s) => s.buyCount} />
+                  <StandingRow
+                    label={isTrade ? 'Buy برد / باخت' : 'Buy TP / SL'}
+                    standings={standings}
+                    get={(s) => `${s.buyTp} / ${s.buySl}`}
+                  />
+                  <StandingRow label="Sell (تعداد)" standings={standings} get={(s) => s.sellCount} />
+                  <StandingRow
+                    label={isTrade ? 'Sell برد / باخت' : 'Sell TP / SL'}
+                    standings={standings}
+                    get={(s) => `${s.sellTp} / ${s.sellSl}`}
+                  />
+                  <StandingRow
+                    label="روز فعال"
+                    standings={standings}
+                    get={(s) => s.activeDays}
+                  />
+                  <StandingRow
+                    label="ستاپ برتر"
+                    standings={standings}
+                    get={(s) => {
+                      const kind = isTrade ? 'trade' : 'backtest'
+                      return formatTopSetupLabel(
+                        s.topSetup || pickTopSetup(s.setupRows, kind),
+                        kind,
+                      )
+                    }}
+                  />
+                  {!isTrade && (
+                    <StandingRow
+                      label="سشن برتر"
+                      standings={standings}
+                      get={(s) => s.sessionRows?.[0]?.label || '—'}
+                    />
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  )
+}
+
+function MetaChip({ children }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs">
+      {children}
+    </span>
+  )
+}
+
+function RangeCard({ label, range }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5">
+      <div className="text-[10px] font-semibold text-gray-500 mb-1">{label}</div>
+      <div className="text-sm font-semibold text-white tabular-nums leading-snug">
+        {range.fa}
+      </div>
+      <div className="text-[11px] text-gray-500 mt-0.5 tabular-nums" dir="ltr">
+        {range.en}
+      </div>
+    </div>
+  )
+}
+
+function StandingRow({ label, standings, get, good, goodFn }) {
+  return (
+    <tr className="border-b border-gray-100 hover:bg-gray-50/80">
+      <th className="sticky right-0 z-10 bg-white px-3 py-2 text-right text-xs font-medium text-gray-700 border-l">
+        {label}
+      </th>
+      {standings.map((s) => {
+        const val = get(s)
+        let tone
+        if (goodFn) tone = goodFn(s)
+        else if (good === true) tone = true
+        else if (good === false) tone = false
+        return <MetricCell key={s.userId} value={val} good={tone} />
+      })}
+    </tr>
+  )
+}

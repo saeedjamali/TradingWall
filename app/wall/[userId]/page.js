@@ -274,6 +274,67 @@ export default function UserWallPage() {
           </section>
         )}
 
+        {privacy.showChallenges && (
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6" dir="rtl">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              چالش‌های بک‌تست
+            </h2>
+            {(data.challenges || []).length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-8">
+                چالشی برای نمایش نیست
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {data.challenges.map((ch) => (
+                  <Link
+                    key={ch.id}
+                    href={`/challenges/${ch.inviteCode}`}
+                    className="block rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 p-4 transition-colors"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-gray-900">{ch.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {ch.type === 'trade' ? 'چالش معامله' : 'چالش بک‌تست'}
+                          {' · '}
+                          {ch.symbol}
+                          {' · '}
+                          {ch.role === 'creator' ? 'سازنده' : 'شرکت‌کننده'}
+                          {' · '}
+                          {ch.phase === 'ended'
+                            ? 'پایان‌یافته'
+                            : ch.phase === 'active'
+                              ? 'فعال'
+                              : ch.phase === 'upcoming'
+                                ? 'به‌زودی'
+                                : ch.phase}
+                        </p>
+                      </div>
+                      {privacy.showChallengeResults && ch.result && (
+                        <div className="text-xs text-left space-y-0.5 tabular-nums">
+                          <div>
+                            <span className="text-emerald-700">TP {ch.result.tp}</span>
+                            {' · '}
+                            <span className="text-rose-700">SL {ch.result.sl}</span>
+                          </div>
+                          <div className="text-gray-700 font-semibold">
+                            {ch.result.unitNet >= 0 ? '+' : ''}
+                            {ch.result.unitNet} R
+                            {ch.result.hitRate != null
+                              ? ` · ${ch.result.hitRate.toFixed(0)}%`
+                              : ''}
+                          </div>
+                          <div className="text-gray-400">{ch.result.count} بک‌تست</div>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {privacy.showAchievements && (
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -439,6 +500,7 @@ export default function UserWallPage() {
 
         {!privacy.showCalendar &&
           !privacy.showBacktestCalendar &&
+          !privacy.showChallenges &&
           !privacy.showAchievements &&
           !privacy.showActivities &&
           !privacy.showSetups &&

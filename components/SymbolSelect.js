@@ -104,15 +104,15 @@ export default function SymbolSelect({ value, onChange, required = false, disabl
       )}
 
       {open && !disabled && (
-        <div className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="p-2 border-b">
+        <div className="absolute z-30 mt-1 w-full bg-white text-gray-900 border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
             <input
               autoFocus
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="جستجو: US30، طلا، BTC..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div className="max-h-64 overflow-y-auto">

@@ -154,7 +154,7 @@ export default function SiteFooter() {
             </span>
             <span className="text-gray-600 hidden sm:inline">·</span>
             <span className="hidden sm:inline text-gray-500">
-              تحلیل، ژورنال، رقابت
+              تحلیل، ژورنال، یادگیری
             </span>
           </p>
           {/* Enamad — بدون rel=noopener/noreferrer (الزام اینماد) */}

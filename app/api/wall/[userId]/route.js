@@ -7,7 +7,17 @@ import Achievement from '@/models/Achievement'
 import Activity from '@/models/Activity'
 import Setup from '@/models/Setup'
 import Backtest from '@/models/Backtest'
+import BacktestChallenge from '@/models/BacktestChallenge'
+import ChallengeParticipant from '@/models/ChallengeParticipant'
 import { requireAdmin } from '@/utils/adminAuth'
+import {
+  buildChallengeStanding,
+  buildTradeChallengeStanding,
+  challengeDateBounds,
+  getChallengePhase,
+  resolveChallengeType,
+} from '@/utils/challenge'
+import { getChallengeStandings } from '@/utils/challengeStandings'
 
 /**
  * GET /api/wall/[userId]
@@ -41,6 +51,8 @@ export async function GET(request, { params }) {
       isPublic: false,
       showCalendar: false,
       showBacktestCalendar: false,
+      showChallenges: false,
+      showChallengeResults: false,
       showAchievements: true,
       showActivities: true,
       showSetups: true,
@@ -78,6 +90,8 @@ export async function GET(request, { params }) {
     // Admin can see every section even when owner hid them
     const showCalendar = isAdminView || !!privacy.showCalendar
     const showBacktestCalendar = isAdminView || !!privacy.showBacktestCalendar
+    const showChallenges = isAdminView || !!privacy.showChallenges
+    const showChallengeResults = isAdminView || !!privacy.showChallengeResults
     const showAchievements = isAdminView || !!privacy.showAchievements
     const showActivities = isAdminView || !!privacy.showActivities
     const showSetups = isAdminView || !!privacy.showSetups
@@ -100,6 +114,8 @@ export async function GET(request, { params }) {
         isPublic: !!privacy.isPublic,
         showCalendar,
         showBacktestCalendar,
+        showChallenges,
+        showChallengeResults,
         showAchievements,
         showActivities,
         showSetups,
@@ -107,6 +123,7 @@ export async function GET(request, { params }) {
       },
       calendar: null,
       backtestCalendar: null,
+      challenges: null,
       achievements: null,
       activities: null,
       setups: null,
@@ -157,6 +174,103 @@ export async function GET(request, { params }) {
         month: month + 1,
         backtests,
       }
+    }
+
+    if (showChallenges) {
+      const created = await BacktestChallenge.find({ creatorId: userId })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean()
+
+      const parts = await ChallengeParticipant.find({
+        userId,
+        status: 'approved',
+      })
+        .populate('challengeId')
+        .lean()
+
+      const joined = parts
+        .map((p) => p.challengeId)
+        .filter((c) => c && String(c.creatorId) !== String(userId))
+
+      const allChallenges = [...created, ...joined]
+      const uniq = []
+      const seen = new Set()
+      for (const ch of allChallenges) {
+        const id = String(ch._id)
+        if (seen.has(id)) continue
+        seen.add(id)
+        uniq.push(ch)
+      }
+
+      payload.challenges = await Promise.all(
+        uniq.slice(0, 15).map(async (ch) => {
+          const resolvedType = resolveChallengeType(ch)
+          const base = {
+            id: String(ch._id),
+            inviteCode: ch.inviteCode,
+            title: ch.title,
+            symbol: ch.symbol,
+            type: resolvedType,
+            challengeType: resolvedType,
+            phase: getChallengePhase(ch),
+            role: String(ch.creatorId) === String(userId) ? 'creator' : 'participant',
+            challengeEndAt: ch.challengeEndAt,
+            result: null,
+          }
+
+          if (showChallengeResults) {
+            const phase = getChallengePhase(ch)
+            let standing = null
+
+            if (phase === 'ended' || phase === 'cancelled') {
+              const { standings } = await getChallengeStandings(ch)
+              standing =
+                standings.find((s) => String(s.userId) === String(userId)) || null
+            } else {
+              const { start, end } = challengeDateBounds(ch)
+              const symbolFilter = {
+                $regex: `^${String(ch.symbol).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
+                $options: 'i',
+              }
+              if (resolvedType === 'trade') {
+                const trades = await Trade.find({
+                  userId,
+                  symbol: symbolFilter,
+                  closeTime: { $gte: start, $lte: end },
+                }).lean()
+                standing = buildTradeChallengeStanding(user, trades, {
+                  start,
+                  end,
+                })
+              } else {
+                const backtests = await Backtest.find({
+                  userId,
+                  symbol: symbolFilter,
+                  date: { $gte: start, $lte: end },
+                }).lean()
+                standing = buildChallengeStanding(user, backtests, {
+                  start,
+                  end,
+                })
+              }
+            }
+
+            if (standing) {
+              base.result = {
+                count: standing.count,
+                tp: standing.tp,
+                sl: standing.sl,
+                unitNet: standing.unitNet,
+                hitRate: standing.hitRate,
+                pnl: standing.pnl,
+              }
+            }
+          }
+
+          return base
+        }),
+      )
     }
 
     if (showAchievements) {

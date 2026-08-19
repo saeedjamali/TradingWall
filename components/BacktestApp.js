@@ -10,8 +10,8 @@ import BacktestModal from '@/components/BacktestModal'
 import BacktestCharts from '@/components/BacktestCharts'
 import MarketRealityDayPanel from '@/components/MarketRealityDayPanel'
 import BacktestListModal from '@/components/BacktestListModal'
-import { UserName } from '@/components/VerifiedBadge'
 import { getSessionUser } from '@/utils/session'
+import AppTopNav from '@/components/AppTopNav'
 import {
   sameLocalDay,
   buildBacktestReports,
@@ -255,62 +255,10 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
             <span className="text-white/30 hidden md:inline">|</span>
             <h1 className="text-lg md:text-xl font-bold truncate">بک‌تست</h1>
           </div>
-          <nav className="flex items-center gap-1 md:gap-2 text-sm">
-            <Link
-              href="/dashboard"
-              className="hidden md:inline text-white/70 hover:text-white px-2"
-            >
-              دیوار معاملاتی
-            </Link>
-            <Link
-              href="/backtest"
-              className="hidden md:inline text-primary-300 font-semibold px-2"
-            >
-              بک‌تست
-            </Link>
-            <Link
-              href="/dashboard/trades"
-              className="hidden md:inline text-white/70 hover:text-white px-2"
-            >
-              لیست معاملات
-            </Link>
-            <Link
-              href="/profile"
-              className="hidden md:inline text-white/70 hover:text-white px-2"
-            >
-              پروفایل
-            </Link>
-            <Link
-              href="/dashboard"
-              title="دیوار معاملاتی"
-              className="md:hidden p-2 rounded-lg text-white/70 hover:bg-white/10"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </Link>
-            <Link
-              href="/dashboard/trades"
-              title="لیست معاملات"
-              className="md:hidden p-2 rounded-lg text-white/70 hover:bg-white/10"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </Link>
-            <UserName
-              name={user.publicName}
-              verified={user.verified}
-              className="hidden sm:inline-flex text-white/70 text-xs max-w-[120px]"
-            />
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="px-3 py-1.5 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 text-xs"
-            >
-              خروج
-            </button>
-          </nav>
+          <AppTopNav
+            isAdmin={user?.role === 'admin'}
+            onLogout={handleLogout}
+          />
         </div>
       </header>
 

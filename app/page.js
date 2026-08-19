@@ -19,9 +19,14 @@ export default function Home() {
   const [supportPhone, setSupportPhone] = useState("");
   const [supportReason, setSupportReason] = useState("");
   const [showMt5Guide, setShowMt5Guide] = useState(false);
+  const [openChallenges, setOpenChallenges] = useState([]);
+  const [homeChallengeQ, setHomeChallengeQ] = useState("");
+  const [homeChallengeType, setHomeChallengeType] = useState("");
+  const [homeChallengeAccess, setHomeChallengeAccess] = useState("");
 
   useEffect(() => {
-    setUser(getSessionUser());
+    const sessionUser = getSessionUser();
+    setUser(sessionUser);
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -53,6 +58,25 @@ export default function Home() {
         if (!cancelled) setBoardsLoading(false);
       }
     })();
+
+    (async () => {
+      try {
+        const params = new URLSearchParams({
+          scope: 'public',
+          phase: 'active',
+          limit: '4',
+        })
+        if (sessionUser?.id) params.set('viewerId', sessionUser.id)
+        const res = await fetch(`/api/challenges?${params}`)
+        const data = await res.json()
+        if (!cancelled && data.success) {
+          setOpenChallenges(data.challenges || [])
+        }
+      } catch {
+        // ignore
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
@@ -158,7 +182,7 @@ export default function Home() {
                 className="mt-5 md:mt-6 text-sm sm:text-base md:text-lg text-gray-300 max-w-xl leading-relaxed"
                 dir="rtl"
               >
-                ژورنال، تحلیل چارت و ابزار فارکس — همه در یکجا
+                ژورنال، بک‌تست، چالش بک‌تست و چالش معامله — همه در یکجا
               </p>
             </div>
           </div>
@@ -244,6 +268,176 @@ export default function Home() {
               title="ساعت بازار"
               subtitle="سشن‌های جهانی"
             />
+          </div>
+        </section>
+
+        {/* Challenges highlight */}
+        <section className="container mx-auto px-4 pb-12 md:pb-16">
+          <div
+            className="max-w-5xl mx-auto relative overflow-hidden rounded-2xl md:rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-950/40 via-gray-900/80 to-amber-950/30"
+            dir="rtl"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.2),_transparent_55%)]" />
+            <div className="relative p-5 sm:p-8 md:p-10">
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-6 md:mb-8">
+                <div className="max-w-xl">
+                  <p className="text-emerald-400 text-xs font-semibold tracking-wide mb-2">
+                    ویژگی جدید
+                  </p>
+                  <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
+                    چالش بک‌تست / چالش معامله
+                  </h2>
+                  <p className="mt-2 text-sm md:text-base text-gray-300 leading-relaxed">
+                    هدف چالش‌ها شناسایی نقاط ضعف و قوت و تحلیل آن‌هاست — نه رتبه‌بندی.
+                    بک‌تست تاریخی یا معاملات واقعی را کنار هم ببینید و الگوهای عملکرد را کشف کنید.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                  <Link
+                    href={
+                      user
+                        ? "/challenges/new"
+                        : "/auth/login?next=/challenges/new"
+                    }
+                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors"
+                  >
+                    ایجاد چالش
+                  </Link>
+                </div>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const p = new URLSearchParams();
+                  if (homeChallengeQ.trim()) p.set("q", homeChallengeQ.trim());
+                  if (homeChallengeType) p.set("type", homeChallengeType);
+                  if (homeChallengeAccess) p.set("access", homeChallengeAccess);
+                  const qs = p.toString();
+                  router.push(`/challenges/browse${qs ? `?${qs}` : ""}`);
+                }}
+                className="mb-6 md:mb-8 rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <div className="sm:col-span-2 lg:col-span-2">
+                    <label className="block text-[11px] text-gray-400 mb-1">
+                      جستجو در چالش‌ها
+                    </label>
+                    <input
+                      value={homeChallengeQ}
+                      onChange={(e) => setHomeChallengeQ(e.target.value)}
+                      placeholder="عنوان، توضیح یا نماد…"
+                      className="w-full rounded-xl bg-white/10 border border-white/15 px-3 py-2.5 text-sm text-white placeholder:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1">نوع</label>
+                    <select
+                      value={homeChallengeType}
+                      onChange={(e) => setHomeChallengeType(e.target.value)}
+                      className="w-full rounded-xl bg-white/10 border border-white/15 px-3 py-2.5 text-sm text-white"
+                    >
+                      <option value="" className="text-gray-900">همه انواع</option>
+                      <option value="backtest" className="text-gray-900">چالش بک‌تست</option>
+                      <option value="trade" className="text-gray-900">چالش معامله</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-400 mb-1">دسترسی</label>
+                    <select
+                      value={homeChallengeAccess}
+                      onChange={(e) => setHomeChallengeAccess(e.target.value)}
+                      className="w-full rounded-xl bg-white/10 border border-white/15 px-3 py-2.5 text-sm text-white"
+                    >
+                      <option value="" className="text-gray-900">همه</option>
+                      <option value="public" className="text-gray-900">عمومی (بدون تایید)</option>
+                      <option value="private" className="text-gray-900">خصوصی (با تایید)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-colors"
+                  >
+                    مشاهده چالش‌ها
+                  </button>
+                  <p className="text-[11px] text-gray-500">
+                    لیست کامل چالش‌ها با فیلتر عمومی/خصوصی و درخواست پیوستن
+                  </p>
+                </div>
+              </form>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                <ChallengePromoCard
+                  title="چالش بک‌تست"
+                  description="تحلیل بک‌تست‌های چارت تاریخی برای پیدا کردن ضعف و قوت ستاپ‌ها، جهت و سشن‌ها."
+                  icon="invite"
+                />
+                <ChallengePromoCard
+                  title="چالش معامله"
+                  description="تحلیل معاملات واقعی در بازه مشخص — معمولاً آینده — با ثبت نتیجه در ژورنال."
+                  icon="race"
+                />
+                <ChallengePromoCard
+                  title="جدول تحلیل"
+                  description="کنار هم دیدن Hit Rate، سود/زیان، Buy/Sell و ستاپ‌ها برای یادگیری — نه رتبه‌بندی."
+                  icon="table"
+                />
+              </div>
+
+              {openChallenges.length > 0 && (
+                <div className="mt-6 md:mt-8">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <h3 className="text-sm font-bold text-white/90">
+                      چالش‌های فعال
+                    </h3>
+                    <Link
+                      href="/challenges/browse"
+                      className="text-xs text-emerald-300 hover:text-emerald-200 font-medium"
+                    >
+                      مشاهده همه ←
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {openChallenges.slice(0, 4).map((c) => (
+                      <Link
+                        key={c._id}
+                        href={`/challenges/${c.inviteCode}`}
+                        className="rounded-xl border border-white/10 bg-black/20 hover:bg-black/30 hover:border-emerald-400/30 px-4 py-3 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-bold text-white text-sm leading-snug">
+                            {c.title}
+                          </p>
+                          <span
+                            className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full border ${
+                              c.requireApproval
+                                ? "bg-amber-500/15 text-amber-200 border-amber-400/20"
+                                : "bg-emerald-500/15 text-emerald-300 border-emerald-400/20"
+                            }`}
+                          >
+                            {c.requireApproval ? "خصوصی" : "عمومی"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1.5">
+                          {c.type === "trade" ? "چالش معامله" : "چالش بک‌تست"}
+                          {" · "}نماد{" "}
+                          <span className="text-emerald-300 font-semibold">
+                            {c.symbol}
+                          </span>
+                          {" · "}هر روز ≥ ۱
+                          {c.type === "trade" ? " معامله" : " بک‌تست"}
+                          {c.approvedCount != null
+                            ? ` · ${c.approvedCount} نفر`
+                            : ""}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -465,6 +659,32 @@ function MiniCapability({ href, title, subtitle }) {
       <div className="text-white font-bold text-sm">{title}</div>
       <div className="text-[11px] text-gray-500 mt-1">{subtitle}</div>
     </Link>
+  );
+}
+
+function ChallengePromoCard({ title, description, icon }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/25 p-4 md:p-5">
+      <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center mb-3 text-emerald-300">
+        {icon === "invite" && (
+          <svg className="w-4.5 h-4.5 w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        )}
+        {icon === "race" && (
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        )}
+        {icon === "table" && (
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 6v12M14 6v12M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" />
+          </svg>
+        )}
+      </div>
+      <h3 className="text-white font-bold text-sm md:text-base mb-1.5">{title}</h3>
+      <p className="text-xs md:text-sm text-gray-400 leading-relaxed">{description}</p>
+    </div>
   );
 }
 

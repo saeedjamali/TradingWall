@@ -37,6 +37,8 @@ export default function ProfilePage() {
     isPublic: false,
     showCalendar: false,
     showBacktestCalendar: false,
+    showChallenges: false,
+    showChallengeResults: false,
     showAchievements: true,
     showActivities: true,
     showSetups: true,
@@ -100,6 +102,8 @@ export default function ProfilePage() {
           isPublic: false,
           showCalendar: false,
           showBacktestCalendar: false,
+          showChallenges: false,
+          showChallengeResults: false,
           showAchievements: true,
           showActivities: true,
           showSetups: true,
@@ -866,6 +870,28 @@ export default function ProfilePage() {
                         setPrivacySettings({
                           ...privacySettings,
                           showBacktestCalendar: checked,
+                        })
+                      }
+                    />
+                    <PrivacyToggle
+                      title="چالش‌های بک‌تست و معامله"
+                      description="نمایش چالش‌هایی که ساخته‌اید یا در آن‌ها شرکت کرده‌اید روی دیوار"
+                      checked={privacySettings.showChallenges}
+                      onChange={(checked) =>
+                        setPrivacySettings({
+                          ...privacySettings,
+                          showChallenges: checked,
+                        })
+                      }
+                    />
+                    <PrivacyToggle
+                      title="نتایج چالش‌ها"
+                      description="نمایش خلاصه عملکرد شما در چالش بک‌تست / چالش معامله روی دیوار"
+                      checked={privacySettings.showChallengeResults}
+                      onChange={(checked) =>
+                        setPrivacySettings({
+                          ...privacySettings,
+                          showChallengeResults: checked,
                         })
                       }
                     />

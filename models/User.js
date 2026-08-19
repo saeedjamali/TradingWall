@@ -73,6 +73,14 @@ const UserSchema = new mongoose.Schema({
       type: Boolean,
       default: false,
     },
+    showChallenges: {
+      type: Boolean,
+      default: false,
+    },
+    showChallengeResults: {
+      type: Boolean,
+      default: false,
+    },
     // Allow other users to send job proposals on public wall
     allowJobOffers: {
       type: Boolean,
