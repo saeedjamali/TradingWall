@@ -5,6 +5,7 @@ import Modal from '@/components/Modal'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
 import SymbolSelect from '@/components/SymbolSelect'
+import SelectedSetupNote from '@/components/SelectedSetupNote'
 import {
   BACKTEST_SESSIONS,
   BACKTEST_TIMEFRAMES,
@@ -56,6 +57,8 @@ export default function BacktestModal({
   onSaved,
   /** 'quick' | 'full' — default for new entries */
   initialMode = 'quick',
+  lockedSetupId = '',
+  preferredSymbol = '',
 }) {
   const [form, setForm] = useState(emptyForm)
   const [setups, setSetups] = useState([])
@@ -114,13 +117,17 @@ export default function BacktestModal({
     } else {
       const prefs = loadBacktestPrefs(userId)
       setMode(initialMode || prefs.mode || 'quick')
-      setForm(formFromPrefs(prefs))
+      const next = formFromPrefs(prefs)
+      if (preferredSymbol) next.symbol = preferredSymbol
+      if (lockedSetupId) next.setupIds = [String(lockedSetupId)]
+      setForm(next)
     }
-  }, [isOpen, existing, initialMode, userId])
+  }, [isOpen, existing, initialMode, userId, lockedSetupId, preferredSymbol])
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
 
   const toggleSetup = (id) => {
+    if (lockedSetupId) return
     const sid = String(id)
     setForm((prev) => ({
       ...prev,
@@ -178,6 +185,7 @@ export default function BacktestModal({
         slHits: form.slHits,
         tpHits: form.tpHits,
         tradeImage: form.tradeImage || null,
+        setupIds: lockedSetupId ? [String(lockedSetupId)] : form.setupIds,
       }
 
       const url = existing
@@ -198,7 +206,7 @@ export default function BacktestModal({
         direction: form.direction,
         session: form.session,
         risk: form.risk === '' ? '' : form.risk,
-        setupIds: form.setupIds,
+        setupIds: lockedSetupId ? [String(lockedSetupId)] : form.setupIds,
         mode,
       })
 
@@ -328,25 +336,42 @@ export default function BacktestModal({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">ستاپ‌ها</label>
-          <div className="flex flex-wrap gap-2 border border-gray-200 rounded-lg p-2 bg-gray-50 max-h-28 overflow-y-auto">
-            {setups.length === 0 && (
-              <span className="text-xs text-gray-500">ستاپی تعریف نشده</span>
-            )}
-            {setups.map((s) => (
-              <button
-                key={s._id}
-                type="button"
-                onClick={() => toggleSetup(s._id)}
-                className={`px-2 py-1 rounded text-xs font-medium ${
-                  form.setupIds.map(String).includes(String(s._id))
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white border border-gray-300 text-gray-700'
-                }`}
-              >
-                {s.type === 'standard' ? '⭐' : '👤'} {s.title}
-              </button>
-            ))}
-          </div>
+          {lockedSetupId ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              این بک‌تست برای چالش با ستاپ{' '}
+              <strong>
+                {setups.find((s) => String(s._id) === String(lockedSetupId))?.title ||
+                  'پیشنهادی'}
+              </strong>{' '}
+              ثبت می‌شود.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 border border-gray-200 rounded-lg p-2 bg-gray-50 max-h-28 overflow-y-auto">
+              {setups.length === 0 && (
+                <span className="text-xs text-gray-500">ستاپی تعریف نشده</span>
+              )}
+              {setups.map((s) => (
+                <button
+                  key={s._id}
+                  type="button"
+                  onClick={() => toggleSetup(s._id)}
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    form.setupIds.map(String).includes(String(s._id))
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700'
+                  }`}
+                >
+                  {s.type === 'standard' ? '⭐' : '👤'} {s.title}
+                </button>
+              ))}
+            </div>
+          )}
+          <SelectedSetupNote
+            setups={setups}
+            selectedIds={
+              lockedSetupId ? [lockedSetupId] : form.setupIds
+            }
+          />
         </div>
 
         {/* Result block — always visible */}

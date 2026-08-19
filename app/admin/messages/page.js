@@ -26,6 +26,7 @@ export default function AdminMessagesPage() {
   const [replyImage, setReplyImage] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [addingSetup, setAddingSetup] = useState(false)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -129,6 +130,30 @@ export default function AdminMessagesPage() {
       alert('خطا در ثبت پاسخ')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const addAsStandardSetup = async () => {
+    if (!selected || selected.category !== 'add_setup') return
+    if (!confirm(`ستاپ «${selected.title}» به لیست استاندارد اضافه شود؟`)) return
+    setAddingSetup(true)
+    try {
+      const res = await fetch('/api/admin/setups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.id,
+          title: selected.title,
+          description: selected.body || '',
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || 'خطا در افزودن ستاپ')
+      alert('ستاپ به لیست استاندارد اضافه شد')
+    } catch (err) {
+      alert(err.message || 'خطا در افزودن ستاپ')
+    } finally {
+      setAddingSetup(false)
     }
   }
 
@@ -319,6 +344,16 @@ export default function AdminMessagesPage() {
                       <img src={selected.image} alt="" className="mt-3 max-h-64 rounded-lg border object-contain" />
                     )}
                   </div>
+                  {selected.category === 'add_setup' && (
+                    <button
+                      type="button"
+                      onClick={addAsStandardSetup}
+                      disabled={addingSetup}
+                      className="mt-3 inline-flex items-center px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50"
+                    >
+                      {addingSetup ? 'در حال افزودن…' : 'تایید و افزودن به ستاپ‌های استاندارد'}
+                    </button>
+                  )}
                 </div>
 
                 {/* Thread */}

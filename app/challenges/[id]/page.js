@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import Loading from '@/components/Loading'
 import SymbolSelect from '@/components/SymbolSelect'
+import SelectedSetupNote from '@/components/SelectedSetupNote'
 import { UserName } from '@/components/VerifiedBadge'
 import { getSessionUser } from '@/utils/session'
 import { BACKTEST_TIMEFRAMES } from '@/utils/backtest'
@@ -62,6 +63,7 @@ export default function ChallengeDetailPage() {
   const [joining, setJoining] = useState(false)
   const [invitePhone, setInvitePhone] = useState('')
   const [inviteBusy, setInviteBusy] = useState(false)
+  const [standardSetups, setStandardSetups] = useState([])
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editBusy, setEditBusy] = useState(false)
@@ -99,6 +101,9 @@ export default function ChallengeDetailPage() {
           ch.maxParticipants == null ? '' : String(ch.maxParticipants),
         unlimited: ch.maxParticipants == null,
         requireApproval: !!ch.requireApproval,
+        suggestedSetupId: String(
+          ch.suggestedSetup?._id || ch.suggestedSetupId || '',
+        ),
         rules: ch.rules || '',
       })
     } catch (err) {
@@ -112,6 +117,18 @@ export default function ChallengeDetailPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const res = await fetch('/api/setups?standard=1')
+        const json = await res.json()
+        if (json.success) setStandardSetups(json.setups || [])
+      } catch {
+        // ignore
+      }
+    })()
+  }, [])
 
   const inviteUrl = useMemo(() => {
     if (typeof window === 'undefined' || !data?.challenge?.inviteCode) return ''
@@ -261,6 +278,9 @@ export default function ChallengeDetailPage() {
             ? null
             : Number(editForm.maxParticipants) || 20,
           requireApproval: editForm.requireApproval,
+          suggestedSetupId: tradeChallenge
+            ? null
+            : editForm.suggestedSetupId || null,
           rules: editForm.rules,
         }),
       })
@@ -299,8 +319,12 @@ export default function ChallengeDetailPage() {
   const c = data.challenge
   const viewer = data.viewer
   const standings = data.standings || []
+  const sortedStandings = [...standings].sort(
+    (a, b) => (b.unitNet || 0) - (a.unitNet || 0),
+  )
   const typeMeta = getChallengeTypeMeta(resolveChallengeType(c))
   const isTrade = resolveChallengeType(c) === 'trade'
+  const hasSuggestedSetup = !!(c.suggestedSetup?._id || c.suggestedSetupId)
   const canEditOrDelete = !!(data.canEditOrDelete || viewer?.canEditOrDelete)
   const activityRange = formatDualDateRange(c.backtestRangeStart, c.backtestRangeEnd)
   const windowRange = formatDualDateRange(c.challengeStartAt, c.challengeEndAt)
@@ -391,7 +415,20 @@ export default function ChallengeDetailPage() {
                     />
                   </MetaChip>
                 )}
+                {!isTrade && (c.suggestedSetup?.title || c.suggestedSetupId) && (
+                  <MetaChip>
+                    <span className="text-gray-500">ستاپ پیشنهادی</span>
+                    <span className="text-amber-200 font-semibold">
+                      {c.suggestedSetup?.title || 'ستاپ انتخاب‌شده'}
+                    </span>
+                  </MetaChip>
+                )}
               </div>
+              {!isTrade && c.suggestedSetup?.description && (
+                <p className="mt-3 max-w-2xl rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {c.suggestedSetup.description}
+                </p>
+              )}
 
               <div className="mt-4 grid grid-cols-1 gap-2 max-w-2xl">
                 <RangeCard
@@ -458,7 +495,17 @@ export default function ChallengeDetailPage() {
               )}
               {viewer?.isParticipant && (
                 <Link
-                  href={isTrade ? '/dashboard' : '/backtest'}
+                  href={
+                    isTrade
+                      ? '/dashboard'
+                      : `/backtest?symbol=${encodeURIComponent(c.symbol)}${
+                          c.suggestedSetup?._id || c.suggestedSetupId
+                            ? `&setupId=${encodeURIComponent(
+                                String(c.suggestedSetup?._id || c.suggestedSetupId),
+                              )}`
+                            : ''
+                        }`
+                  }
                   className="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-center text-sm font-semibold hover:bg-white/15"
                 >
                   {isTrade ? 'تقویم معاملاتی' : 'تقویم بک‌تست'}
@@ -607,6 +654,45 @@ export default function ChallengeDetailPage() {
                     </select>
                   </div>
                 </div>
+                {!isTrade && (
+                  <div>
+                    <label className="block text-[11px] text-gray-500 mb-1">
+                      ستاپ پیشنهادی (اختیاری)
+                    </label>
+                    <select
+                      value={editForm.suggestedSetupId || ''}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          suggestedSetupId: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    >
+                      <option value="">بدون ستاپ مشخص</option>
+                      {standardSetups.map((s) => (
+                        <option key={s._id} value={s._id}>
+                          {s.title}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                      فقط بک‌تست‌های همین ستاپ استاندارد در چالش شمرده می‌شوند. ستاپ مدنظرتان
+                      در لیست نیست؟ از بخش{' '}
+                      <Link
+                        href="/?category=add_setup#support"
+                        className="text-sky-700 hover:text-sky-800 underline underline-offset-2"
+                      >
+                        نظر یا پیشنهاد
+                      </Link>{' '}
+                      در صفحه اصلی پیشنهاد بدهید.
+                    </p>
+                    <SelectedSetupNote
+                      setups={standardSetups}
+                      selectedIds={editForm.suggestedSetupId}
+                    />
+                  </div>
+                )}
                 <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 leading-relaxed">
                   <strong>{typeMeta.minLabel}:</strong> {typeMeta.progressHint}
                 </div>
@@ -818,10 +904,13 @@ export default function ChallengeDetailPage() {
             <div>
               <h2 className="font-bold text-lg text-gray-900">جدول تحلیل نقاط ضعف و قوت</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                برای یادگیری و تحلیل — نه رتبه‌بندی. ستون‌ها = شرکت‌کنندگان · سطرها = شاخص‌ها (
+                برای یادگیری و تحلیل — نه رتبه‌بندی. سطرها = شرکت‌کنندگان (مرتب با برایند
+                TP−SL) · ستون‌ها = شاخص‌ها (
                 {isTrade
                   ? `معاملات واقعی ${c.symbol} در بازه معاملات`
-                  : `بک‌تست‌های ${c.symbol} در بازه چارت`}
+                  : hasSuggestedSetup
+                    ? `بک‌تست‌های ${c.symbol} با ستاپ ${c.suggestedSetup?.title || ''} در بازه چارت`
+                    : `بک‌تست‌های ${c.symbol} در بازه چارت`}
                 )
               </p>
               {(data.resultsFrozen || c.resultsFrozen || c.phase === 'ended') && (
@@ -850,7 +939,7 @@ export default function ChallengeDetailPage() {
                 <span className="block mt-2">برای دیدن نتایج، به چالش بپیوندید.</span>
               )}
             </p>
-          ) : standings.length === 0 ? (
+          ) : sortedStandings.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-10">
               هنوز داده‌ای برای تحلیل ثبت نشده است
             </p>
@@ -860,135 +949,149 @@ export default function ChallengeDetailPage() {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="sticky right-0 z-10 bg-gray-50 px-3 py-2 text-right text-xs font-bold text-gray-600 border-b min-w-[120px]">
-                      شاخص
+                      کاربر
                     </th>
-                    {standings.map((s) => (
-                      <th
-                        key={s.userId}
-                        className="px-3 py-2 text-center border-b min-w-[110px]"
-                      >
-                        <Link
-                          href={`/wall/${s.userId}`}
-                          className="font-bold text-primary-700 hover:underline text-xs"
-                        >
-                          <UserName
-                            name={s.publicName}
-                            verified={s.verified}
-                            badgeClassName="w-3.5 h-3.5 text-blue-500"
-                          />
-                        </Link>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      پیشرفت
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      {typeMeta.entriesLabel}
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b">
+                      {isTrade ? 'برد' : 'TP'}
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b">
+                      {isTrade ? 'باخت' : 'SL'}
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      {isTrade ? 'برایند برد−باخت' : 'برایند TP−SL'}
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      Hit Rate
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      Profit Factor
+                    </th>
+                    {!isTrade && (
+                      <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b">
+                        Expectancy
                       </th>
-                    ))}
+                    )}
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      {isTrade ? 'سود/زیان $' : 'برایند $'}
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b">
+                      Buy
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      {isTrade ? 'Buy برد/باخت' : 'Buy TP/SL'}
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b">
+                      Sell
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      {isTrade ? 'Sell برد/باخت' : 'Sell TP/SL'}
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                      روز فعال
+                    </th>
+                    {!hasSuggestedSetup && (
+                      <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                        ستاپ برتر
+                      </th>
+                    )}
+                    {!isTrade && (
+                      <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 border-b whitespace-nowrap">
+                        سشن برتر
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
-                  <StandingRow
-                    label="پیشرفت چالش"
-                    standings={standings}
-                    get={(s) =>
-                      s.progressPct != null
-                        ? `${s.progressPct}% (${s.coveredDays ?? 0}/${s.totalDays ?? '—'})`
-                        : '—'
-                    }
-                    goodFn={(s) => (s.progressPct || 0) >= 100}
-                  />
-                  <StandingRow
-                    label={typeMeta.entriesLabel}
-                    standings={standings}
-                    get={(s) => s.count}
-                  />
-                  <StandingRow
-                    label={isTrade ? 'برد' : 'TP'}
-                    standings={standings}
-                    get={(s) => (isTrade ? s.wins : s.tp)}
-                    good
-                  />
-                  <StandingRow
-                    label={isTrade ? 'باخت' : 'SL'}
-                    standings={standings}
-                    get={(s) => (isTrade ? s.losses : s.sl)}
-                    good={false}
-                  />
-                  <StandingRow
-                    label={isTrade ? 'برایند (برد−باخت)' : 'برایند (TP−SL)'}
-                    standings={standings}
-                    get={(s) => `${s.unitNet >= 0 ? '+' : ''}${s.unitNet}`}
-                    goodFn={(s) => s.unitNet > 0}
-                  />
-                  <StandingRow
-                    label="Hit Rate / وین‌ریت"
-                    standings={standings}
-                    get={(s) =>
-                      s.hitRate != null ? `${s.hitRate.toFixed(1)}%` : '—'
-                    }
-                  />
-                  <StandingRow
-                    label="Profit Factor"
-                    standings={standings}
-                    get={(s) =>
-                      s.profitFactor == null
-                        ? '—'
-                        : s.profitFactor === Infinity
-                          ? '∞'
-                          : s.profitFactor.toFixed(2)
-                    }
-                  />
-                  {!isTrade && (
-                    <StandingRow
-                      label="Expectancy"
-                      standings={standings}
-                      get={(s) =>
-                        s.expectancy != null
-                          ? `${s.expectancy >= 0 ? '+' : ''}${s.expectancy.toFixed(2)} R`
-                          : '—'
-                      }
-                    />
-                  )}
-                  <StandingRow
-                    label={isTrade ? 'سود/زیان $' : 'برایند $'}
-                    standings={standings}
-                    get={(s) =>
-                      s.withRisk
-                        ? `${s.pnl >= 0 ? '+' : ''}${Number(s.pnl).toFixed(0)}`
-                        : '—'
-                    }
-                    goodFn={(s) => s.withRisk && s.pnl > 0}
-                  />
-                  <StandingRow label="Buy (تعداد)" standings={standings} get={(s) => s.buyCount} />
-                  <StandingRow
-                    label={isTrade ? 'Buy برد / باخت' : 'Buy TP / SL'}
-                    standings={standings}
-                    get={(s) => `${s.buyTp} / ${s.buySl}`}
-                  />
-                  <StandingRow label="Sell (تعداد)" standings={standings} get={(s) => s.sellCount} />
-                  <StandingRow
-                    label={isTrade ? 'Sell برد / باخت' : 'Sell TP / SL'}
-                    standings={standings}
-                    get={(s) => `${s.sellTp} / ${s.sellSl}`}
-                  />
-                  <StandingRow
-                    label="روز فعال"
-                    standings={standings}
-                    get={(s) => s.activeDays}
-                  />
-                  <StandingRow
-                    label="ستاپ برتر"
-                    standings={standings}
-                    get={(s) => {
-                      const kind = isTrade ? 'trade' : 'backtest'
-                      return formatTopSetupLabel(
-                        s.topSetup || pickTopSetup(s.setupRows, kind),
-                        kind,
-                      )
-                    }}
-                  />
-                  {!isTrade && (
-                    <StandingRow
-                      label="سشن برتر"
-                      standings={standings}
-                      get={(s) => s.sessionRows?.[0]?.label || '—'}
-                    />
-                  )}
+                  {sortedStandings.map((s) => {
+                    const kind = isTrade ? 'trade' : 'backtest'
+                    return (
+                      <tr
+                        key={s.userId}
+                        className="border-b border-gray-100 hover:bg-gray-50/80"
+                      >
+                        <th className="sticky right-0 z-10 bg-white px-3 py-2 text-right text-xs font-medium text-gray-800 border-l whitespace-nowrap">
+                          <Link
+                            href={`/wall/${s.userId}`}
+                            className="font-bold text-primary-700 hover:underline"
+                          >
+                            <UserName
+                              name={s.publicName}
+                              verified={s.verified}
+                              badgeClassName="w-3.5 h-3.5 text-blue-500"
+                            />
+                          </Link>
+                        </th>
+                        <MetricCell
+                          value={
+                            s.progressPct != null
+                              ? `${s.progressPct}% (${s.coveredDays ?? 0}/${s.totalDays ?? '—'})`
+                              : '—'
+                          }
+                          good={(s.progressPct || 0) >= 100}
+                        />
+                        <MetricCell value={s.count} />
+                        <MetricCell value={isTrade ? s.wins : s.tp} good />
+                        <MetricCell value={isTrade ? s.losses : s.sl} good={false} />
+                        <MetricCell
+                          value={`${s.unitNet >= 0 ? '+' : ''}${s.unitNet}`}
+                          good={s.unitNet > 0}
+                        />
+                        <MetricCell
+                          value={
+                            s.hitRate != null ? `${s.hitRate.toFixed(1)}%` : '—'
+                          }
+                        />
+                        <MetricCell
+                          value={
+                            s.profitFactor == null
+                              ? '—'
+                              : s.profitFactor === Infinity
+                                ? '∞'
+                                : s.profitFactor.toFixed(2)
+                          }
+                        />
+                        {!isTrade && (
+                          <MetricCell
+                            value={
+                              s.expectancy != null
+                                ? `${s.expectancy >= 0 ? '+' : ''}${s.expectancy.toFixed(2)} R`
+                                : '—'
+                            }
+                          />
+                        )}
+                        <MetricCell
+                          value={
+                            s.withRisk
+                              ? `${s.pnl >= 0 ? '+' : ''}${Number(s.pnl).toFixed(0)}`
+                              : '—'
+                          }
+                          good={s.withRisk && s.pnl > 0}
+                        />
+                        <MetricCell value={s.buyCount} />
+                        <MetricCell value={`${s.buyTp} / ${s.buySl}`} />
+                        <MetricCell value={s.sellCount} />
+                        <MetricCell value={`${s.sellTp} / ${s.sellSl}`} />
+                        <MetricCell value={s.activeDays} />
+                        {!hasSuggestedSetup && (
+                          <MetricCell
+                            value={formatTopSetupLabel(
+                              s.topSetup || pickTopSetup(s.setupRows, kind),
+                              kind,
+                            )}
+                          />
+                        )}
+                        {!isTrade && (
+                          <MetricCell value={s.sessionRows?.[0]?.label || '—'} />
+                        )}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1018,23 +1121,5 @@ function RangeCard({ label, range }) {
         {range.en}
       </div>
     </div>
-  )
-}
-
-function StandingRow({ label, standings, get, good, goodFn }) {
-  return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50/80">
-      <th className="sticky right-0 z-10 bg-white px-3 py-2 text-right text-xs font-medium text-gray-700 border-l">
-        {label}
-      </th>
-      {standings.map((s) => {
-        const val = get(s)
-        let tone
-        if (goodFn) tone = goodFn(s)
-        else if (good === true) tone = true
-        else if (good === false) tone = false
-        return <MetricCell key={s.userId} value={val} good={tone} />
-      })}
-    </tr>
   )
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import SymbolSelect from '@/components/SymbolSelect'
+import SelectedSetupNote from '@/components/SelectedSetupNote'
 import { getSessionUser } from '@/utils/session'
 import { BACKTEST_TIMEFRAMES } from '@/utils/backtest'
 import { formatDualDate, getChallengeTypeMeta, buildDefaultChallengeTitle } from '@/utils/challenge'
@@ -47,6 +48,7 @@ export default function NewChallengePage() {
   const router = useRouter()
   const [user, setUser] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [standardSetups, setStandardSetups] = useState([])
   const now = new Date()
   const defaultChart = monthBounds(now.getFullYear(), now.getMonth() - 1)
   const defaultWindow = weekFromToday()
@@ -65,6 +67,7 @@ export default function NewChallengePage() {
     maxParticipants: '20',
     unlimited: false,
     requireApproval: false,
+    suggestedSetupId: '',
     rules: '',
   })
 
@@ -75,6 +78,15 @@ export default function NewChallengePage() {
       return
     }
     setUser(u)
+    ;(async () => {
+      try {
+        const res = await fetch('/api/setups?standard=1')
+        const data = await res.json()
+        if (data.success) setStandardSetups(data.setups || [])
+      } catch {
+        // ignore
+      }
+    })()
   }, [router])
 
   const typeMeta = getChallengeTypeMeta(form.type)
@@ -90,6 +102,7 @@ export default function NewChallengePage() {
         challengeStartAt: toInputDate(nextMonth.start),
         challengeEndAt: toInputDate(nextMonth.end),
         title: buildDefaultChallengeTitle('trade', nextMonth.start, f.symbol),
+        suggestedSetupId: '',
       }))
     } else {
       const window = weekFromToday()
@@ -172,6 +185,8 @@ export default function NewChallengePage() {
             form.type === 'trade' ? form.backtestRangeEnd : form.challengeEndAt,
           maxParticipants: form.unlimited ? null : Number(form.maxParticipants) || 20,
           requireApproval: form.requireApproval,
+          suggestedSetupId:
+            form.type === 'backtest' ? form.suggestedSetupId || null : null,
           rules: form.rules,
         }),
       })
@@ -294,6 +309,46 @@ export default function NewChallengePage() {
               </select>
             </div>
           </div>
+
+          {form.type === 'backtest' && (
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">
+                ستاپ پیشنهادی (اختیاری)
+              </label>
+              <select
+                value={form.suggestedSetupId}
+                onChange={(e) =>
+                  setForm({ ...form, suggestedSetupId: e.target.value })
+                }
+                className="w-full rounded-lg bg-white/10 border border-white/15 px-3 py-2 text-sm"
+              >
+                <option value="" className="text-gray-900">
+                  بدون ستاپ مشخص — همه بک‌تست‌های نماد شمرده می‌شوند
+                </option>
+                {standardSetups.map((s) => (
+                  <option key={s._id} value={s._id} className="text-gray-900">
+                    {s.title}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                اگر ستاپ انتخاب شود، فقط بک‌تست‌هایی که همین ستاپ استاندارد را دارند در چالش
+                حساب می‌شوند. ستاپ مدنظرتان در لیست نیست؟ از بخش{' '}
+                <Link
+                  href="/?category=add_setup#support"
+                  className="text-primary-400 hover:text-primary-300 underline underline-offset-2"
+                >
+                  نظر یا پیشنهاد
+                </Link>{' '}
+                در صفحه اصلی، دسته «افزودن / مشکل ستاپ» پیشنهاد بدهید.
+              </p>
+              <SelectedSetupNote
+                setups={standardSetups}
+                selectedIds={form.suggestedSetupId}
+                dark
+              />
+            </div>
+          )}
 
           <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-3 text-xs text-emerald-100/90 leading-relaxed">
             <p className="font-bold text-emerald-200 mb-1">معیار پیشرفت چالش</p>

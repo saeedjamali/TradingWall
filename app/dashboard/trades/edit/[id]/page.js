@@ -7,6 +7,7 @@ import Button from '@/components/Button'
 import Input from '@/components/Input'
 import Loading from '@/components/Loading'
 import SymbolSelect from '@/components/SymbolSelect'
+import SelectedSetupNote from '@/components/SelectedSetupNote'
 
 export default function EditTradePage() {
   const router = useRouter()
@@ -590,6 +591,7 @@ export default function EditTradePage() {
                 <p className="text-xs text-gray-500 mt-2">
                   ⭐ ستاپ‌های استاندارد | 👤 ستاپ‌های شخصی
                 </p>
+                <SelectedSetupNote setups={setups} selectedIds={selectedSetups} />
               </div>
             </div>
 

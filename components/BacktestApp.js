@@ -61,6 +61,7 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
   const [formMode, setFormMode] = useState('quick')
   const [editing, setEditing] = useState(null)
   const [previewImage, setPreviewImage] = useState(null)
+  const [challengeHint, setChallengeHint] = useState({ setupId: '', symbol: '' })
 
   useEffect(() => {
     const u = getSessionUser()
@@ -70,6 +71,15 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
     }
     setUser(u)
   }, [router, loginRedirect])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const p = new URLSearchParams(window.location.search)
+    setChallengeHint({
+      setupId: p.get('setupId') || '',
+      symbol: p.get('symbol') || '',
+    })
+  }, [])
 
   const fetchMonth = useCallback(async (userId, monthDate) => {
     const { start, end } = monthBounds(monthDate)
@@ -261,6 +271,16 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
           />
         </div>
       </header>
+
+      {(challengeHint.setupId || challengeHint.symbol) && (
+        <div className="bg-amber-500/15 border-b border-amber-400/20" dir="rtl">
+          <div className="container mx-auto px-4 py-2.5 text-xs md:text-sm text-amber-100">
+            در حال ثبت بک‌تست برای چالش
+            {challengeHint.symbol ? ` · نماد ${challengeHint.symbol}` : ''}
+            {challengeHint.setupId ? ' · ستاپ پیشنهادی چالش روی فرم قفل است' : ''}
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-6 md:py-8">
         {/* Guide */}
@@ -1199,6 +1219,8 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
         existing={editing}
         onSaved={handleSaved}
         initialMode={formMode}
+        lockedSetupId={challengeHint.setupId}
+        preferredSymbol={challengeHint.symbol}
       />
     </div>
   )

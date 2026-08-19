@@ -60,6 +60,12 @@ const BacktestChallengeSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    /** Optional suggested standard setup for backtest challenges */
+    suggestedSetupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Setup',
+      default: null,
+    },
     minBacktests: {
       type: Number,
       default: 10,

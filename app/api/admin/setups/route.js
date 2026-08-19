@@ -53,6 +53,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'عنوان ستاپ الزامی است' }, { status: 400 })
     }
 
+    const existing = await Setup.findOne({
+      type: 'standard',
+      title: title.trim(),
+    }).lean()
+    if (existing) {
+      return NextResponse.json(
+        { error: 'ستاپی با این عنوان از قبل در لیست استاندارد هست' },
+        { status: 400 },
+      )
+    }
+
     const setup = await Setup.create({
       title: title.trim(),
       description: description || '',

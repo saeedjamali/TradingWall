@@ -58,6 +58,7 @@ export default function ProposalForm({
     : 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500'
 
   const guestMode = allowGuest && !isLoggedIn
+  const isSetupRequest = showCategory && category === 'add_setup'
 
   const handleImage = async (e) => {
     const file = e.target.files?.[0]
@@ -183,26 +184,43 @@ export default function ProposalForm({
       )}
 
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>عنوان</label>
+        <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>
+          {isSetupRequest ? 'نام ستاپ' : 'عنوان'}
+        </label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className={inputCls}
-          placeholder="عنوان پیشنهاد یا انتقاد"
+          placeholder={
+            isSetupRequest
+              ? 'مثلاً Order Block یا Breaker'
+              : 'عنوان پیشنهاد یا انتقاد'
+          }
           maxLength={200}
           required
         />
       </div>
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>توضیحات</label>
+        <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>
+          {isSetupRequest ? 'توضیح ستاپ' : 'توضیحات'}
+        </label>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           className={`${inputCls} min-h-[110px]`}
-          placeholder="جزئیات را بنویسید..."
+          placeholder={
+            isSetupRequest
+              ? 'شرایط ورود، تایید، حد ضرر، خروج و هر نکته‌ای که مدیر برای افزودن به لیست ستاپ‌ها لازم دارد…'
+              : 'جزئیات را بنویسید...'
+          }
           maxLength={5000}
           required
         />
+        {isSetupRequest && (
+          <p className={`text-xs mt-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+            پس از بررسی مدیر، در صورت تایید به لیست ستاپ‌های استاندارد اضافه می‌شود.
+          </p>
+        )}
       </div>
       <div>
         <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>

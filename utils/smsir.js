@@ -69,8 +69,8 @@ export async function sendCustomSMS(phone, message) {
   }
 }
 
-/** Challenge invite — template 316496 with FULLNAME + LINK */
-export async function sendChallengeInviteSMS(phone, fullName, link) {
+/** Challenge invite — template params FULLNAME + LINK (invite id only) */
+export async function sendChallengeInviteSMS(phone, fullName, inviteId) {
   try {
     const response = await axios.post(
       `${SMS_IR_BASE_URL}/v1/send/verify`,
@@ -79,7 +79,7 @@ export async function sendChallengeInviteSMS(phone, fullName, link) {
         templateId: 164409,
         parameters: [
           { name: "FULLNAME", value: String(fullName || "کاربر").slice(0, 40) },
-          { name: "LINK", value: String(link).slice(0, 200) },
+          { name: "LINK", value: String(inviteId || "").slice(0, 40) },
         ],
       },
       {

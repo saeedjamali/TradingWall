@@ -5,7 +5,6 @@ import User from '@/models/User'
 import { requireActiveUser } from '@/utils/requireActiveUser'
 import { sendChallengeInviteSMS } from '@/utils/smsir'
 import { normalizePhone } from '@/utils/challenge'
-import { getSiteUrl } from '@/utils/site'
 
 async function findChallenge(id) {
   if (/^[a-f0-9]{24}$/i.test(id)) {
@@ -54,23 +53,23 @@ export async function POST(request, { params }) {
 
     const creator = await User.findById(userId).select('publicName').lean()
     const fullName = creator?.publicName || 'کاربر'
-    const site = getSiteUrl().replace(/\/$/, '')
-    const link = `${site}/challenges/${challenge.inviteCode}`
+    const inviteId = challenge.inviteCode
+    const inviteLink = `https://tradingwall.ir/challenges/${inviteId}`
 
-    const sms = await sendChallengeInviteSMS(normalized, fullName, link)
+    const sms = await sendChallengeInviteSMS(normalized, fullName, inviteId)
 
     if (!sms.success) {
       return NextResponse.json({
         success: false,
         error: sms.error || 'ارسال پیامک ناموفق بود',
-        inviteLink: link,
+        inviteLink,
       }, { status: 502 })
     }
 
     return NextResponse.json({
       success: true,
       message: 'پیامک دعوت ارسال شد',
-      inviteLink: link,
+      inviteLink,
       phone: normalized,
     })
   } catch (error) {

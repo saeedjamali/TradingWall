@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Modal from './Modal'
+import SelectedSetupNote from '@/components/SelectedSetupNote'
 import { formatDate } from '@/utils/dateHelpers'
 
 export default function DayTradesModal({
@@ -466,6 +467,10 @@ export default function DayTradesModal({
                           </button>
                         ))}
                       </div>
+                      <SelectedSetupNote
+                        setups={setups}
+                        selectedIds={selectedSetups}
+                      />
                       <div className="flex gap-2">
                         <button
                           onClick={() => saveSetups(trade._id)}

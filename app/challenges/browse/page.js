@@ -423,6 +423,9 @@ function BrowseChallengesInner() {
                           {c.symbol}
                         </span>
                         {c.timeframe ? <span>{c.timeframe}</span> : null}
+                        {c.suggestedSetup?.title ? (
+                          <span className="text-amber-200">ستاپ {c.suggestedSetup.title}</span>
+                        ) : null}
                         <span>
                           {resolvedType === 'trade' ? (
                             <>

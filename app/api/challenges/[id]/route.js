@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb'
 import BacktestChallenge from '@/models/BacktestChallenge'
 import ChallengeParticipant from '@/models/ChallengeParticipant'
 import User from '@/models/User'
+import '@/models/Setup'
 import { requireActiveUser } from '@/utils/requireActiveUser'
 import { requireAdmin } from '@/utils/adminAuth'
 import {
@@ -20,17 +21,25 @@ import {
 } from '@/utils/challengeStandings'
 import { assertActiveSymbol } from '@/utils/symbolSeed'
 import { startOfLocalDay, endOfLocalDay } from '@/utils/backtest'
+import {
+  resolveSuggestedSetupId,
+  serializeSuggestedSetup,
+} from '@/utils/challengeSetup'
 
 async function loadChallengeByParam(param) {
   if (!param) return null
-  // accept inviteCode or ObjectId
+  const populateSetup = { path: 'suggestedSetupId', select: 'title type description' }
   if (/^[a-f0-9]{10}$/i.test(param)) {
-    return BacktestChallenge.findOne({ inviteCode: param }).lean()
+    return BacktestChallenge.findOne({ inviteCode: param })
+      .populate(populateSetup)
+      .lean()
   }
   if (/^[a-f0-9]{24}$/i.test(param)) {
-    return BacktestChallenge.findById(param).lean()
+    return BacktestChallenge.findById(param).populate(populateSetup).lean()
   }
-  return BacktestChallenge.findOne({ inviteCode: param }).lean()
+  return BacktestChallenge.findOne({ inviteCode: param })
+    .populate(populateSetup)
+    .lean()
 }
 
 export async function GET(request, { params }) {
@@ -157,6 +166,11 @@ export async function GET(request, { params }) {
         resultsFrozen,
         resultsFrozenAt,
         activityDayCount,
+        suggestedSetup: serializeSuggestedSetup(challenge),
+        suggestedSetupId:
+          serializeSuggestedSetup(challenge)?._id ||
+          challenge.suggestedSetupId ||
+          null,
       },
       viewer: viewer
         ? {
@@ -217,6 +231,7 @@ export async function PUT(request, { params }) {
       resultsVisibility,
       type,
       challengeType: bodyChallengeType,
+      suggestedSetupId: bodySuggestedSetupId,
     } = body
 
     if (!userId) {
@@ -266,7 +281,8 @@ export async function PUT(request, { params }) {
       requireApproval !== undefined ||
       resultsVisibility != null ||
       type != null ||
-      bodyChallengeType != null
+      bodyChallengeType != null ||
+      bodySuggestedSetupId !== undefined
 
     if (wantsFullEdit && otherJoined) {
       return NextResponse.json(
@@ -307,6 +323,22 @@ export async function PUT(request, { params }) {
       if (nextType) {
         update.challengeType = nextType
         update.type = nextType
+      }
+      if (nextType === 'trade') {
+        update.suggestedSetupId = null
+      } else if (bodySuggestedSetupId !== undefined) {
+        try {
+          const setupType = nextType || resolveChallengeType(challenge)
+          update.suggestedSetupId = await resolveSuggestedSetupId(
+            bodySuggestedSetupId,
+            setupType,
+          )
+        } catch (e) {
+          return NextResponse.json(
+            { error: e.message || 'ستاپ نامعتبر است' },
+            { status: e.status || 400 },
+          )
+        }
       }
       if (symbol) {
         try {

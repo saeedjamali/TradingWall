@@ -9,7 +9,16 @@ export async function GET(request) {
     
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    
+    const standardOnly = searchParams.get('standard') === '1'
+
+    if (standardOnly) {
+      const setups = await Setup.find({ type: 'standard' })
+        .select('_id title type description')
+        .sort({ title: 1 })
+        .lean()
+      return NextResponse.json({ success: true, setups })
+    }
+
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'userId is required' },

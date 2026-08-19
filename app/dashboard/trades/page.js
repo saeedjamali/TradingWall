@@ -10,6 +10,7 @@ import EmptyState, { NoTradesIcon } from "@/components/EmptyState";
 import Modal from "@/components/Modal";
 import { formatDateTime } from "@/utils/dateHelpers";
 import { getSessionUser } from "@/utils/session";
+import SelectedSetupNote from "@/components/SelectedSetupNote";
 
 export default function TradesListPage() {
   const router = useRouter();
@@ -864,6 +865,7 @@ export default function TradesListPage() {
             <p className="text-xs text-gray-500 mt-2">
               ⭐ ستاپ‌های استاندارد | 👤 ستاپ‌های شخصی
             </p>
+            <SelectedSetupNote setups={setups} selectedIds={selectedSetups} />
           </div>
 
           {/* Action Buttons */}

@@ -89,6 +89,9 @@ function ChallengeCard({ c, badge }) {
         {c.timeframe ? (
           <span className="text-xs text-gray-400">{c.timeframe}</span>
         ) : null}
+        {c.suggestedSetup?.title ? (
+          <span className="text-xs text-amber-200">ستاپ {c.suggestedSetup.title}</span>
+        ) : null}
         <span className="text-xs text-gray-500">
           هر روز ≥ ۱ {resolvedType === 'trade' ? 'معامله' : 'بک‌تست'}
         </span>

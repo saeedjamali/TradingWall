@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import SymbolSelect from '@/components/SymbolSelect'
+import SelectedSetupNote from '@/components/SelectedSetupNote'
 import {
   BACKTEST_TIMEFRAMES,
   loadBacktestPrefs,
@@ -223,6 +224,7 @@ export default function MarketRealityDayPanel({
               </optgroup>
             )}
           </select>
+          <SelectedSetupNote setups={setups} selectedIds={form.setupId} />
 
           <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto rounded-lg border border-gray-100 bg-white p-2">
             {setups.length === 0 && (

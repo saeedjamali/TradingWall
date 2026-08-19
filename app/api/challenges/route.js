@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import BacktestChallenge from '@/models/BacktestChallenge'
 import ChallengeParticipant from '@/models/ChallengeParticipant'
+import '@/models/Setup'
 import { requireActiveUser } from '@/utils/requireActiveUser'
 import { assertActiveSymbol } from '@/utils/symbolSeed'
 import { startOfLocalDay, endOfLocalDay } from '@/utils/backtest'
 import { getChallengePhase, resolveChallengeType, validateChallengeWindowNotPast } from '@/utils/challenge'
+import { resolveSuggestedSetupId, serializeSuggestedSetup } from '@/utils/challengeSetup'
 
 export async function GET(request) {
   try {
@@ -57,6 +59,7 @@ export async function GET(request) {
         .sort({ createdAt: -1 })
         .limit(Math.min(200, Math.max(limit * 4, 80)))
         .populate('creatorId', 'publicName verified')
+        .populate('suggestedSetupId', 'title')
         .lean()
 
       let viewerParticipationMap = {}
@@ -89,6 +92,7 @@ export async function GET(request) {
             approvedCount: approved,
             creator: c.creatorId,
             creatorId: c.creatorId?._id || c.creatorId,
+            suggestedSetup: serializeSuggestedSetup(c),
             myStatus: viewerParticipationMap[String(c._id)] || null,
           }
         }),
@@ -131,6 +135,7 @@ export async function GET(request) {
         .sort({ createdAt: -1 })
         .limit(50)
         .populate('creatorId', 'publicName verified')
+        .populate('suggestedSetupId', 'title')
         .lean()
 
       const withMeta = await Promise.all(
@@ -147,6 +152,7 @@ export async function GET(request) {
             approvedCount: approved,
             creator: c.creatorId,
             creatorId: c.creatorId?._id || c.creatorId,
+            suggestedSetup: serializeSuggestedSetup(c),
           }
         }),
       )
@@ -156,6 +162,7 @@ export async function GET(request) {
 
     const created = await BacktestChallenge.find({ creatorId: userId })
       .sort({ createdAt: -1 })
+      .populate('suggestedSetupId', 'title')
       .lean()
 
     const participations = await ChallengeParticipant.find({
@@ -164,7 +171,10 @@ export async function GET(request) {
     })
       .populate({
         path: 'challengeId',
-        populate: { path: 'creatorId', select: 'publicName verified' },
+        populate: [
+          { path: 'creatorId', select: 'publicName verified' },
+          { path: 'suggestedSetupId', select: 'title' },
+        ],
       })
       .lean()
 
@@ -178,6 +188,7 @@ export async function GET(request) {
         participationStatus: p.status,
         creator: p.challengeId.creatorId,
         creatorId: p.challengeId.creatorId?._id || p.challengeId.creatorId,
+        suggestedSetup: serializeSuggestedSetup(p.challengeId),
       }))
 
     const createdMapped = await Promise.all(
@@ -193,6 +204,7 @@ export async function GET(request) {
           phase: getChallengePhase(c),
           approvedCount: approved,
           participationStatus: 'creator',
+          suggestedSetup: serializeSuggestedSetup(c),
         }
       }),
     )
@@ -228,6 +240,7 @@ export async function POST(request) {
       maxParticipants,
       requireApproval,
       rules,
+      suggestedSetupId: bodySuggestedSetupId,
     } = body
 
     if (!userId) {
@@ -304,6 +317,19 @@ export async function POST(request) {
       return NextResponse.json({ error: pastError }, { status: 400 })
     }
 
+    let suggestedSetupId = null
+    try {
+      suggestedSetupId = await resolveSuggestedSetupId(
+        bodySuggestedSetupId,
+        challengeType,
+      )
+    } catch (e) {
+      return NextResponse.json(
+        { error: e.message || 'ستاپ نامعتبر است' },
+        { status: e.status || 400 },
+      )
+    }
+
     const needsApproval = !!requireApproval
 
     const challenge = await BacktestChallenge.create({
@@ -325,6 +351,7 @@ export async function POST(request) {
           : Math.max(2, Number(maxParticipants)),
       requireApproval: needsApproval,
       resultsVisibility: needsApproval ? 'participants' : 'public',
+      suggestedSetupId,
       rules: rules || '',
       status: 'open',
     })

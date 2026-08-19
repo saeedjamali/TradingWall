@@ -19,23 +19,18 @@ function symbolFilter(symbol) {
   }
 }
 
-function sortStandings(standings, isTrade) {
+function sortStandings(standings) {
   return [...standings].sort((a, b) => {
+    if ((b.unitNet || 0) !== (a.unitNet || 0)) {
+      return (b.unitNet || 0) - (a.unitNet || 0)
+    }
     if ((b.progressPct || 0) !== (a.progressPct || 0)) {
       return (b.progressPct || 0) - (a.progressPct || 0)
     }
-    if (isTrade) {
-      if ((b.pnl || 0) !== (a.pnl || 0)) return (b.pnl || 0) - (a.pnl || 0)
-      if ((b.hitRate || 0) !== (a.hitRate || 0)) {
-        return (b.hitRate || 0) - (a.hitRate || 0)
-      }
-      return b.count - a.count
-    }
-    if (b.unitNet !== a.unitNet) return b.unitNet - a.unitNet
     if ((b.hitRate || 0) !== (a.hitRate || 0)) {
       return (b.hitRate || 0) - (a.hitRate || 0)
     }
-    return b.count - a.count
+    return (b.count || 0) - (a.count || 0)
   })
 }
 
@@ -69,18 +64,24 @@ export async function computeChallengeStandings(challenge) {
           .lean()
         return buildTradeChallengeStanding(u, trades, bounds)
       }
-      const backtests = await Backtest.find({
+      const backtestQuery = {
         userId: u._id,
         symbol: filter,
         date: { $gte: bounds.start, $lte: bounds.end },
-      })
+      }
+      const suggestedId =
+        challenge.suggestedSetupId?._id || challenge.suggestedSetupId
+      if (suggestedId) {
+        backtestQuery.setupIds = suggestedId
+      }
+      const backtests = await Backtest.find(backtestQuery)
         .populate('setupIds', 'title type')
         .lean()
       return buildChallengeStanding(u, backtests, bounds)
     }),
   )
 
-  return sortStandings(rows.filter(Boolean), isTrade)
+  return sortStandings(rows.filter(Boolean))
 }
 
 /**
