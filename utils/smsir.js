@@ -78,7 +78,7 @@ export async function sendChallengeInviteSMS(phone, fullName, inviteId) {
         mobile: phone,
         templateId: 164409,
         parameters: [
-          { name: "FULLNAME", value: String(fullName || "کاربر").slice(0, 40) },
+          { name: "NAME", value: String("کاربر").slice(0, 40) },
           { name: "LINK", value: String(inviteId || "").slice(0, 40) },
         ],
       },
