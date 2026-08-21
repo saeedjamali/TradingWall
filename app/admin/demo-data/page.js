@@ -65,7 +65,7 @@ export default function AdminDemoDataPage() {
     if (action === 'seed') {
       const msg = replace
         ? 'دیتای دمو فعلی پاک و دوباره ساخته می‌شود. ادامه؟'
-        : '۱۰ کاربر دمو با معاملات سالانه ساخته می‌شود. ادامه؟'
+        : '۱۰ کاربر دمو با معاملات از ابتدای سال تا امروز ساخته می‌شود. ادامه؟'
       if (!confirm(msg)) return
     }
     if (action === 'clear') {
@@ -118,8 +118,9 @@ export default function AdminDemoDataPage() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">دیتای دمو</h2>
           <p className="text-gray-600 mt-1 text-sm leading-relaxed">
-            ۱۰ کاربر واقعی‌نما با حدود ۲۵۵ معامله در سال جاری، دیوار عمومی،
-            ستاپ و فعالیت — برای پر کردن لیدربورد و دیوار معاملاتی.
+            ۱۰ کاربر واقعی‌نما با معاملات از ابتدای سال جاری تا امروز (حدود یک
+            معامله در هر روز کاری، سود و حد ضرر حداکثر حدود ۹۰–۱۰۰ دلار)، دیوار
+            عمومی، ستاپ و فعالیت — برای پر کردن لیدربورد و دیوار معاملاتی.
           </p>
         </div>
 

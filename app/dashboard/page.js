@@ -740,6 +740,36 @@ function TradingCalendar({
     weeks.push(currentWeek);
   }
 
+  const weekdayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const weekdayStats = Array.from({ length: 7 }, () => ({
+    profit: 0,
+    wins: 0,
+    losses: 0,
+    count: 0,
+  }));
+  for (const trade of monthTrades || []) {
+    const tradeDate = new Date(trade.closeTime);
+    if (
+      tradeDate.getMonth() !== currentMonth.getMonth() ||
+      tradeDate.getFullYear() !== currentMonth.getFullYear()
+    ) {
+      continue;
+    }
+    const dow = tradeDate.getDay();
+    weekdayStats[dow].count += 1;
+    weekdayStats[dow].profit += trade.profit || 0;
+    if (trade.profit > 0) weekdayStats[dow].wins += 1;
+    else if (trade.profit < 0) weekdayStats[dow].losses += 1;
+  }
+
   // Calculate month summary
   const monthProfit = (monthTrades || []).reduce(
     (sum, trade) => sum + trade.profit,
@@ -1185,11 +1215,68 @@ function TradingCalendar({
             </div>
           ))}
 
-          {/* Month Summary Row */}
+          {/* Weekday totals (Mon–Fri) + Month Total */}
           <div className="grid grid-cols-8 gap-1.5 md:gap-2 mt-2 md:mt-4 pt-2 md:pt-4 border-t-2 border-slate-200">
-            <div className="col-span-7 text-right font-bold text-sm md:text-lg text-slate-700 flex items-center justify-end pr-2">
-              Month Total:
-            </div>
+            {weekdayStats.map((wd, di) => {
+              const isWeekend = di === 0 || di === 6;
+              const has = wd.count > 0;
+              const wr =
+                has && wd.count > 0
+                  ? ((wd.wins / wd.count) * 100).toFixed(0)
+                  : 0;
+              const isProfit = has && wd.profit > 0;
+              const isLoss = has && wd.profit < 0;
+              return (
+                <div
+                  key={`wd-${di}`}
+                  className={`
+                    border-2 rounded-xl p-1.5 md:p-2 min-h-[118px] md:min-h-[128px]
+                    ${isWeekend ? "bg-slate-200/70 border-slate-300 opacity-80" : ""}
+                    ${!isWeekend && isProfit ? "bg-emerald-100 border-emerald-400" : ""}
+                    ${!isWeekend && isLoss ? "bg-rose-100 border-rose-400" : ""}
+                    ${!isWeekend && has && wd.profit === 0 ? "bg-amber-100 border-amber-400" : ""}
+                    ${!isWeekend && !has ? "bg-slate-50 border-slate-300" : ""}
+                  `}
+                >
+                  {isWeekend ? (
+                    <div className="text-slate-400 text-center text-xs mt-6">
+                      —
+                    </div>
+                  ) : (
+                    <div className="text-[10px] md:text-xs space-y-1 text-left">
+                      <div className="font-bold text-[9px] md:text-[10px] text-slate-500">
+                        {weekdayNames[di]}
+                      </div>
+                      {has ? (
+                        <>
+                          <div
+                            className={`font-bold text-[13px] md:text-sm tabular-nums ${
+                              isProfit
+                                ? "text-emerald-700"
+                                : isLoss
+                                  ? "text-rose-700"
+                                  : "text-amber-700"
+                            }`}
+                          >
+                            {wd.profit >= 0 ? "+" : "-"}$
+                            {Math.abs(wd.profit).toFixed(2)}
+                          </div>
+                          <div className="text-slate-600">
+                            {wd.count} trades ·{" "}
+                            <span className="text-emerald-700">W{wd.wins}</span>
+                            /
+                            <span className="text-rose-700">L{wd.losses}</span>
+                          </div>
+                          <div className="text-slate-600">WR: {wr}%</div>
+                        </>
+                      ) : (
+                        <div className="text-gray-400">—</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             <div
               className={`
           border-2 rounded-xl p-2 md:p-4 font-bold
@@ -1200,6 +1287,9 @@ function TradingCalendar({
         `}
             >
               <div className="text-xs md:text-sm space-y-1 text-left">
+                <div className="text-[10px] md:text-xs font-bold text-primary-700">
+                  Month Total
+                </div>
                 {hasMonthTrades ? (
                   <>
                     <div

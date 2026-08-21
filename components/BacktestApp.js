@@ -20,6 +20,15 @@ import {
 } from '@/utils/backtest'
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const WEEK_DAYS_FULL = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+]
 
 function monthBounds(monthDate) {
   const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
@@ -128,6 +137,21 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
   )
 
   const monthStats = useMemo(() => buildBacktestReports(backtests), [backtests])
+  const weekdayStats = useMemo(() => {
+    const buckets = Array.from({ length: 7 }, () => [])
+    for (const b of backtests || []) {
+      const d = new Date(b.date)
+      if (Number.isNaN(d.getTime())) continue
+      buckets[d.getDay()].push(b)
+    }
+    return buckets.map((items) => {
+      const tp = items.reduce((s, b) => s + (b.tpHits || 0), 0)
+      const sl = items.reduce((s, b) => s + (b.slHits || 0), 0)
+      const pnl = items.reduce((s, b) => s + (b.resultPnL || 0), 0)
+      const withPnl = items.some((b) => b.resultPnL != null)
+      return { items, tp, sl, pnl, withPnl, count: items.length }
+    })
+  }, [backtests])
   const marketStats = useMemo(
     () => buildMarketRealityReports(marketRealities),
     [marketRealities],
@@ -678,9 +702,63 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
               })}
 
               <div className="grid grid-cols-8 gap-1.5 mt-2 pt-3 border-t-2 border-slate-200">
-                <div className="col-span-7 text-right font-bold text-sm text-slate-700 flex items-center justify-end pr-2">
-                  Month Total:
-                </div>
+                {weekdayStats.map((wd, di) => {
+                  const isWeekend = di === 0 || di === 6
+                  const has = wd.count > 0
+                  const isProfit = has && (wd.withPnl ? wd.pnl > 0 : wd.tp - wd.sl > 0)
+                  const isLoss = has && (wd.withPnl ? wd.pnl < 0 : wd.tp - wd.sl < 0)
+                  return (
+                    <div
+                      key={`wd-${di}`}
+                      className={`
+                        border-2 rounded-xl p-1.5 min-h-[88px] text-[10px] space-y-0.5
+                        ${isWeekend ? 'bg-slate-200/70 border-slate-300 opacity-80' : ''}
+                        ${!isWeekend && isProfit ? 'bg-emerald-100 border-emerald-400' : ''}
+                        ${!isWeekend && isLoss ? 'bg-rose-100 border-rose-400' : ''}
+                        ${!isWeekend && has && !isProfit && !isLoss ? 'bg-amber-100 border-amber-400' : ''}
+                        ${!isWeekend && !has ? 'bg-slate-50 border-slate-300' : ''}
+                      `}
+                    >
+                      {isWeekend ? (
+                        <div className="text-slate-400 text-center mt-4">—</div>
+                      ) : has ? (
+                        <>
+                          <div className="text-[9px] font-bold text-slate-500">
+                            {WEEK_DAYS_FULL[di]}
+                          </div>
+                          <div
+                            className={`font-bold text-xs tabular-nums ${
+                              isProfit
+                                ? 'text-emerald-700'
+                                : isLoss
+                                  ? 'text-rose-700'
+                                  : 'text-amber-700'
+                            }`}
+                          >
+                            {wd.withPnl
+                              ? `${wd.pnl >= 0 ? '+' : ''}$${wd.pnl.toFixed(0)}`
+                              : `${wd.tp - wd.sl >= 0 ? '+' : ''}${wd.tp - wd.sl} R`}
+                          </div>
+                          <div className="text-slate-600">{wd.count} BT</div>
+                          <div>
+                            <span className="text-emerald-700">TP {wd.tp}</span>
+                            {' · '}
+                            <span className="text-rose-700">SL {wd.sl}</span>
+                          </div>
+                          <div className="text-slate-500 tabular-nums">
+                            برایند: {wd.tp - wd.sl >= 0 ? '+' : ''}
+                            {wd.tp - wd.sl}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-gray-400 text-center mt-3 text-[9px]">
+                          {WEEK_DAYS_FULL[di]}
+                          <div className="mt-1">—</div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
                 <div
                   className={`
                     border-2 rounded-xl p-2 text-[10px] space-y-0.5
@@ -690,6 +768,9 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
                     ${monthStats.count === 0 ? 'bg-slate-50 border-slate-300' : ''}
                   `}
                 >
+                  <div className="text-[9px] font-bold text-primary-700">
+                    Month Total
+                  </div>
                   {monthStats.count > 0 ? (
                     <>
                       <div

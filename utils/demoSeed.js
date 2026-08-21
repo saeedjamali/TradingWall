@@ -1,5 +1,5 @@
 /**
- * Demo users + annual trades for leaderboard / public trading walls.
+ * Demo users + year-to-date trades for leaderboard / public trading walls.
  * Marked with User.isDemo — safe to seed/clear from admin panel.
  */
 
@@ -26,8 +26,8 @@ export const DEMO_USERS = [
     capital: 25000,
     verified: true,
     winRate: 0.62,
-    avgWin: 85,
-    avgLoss: -48,
+    avgWin: 58,
+    avgLoss: -42,
   },
   {
     phone: '09000000002',
@@ -37,8 +37,8 @@ export const DEMO_USERS = [
     capital: 15000,
     verified: true,
     winRate: 0.58,
-    avgWin: 72,
-    avgLoss: -55,
+    avgWin: 52,
+    avgLoss: -45,
   },
   {
     phone: '09000000003',
@@ -48,8 +48,8 @@ export const DEMO_USERS = [
     capital: 20000,
     verified: false,
     winRate: 0.55,
-    avgWin: 95,
-    avgLoss: -60,
+    avgWin: 62,
+    avgLoss: -48,
   },
   {
     phone: '09000000004',
@@ -59,8 +59,8 @@ export const DEMO_USERS = [
     capital: 12000,
     verified: true,
     winRate: 0.67,
-    avgWin: 55,
-    avgLoss: -40,
+    avgWin: 44,
+    avgLoss: -32,
   },
   {
     phone: '09000000005',
@@ -70,8 +70,8 @@ export const DEMO_USERS = [
     capital: 30000,
     verified: false,
     winRate: 0.51,
-    avgWin: 110,
-    avgLoss: -70,
+    avgWin: 68,
+    avgLoss: -55,
   },
   {
     phone: '09000000006',
@@ -81,8 +81,8 @@ export const DEMO_USERS = [
     capital: 18000,
     verified: true,
     winRate: 0.6,
-    avgWin: 68,
-    avgLoss: -45,
+    avgWin: 50,
+    avgLoss: -38,
   },
   {
     phone: '09000000007',
@@ -92,8 +92,8 @@ export const DEMO_USERS = [
     capital: 22000,
     verified: false,
     winRate: 0.54,
-    avgWin: 88,
-    avgLoss: -62,
+    avgWin: 56,
+    avgLoss: -48,
   },
   {
     phone: '09000000008',
@@ -103,8 +103,8 @@ export const DEMO_USERS = [
     capital: 14000,
     verified: true,
     winRate: 0.64,
-    avgWin: 60,
-    avgLoss: -38,
+    avgWin: 46,
+    avgLoss: -34,
   },
   {
     phone: '09000000009',
@@ -114,8 +114,8 @@ export const DEMO_USERS = [
     capital: 28000,
     verified: false,
     winRate: 0.49,
-    avgWin: 130,
-    avgLoss: -85,
+    avgWin: 72,
+    avgLoss: -58,
   },
   {
     phone: '09000000010',
@@ -125,8 +125,8 @@ export const DEMO_USERS = [
     capital: 16000,
     verified: true,
     winRate: 0.59,
-    avgWin: 78,
-    avgLoss: -50,
+    avgWin: 54,
+    avgLoss: -40,
   },
 ]
 
@@ -212,52 +212,45 @@ function atLocalTime(day, hour, minute, second = 0) {
   return x
 }
 
+/** Losing trades never exceed this (USD). Wins stay in a similar modest range. */
+const MAX_LOSS_USD = 100
+const MAX_WIN_USD = 90
+const MIN_LOSS_USD = 12
+const MIN_WIN_USD = 15
+
 /**
- * Spread ~255 closes across the year (local calendar), denser near "now"
- * so week (≥5) and month (≥20) leaderboards fill.
+ * One close on almost every weekday from 1 Jan of the current year through today,
+ * plus extras so year (≥220), month (≥20) and week (≥5) boards fill.
  */
 function buildCloseTimes(rng, now = new Date()) {
-  const year = now.getFullYear()
-  const yearStart = new Date(year, 0, 2, 8, 0, 0)
-  const monthStart = new Date(year, now.getMonth(), 1, 8, 0, 0)
-  const weekStart = startOfLocalDay(now)
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay()) // Sunday
-
+  const yearStart = startOfLocalDay(new Date(now.getFullYear(), 0, 1))
+  const end = startOfLocalDay(now)
+  const weekStart = addDays(end, -6)
   const times = []
-  const pushDay = (day, force = false) => {
-    if (!force && isWeekend(day)) return
-    const h = 7 + Math.floor(rng() * 10)
-    const m = Math.floor(rng() * 60)
-    times.push(atLocalTime(day, h, m, Math.floor(rng() * 60)))
-  }
 
-  // Current week: at least 2 closes on each weekday so far
-  for (let d = 0; d < 7; d++) {
-    const day = addDays(weekStart, d)
-    if (day > now) break
+  for (let day = new Date(yearStart); day <= end; day = addDays(day, 1)) {
     if (isWeekend(day)) continue
-    pushDay(day, true)
-    if (rng() > 0.35) pushDay(day, true)
-  }
 
-  // Rest of current month → ~30
-  let cursor = addDays(now, -1)
-  while (times.length < 30 && cursor >= monthStart) {
-    pushDay(cursor)
-    cursor = addDays(cursor, -1)
-  }
-
-  // Rest of year → ~255
-  const target = 255
-  cursor = addDays(monthStart, -1)
-  while (times.length < target && cursor >= yearStart) {
-    if (!isWeekend(cursor) && rng() > 0.32) {
-      const tradesToday = 1 + (rng() > 0.65 ? 1 : 0)
-      for (let t = 0; t < tradesToday && times.length < target; t++) {
-        pushDay(cursor, true)
-      }
+    const inRecentWeek = day >= weekStart
+    let count = 1
+    const r = rng()
+    if (inRecentWeek) {
+      count = r > 0.3 ? 2 : 1
+    } else if (r > 0.48) {
+      count = 2
     }
-    cursor = addDays(cursor, -1)
+
+    for (let t = 0; t < count; t++) {
+      const h = 7 + Math.floor(rng() * 12)
+      const m = Math.floor(rng() * 60)
+      let closeTime = atLocalTime(day, h, m, Math.floor(rng() * 60))
+      if (closeTime > now) {
+        closeTime = new Date(
+          now.getTime() - (10 + Math.floor(rng() * 180)) * 60 * 1000,
+        )
+      }
+      times.push(closeTime)
+    }
   }
 
   times.sort((a, b) => a - b)
@@ -297,13 +290,18 @@ function buildTrade({
   const openPrice = round(symbolPrice(symbol, rng), symbol.includes('USD') && symbol.length === 6 && !['XAUUSD', 'XAGUSD', 'BTCUSD', 'ETHUSD', 'USOIL'].includes(symbol) ? 5 : 2)
   const isWin = rng() < profile.winRate
   const profitBase = isWin ? profile.avgWin : profile.avgLoss
-  const profit = round(profitBase * (0.7 + rng() * 0.7), 2)
-  const durationMin = 15 + Math.floor(rng() * 240)
+  let profit = round(profitBase * (0.55 + rng() * 0.7), 2)
+  if (isWin) {
+    profit = Math.min(MAX_WIN_USD, Math.max(MIN_WIN_USD, profit))
+  } else {
+    profit = Math.max(-MAX_LOSS_USD, Math.min(-MIN_LOSS_USD, profit))
+  }
+  const durationMin = 20 + Math.floor(rng() * 180)
   const openTime = new Date(closeTime.getTime() - durationMin * 60 * 1000)
   const pipMove =
-    Math.abs(profit) / (10 + rng() * 40) * (type === 'buy' ? (isWin ? 1 : -1) : isWin ? -1 : 1)
+    Math.abs(profit) / (20 + rng() * 50) * (type === 'buy' ? (isWin ? 1 : -1) : isWin ? -1 : 1)
   const closePrice = round(openPrice + pipMove * (openPrice > 50 ? 1 : 0.0001), openPrice > 50 ? 2 : 5)
-  const volume = round(0.1 + rng() * 1.4, 2)
+  const volume = round(0.05 + rng() * 0.35, 2)
 
   const assignedSetups =
     setupIds.length && rng() > 0.35
@@ -412,7 +410,7 @@ export async function clearDemoData() {
 }
 
 /**
- * Seed 10 demo users with ~255 trades each for current year + wall content.
+ * Seed 10 demo users with YTD trades (1 Jan → today) + wall content.
  * @param {{ SymbolModel?: import('mongoose').Model, replace?: boolean }} opts
  */
 export async function seedDemoData(opts = {}) {
@@ -498,19 +496,19 @@ export async function seedDemoData(opts = {}) {
     await Trade.insertMany(trades, { ordered: false })
     createdTrades += trades.length
 
-    // A handful of daily plans across recent months
     const planDocs = []
-    for (let p = 0; p < 12; p++) {
-      const day = addDays(now, -(p * 7 + Math.floor(rng() * 3)))
-      if (day.getUTCFullYear() !== now.getUTCFullYear()) continue
+    const monthsElapsed = now.getMonth() + 1
+    for (let p = 0; p < monthsElapsed; p++) {
+      const day = new Date(now.getFullYear(), p, 3 + Math.floor(rng() * 18))
+      if (day > now) continue
       planDocs.push({
         userId: user._id,
         date: startOfLocalDay(day),
         period: 'daily',
-        maxTrades: 3 + Math.floor(rng() * 3),
-        maxLoss: 100 + Math.floor(rng() * 150),
-        maxLossPercent: 1 + rng(),
-        targetProfit: 150 + Math.floor(rng() * 200),
+        maxTrades: 2 + Math.floor(rng() * 3),
+        maxLoss: 40 + Math.floor(rng() * 60),
+        maxLossPercent: 0.6 + rng() * 0.8,
+        targetProfit: 50 + Math.floor(rng() * 50),
         notes: 'پلن دمو — تمرکز روی کیفیت ورود',
         mood: pick(rng, ['calm', 'focused', 'confident', 'neutral']),
       })
@@ -524,11 +522,19 @@ export async function seedDemoData(opts = {}) {
       }
     }
 
-    const activities = ACTIVITY_TEMPLATES.map((a, ai) => ({
-      ...a,
-      userId: user._id,
-      date: addDays(now, -(ai * 10 + i)),
-    }))
+    const activities = ACTIVITY_TEMPLATES.map((a, ai) => {
+      const month = Math.min(
+        now.getMonth(),
+        Math.max(0, now.getMonth() - ai),
+      )
+      const dayNum = 4 + ((i + ai * 7) % 20)
+      const date = new Date(now.getFullYear(), month, dayNum)
+      return {
+        ...a,
+        userId: user._id,
+        date: date > now ? startOfLocalDay(now) : startOfLocalDay(date),
+      }
+    })
     await Activity.insertMany(activities)
     createdActivities += activities.length
   }
