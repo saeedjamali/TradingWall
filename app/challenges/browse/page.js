@@ -203,7 +203,7 @@ function BrowseChallengesInner() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
-                همه چالش‌ها
+                چالش بک‌تست و چالش معامله
               </h1>
               <p className="mt-2 text-sm md:text-base text-gray-300 leading-relaxed">
                 چالش‌های عمومی (پیوستن بدون تایید) و خصوصی (نیاز به تایید سازنده) را جستجو کنید و درخواست پیوستن بدهید.

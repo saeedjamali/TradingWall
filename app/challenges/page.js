@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Loading from '@/components/Loading'
 import AppTopNav from '@/components/AppTopNav'
 import { UserName } from '@/components/VerifiedBadge'
 import { getSessionUser } from '@/utils/session'
@@ -171,32 +170,41 @@ export default function ChallengesPage() {
   const [openList, setOpenList] = useState([])
 
   useEffect(() => {
-    const u = getSessionUser()
-    if (!u) {
-      router.push('/auth/login?next=/challenges')
-      return
-    }
-    setUser(u)
-  }, [router])
+    setUser(getSessionUser())
+  }, [])
 
   useEffect(() => {
-    if (!user?.id) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
       try {
-        const [mineRes, openRes] = await Promise.all([
-          fetch(`/api/challenges?userId=${user.id}&scope=mine`),
-          fetch(`/api/challenges?userId=${user.id}&scope=open`),
-        ])
-        const mine = await mineRes.json()
-        const open = await openRes.json()
-        if (!cancelled) {
-          if (mine.success) {
-            setCreated(mine.created || [])
-            setJoined(mine.joined || [])
+        if (user?.id) {
+          const [mineRes, openRes] = await Promise.all([
+            fetch(`/api/challenges?userId=${user.id}&scope=mine`),
+            fetch(`/api/challenges?userId=${user.id}&scope=open`),
+          ])
+          const mine = await mineRes.json()
+          const open = await openRes.json()
+          if (!cancelled) {
+            if (mine.success) {
+              setCreated(mine.created || [])
+              setJoined(mine.joined || [])
+            }
+            if (open.success) setOpenList(open.challenges || [])
           }
-          if (open.success) setOpenList(open.challenges || [])
+        } else {
+          const params = new URLSearchParams({
+            scope: 'public',
+            phase: 'active',
+            limit: '8',
+          })
+          const res = await fetch(`/api/challenges?${params}`)
+          const data = await res.json()
+          if (!cancelled && data.success) {
+            setOpenList(data.challenges || [])
+            setCreated([])
+            setJoined([])
+          }
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -219,14 +227,6 @@ export default function ChallengesPage() {
     router.push('/')
   }
 
-  if (!user || loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <Loading text="در حال بارگذاری چالش‌ها..." />
-      </div>
-    )
-  }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       <header className="border-b border-white/10 bg-black/25 backdrop-blur-sm sticky top-0 z-30">
@@ -242,18 +242,31 @@ export default function ChallengesPage() {
                 className="h-8 md:h-10 w-auto max-w-[150px] md:max-w-[200px]"
               />
             </Link>
-            <span className="text-white/25 hidden sm:inline">|</span>
-            <UserName
-              name={user.publicName}
-              verified={user.verified}
-              className="hidden sm:inline text-white/75 text-sm max-w-[130px]"
-              badgeClassName="w-4 h-4 text-blue-400"
-            />
+            {user ? (
+              <>
+                <span className="text-white/25 hidden sm:inline">|</span>
+                <UserName
+                  name={user.publicName}
+                  verified={user.verified}
+                  className="hidden sm:inline text-white/75 text-sm max-w-[130px]"
+                  badgeClassName="w-4 h-4 text-blue-400"
+                />
+              </>
+            ) : null}
           </div>
-          <AppTopNav
-            isAdmin={user.role === 'admin'}
-            onLogout={handleLogout}
-          />
+          {user ? (
+            <AppTopNav
+              isAdmin={user.role === 'admin'}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <Link
+              href="/auth/login?next=/challenges"
+              className="text-sm px-3 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 font-semibold"
+            >
+              ورود
+            </Link>
+          )}
         </div>
       </header>
 
@@ -284,7 +297,7 @@ export default function ChallengesPage() {
                 همه چالش‌ها
               </Link>
               <Link
-                href="/challenges/new"
+                href={user ? '/challenges/new' : '/auth/login?next=/challenges/new'}
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-sm shadow-[0_8px_24px_-8px_rgba(16,185,129,0.55)] transition-colors"
               >
                 ایجاد چالش جدید
@@ -298,57 +311,82 @@ export default function ChallengesPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-3 max-w-lg">
-            <StatChip label="ساخته‌شده" value={created.length} />
-            <StatChip label="شرکت‌کرده" value={joinedOnly.length} />
-            <StatChip label="چالش باز" value={openList.length} accent />
-          </div>
+          {user ? (
+            <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-3 max-w-lg">
+              <StatChip label="ساخته‌شده" value={created.length} />
+              <StatChip label="شرکت‌کرده" value={joinedOnly.length} />
+              <StatChip label="چالش باز" value={openList.length} accent />
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-gray-400 max-w-xl">
+              برای ساخت چالش یا پیوستن کامل وارد شوید؛ فهرست چالش‌های عمومی را
+              همین‌جا یا در صفحه همه چالش‌ها ببینید.
+            </p>
+          )}
         </div>
       </section>
 
       <div className="container mx-auto px-4 py-8 md:py-10 max-w-5xl">
-        <SectionBlock
-          title="چالش‌های من"
-          subtitle="چالش‌هایی که خودتان ساخته‌اید و مدیریت می‌کنید"
-          count={created.length}
-          empty={created.length === 0 ? 'هنوز چالشی نساخته‌اید — اولین چالش را بسازید.' : null}
-        >
-          {created.map((c) => (
-            <ChallengeCard key={c._id} c={c} badge="سازنده" />
-          ))}
-        </SectionBlock>
-
-        <SectionBlock
-          title="شرکت‌کرده‌ام"
-          subtitle="چالش‌هایی که به آن‌ها پیوسته‌اید"
-          count={joinedOnly.length}
-          empty={
-            joinedOnly.length === 0
-              ? 'هنوز در چالشی شرکت نکرده‌اید — از بخش چالش‌های باز یکی را انتخاب کنید.'
-              : null
-          }
-        >
-          {joinedOnly.map((c) => (
-            <ChallengeCard
-              key={c._id}
-              c={c}
-              badge={
-                c.participationStatus === 'pending'
-                  ? 'در انتظار تایید'
-                  : 'عضو'
+        {user ? (
+          <>
+            <SectionBlock
+              title="چالش‌های من"
+              subtitle="چالش‌هایی که خودتان ساخته‌اید و مدیریت می‌کنید"
+              count={created.length}
+              empty={
+                loading
+                  ? 'در حال بارگذاری...'
+                  : created.length === 0
+                    ? 'هنوز چالشی نساخته‌اید — اولین چالش را بسازید.'
+                    : null
               }
-            />
-          ))}
-        </SectionBlock>
+            >
+              {created.map((c) => (
+                <ChallengeCard key={c._id} c={c} badge="سازنده" />
+              ))}
+            </SectionBlock>
+
+            <SectionBlock
+              title="شرکت‌کرده‌ام"
+              subtitle="چالش‌هایی که به آن‌ها پیوسته‌اید"
+              count={joinedOnly.length}
+              empty={
+                loading
+                  ? 'در حال بارگذاری...'
+                  : joinedOnly.length === 0
+                    ? 'هنوز در چالشی شرکت نکرده‌اید — از بخش چالش‌های باز یکی را انتخاب کنید.'
+                    : null
+              }
+            >
+              {joinedOnly.map((c) => (
+                <ChallengeCard
+                  key={c._id}
+                  c={c}
+                  badge={
+                    c.participationStatus === 'pending'
+                      ? 'در انتظار تایید'
+                      : 'عضو'
+                  }
+                />
+              ))}
+            </SectionBlock>
+          </>
+        ) : null}
 
         <SectionBlock
-          title="چالش‌های باز"
-          subtitle="چالش‌های فعال که می‌توانید به آن‌ها بپیوندید"
+          title={user ? 'چالش‌های باز' : 'چالش‌های عمومی فعال'}
+          subtitle={
+            user
+              ? 'چالش‌های فعال که می‌توانید به آن‌ها بپیوندید'
+              : 'چالش بک‌تست و چالش معامله روی نماد مشخص — بدون رتبه‌بندی'
+          }
           count={openList.length}
           empty={
-            openList.length === 0
-              ? 'در حال حاضر چالش بازی وجود ندارد.'
-              : null
+            loading
+              ? 'در حال بارگذاری چالش‌ها...'
+              : openList.length === 0
+                ? 'در حال حاضر چالش بازی وجود ندارد.'
+                : null
           }
         >
           {openList.map((c) => (

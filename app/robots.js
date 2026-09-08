@@ -16,6 +16,8 @@ export default async function robots() {
           '/tools',
           '/tools/',
           '/backtest',
+          '/challenges',
+          '/challenges/',
         ],
         disallow: [
           '/admin/',
@@ -24,6 +26,7 @@ export default async function robots() {
           '/auth/',
           '/api/',
           '/uploads/',
+          '/challenges/new',
         ],
       },
       {
@@ -35,6 +38,8 @@ export default async function robots() {
           '/tools',
           '/tools/',
           '/backtest',
+          '/challenges',
+          '/challenges/',
         ],
         disallow: [
           '/admin/',
@@ -43,6 +48,7 @@ export default async function robots() {
           '/auth/',
           '/api/',
           '/uploads/',
+          '/challenges/new',
         ],
       },
     ],

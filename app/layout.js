@@ -5,6 +5,7 @@ import ActiveSessionGuard from "@/components/ActiveSessionGuard";
 import SiteLogTracker from "@/components/SiteLogTracker";
 import SeoJsonLd from "@/components/SeoJsonLd";
 import {
+  HOME_TITLE,
   SITE_DESCRIPTION,
   SITE_KEYWORDS,
   SITE_NAME_FA,
@@ -31,7 +32,7 @@ const googleVerification =
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: SITE_NAME_FA,
+    default: HOME_TITLE,
     template: `%s | ${SITE_NAME_FA}`,
   },
   description: SITE_DESCRIPTION,
@@ -41,21 +42,26 @@ export const metadata = {
   creator: SITE_NAME_FA,
   publisher: SITE_NAME_FA,
   category: "finance",
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "fa_IR",
     alternateLocale: ["en_US"],
     url: siteUrl,
     siteName: SITE_NAME_FA,
-    title: SITE_NAME_FA,
+    title: HOME_TITLE,
     description: SITE_TAGLINE,
+    images: [
+      {
+        url: "/icons/tradingwall-icon-512x512.png",
+        width: 512,
+        height: 512,
+        alt: SITE_NAME_FA,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: SITE_NAME_FA,
+    title: HOME_TITLE,
     description: SITE_TAGLINE,
   },
   robots: {

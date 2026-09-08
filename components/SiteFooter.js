@@ -33,9 +33,15 @@ const CANDLES = [
   { h: 35, up: false, wick: 10 },
 ];
 
-const BASE_FOOTER_LINKS = [
-  { href: "/", label: "صفحه اصلی" },
+const PUBLIC_SEO_LINKS = [
+  { href: "/", label: "ژورنال معاملاتی" },
+  { href: "/backtest", label: "بک‌تست فارکس" },
+  { href: "/challenges", label: "چالش بک‌تست" },
+  { href: "/tools", label: "ابزار فارکس" },
   { href: "/leaderboards", label: "لیدربورد" },
+];
+
+const ACCOUNT_LINKS = [
   { href: "/dashboard", label: "داشبورد" },
   { href: "/profile", label: "پروفایل" },
 ];
@@ -71,8 +77,8 @@ export default function SiteFooter() {
   }, []);
 
   const footerLinks = isLoggedIn
-    ? BASE_FOOTER_LINKS
-    : [...BASE_FOOTER_LINKS, { href: "/auth/login", label: "ورود" }];
+    ? [...PUBLIC_SEO_LINKS, ...ACCOUNT_LINKS]
+    : [...PUBLIC_SEO_LINKS, { href: "/auth/login", label: "ورود" }];
 
   return (
     <footer className="site-footer relative mt-auto overflow-hidden border-t border-white/10 bg-gradient-to-b from-slate-900 via-gray-900 to-[#0b1220] text-gray-300">

@@ -3,20 +3,15 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import Loading from '@/components/Loading'
 import BacktestApp from '@/components/BacktestApp'
 import { getSessionUser } from '@/utils/session'
 
 export default function BacktestPage() {
-  const [user, setUser] = useState(undefined)
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
     setUser(getSessionUser())
   }, [])
-
-  if (user === undefined) {
-    return <Loading text="در حال بارگذاری..." />
-  }
 
   if (user) {
     return <BacktestApp loginRedirect={null} />
@@ -59,11 +54,12 @@ function BacktestLanding() {
             Backtest Journal
           </p>
           <h1 className="text-3xl md:text-5xl font-bold mb-4">
-            بک‌تست معاملاتی
+            بک‌تست فارکس و ژورنال بکتست
           </h1>
           <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8">
-            بک‌تست‌های روزانه را ثبت کنید، تعداد TP و SL را پیگیری کنید و با
-            گزارش ستاپ‌ها و تقویم ماهانه وضعیت عملکرد خود را ببینید.
+            بک‌تست (بکتست) یعنی آزمودن ستاپ روی چارت تاریخی. بک‌تست‌های روزانه را
+            ثبت کنید، تعداد TP و SL را پیگیری کنید و با گزارش ستاپ‌ها و تقویم
+            ماهانه وضعیت عملکرد خود را ببینید.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link
@@ -122,6 +118,31 @@ function BacktestLanding() {
             ماشین‌حساب ریسک
           </Link>
         </p>
+
+        <article
+          className="max-w-3xl mx-auto mt-14 text-right text-white/60 text-sm leading-relaxed space-y-4"
+          dir="rtl"
+        >
+          <h2 className="text-lg font-bold text-white">
+            چرا بک‌تست را در ژورنال ثبت کنیم؟
+          </h2>
+          <p>
+            بدون ثبت منظم، بکتست فقط چند اسکرین‌شات پراکنده است. ژورنال بک‌تست
+            دیوار معاملاتی تعداد نتایج را کنار هم می‌گذارد تا ببینید کدام ستاپ
+            روی کدام نماد پایدارتر است و کجا حد ضرر بیشتر از حد سود تکرار می‌شود.
+          </p>
+          <p>
+            بعد از ثبت بک‌تست می‌توانید در{' '}
+            <Link href="/challenges" className="text-cyan-300 hover:underline">
+              چالش بک‌تست
+            </Link>{' '}
+            با دیگران روی یک نماد کار کنید، یا معاملات واقعی را در{' '}
+            <Link href="/" className="text-cyan-300 hover:underline">
+              ژورنال معاملاتی
+            </Link>{' '}
+            دنبال کنید.
+          </p>
+        </article>
       </div>
     </main>
   )
