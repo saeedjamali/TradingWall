@@ -149,6 +149,16 @@ export default function AdminDashboard() {
               </div>
             </div>
           </Link>
+
+          <Link href="/admin/logs" className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-transparent hover:border-slate-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center text-2xl">📋</div>
+              <div>
+                <h3 className="font-bold text-lg">لاگ و بازدید</h3>
+                <p className="text-sm text-gray-600">صفحات، اکشن‌ها و فیلتر زمانی</p>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Recent Activity */}

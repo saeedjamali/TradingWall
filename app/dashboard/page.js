@@ -19,6 +19,7 @@ import { UserName } from "@/components/VerifiedBadge";
 import AppTopNav from "@/components/AppTopNav";
 import { checkPlanCompliance, getPlanForDate } from "@/utils/planCompliance";
 import { getSessionUser } from "@/utils/session";
+import { monthLocalBounds } from "@/utils/dateHelpers";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -70,19 +71,13 @@ export default function DashboardPage() {
 
   const fetchMonthTrades = async (userId) => {
     try {
-      const startDate = new Date(
+      const { start, end } = monthLocalBounds(
         currentMonth.getFullYear(),
         currentMonth.getMonth(),
-        1,
-      );
-      const endDate = new Date(
-        currentMonth.getFullYear(),
-        currentMonth.getMonth() + 1,
-        0,
       );
 
       const response = await fetch(
-        `/api/trades?userId=${userId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&limit=1000`,
+        `/api/trades?userId=${userId}&startDate=${encodeURIComponent(start.toISOString())}&endDate=${encodeURIComponent(end.toISOString())}&limit=1000`,
       );
       const data = await response.json();
 
@@ -308,6 +303,7 @@ export default function DashboardPage() {
                     new Date(
                       currentMonth.getFullYear(),
                       currentMonth.getMonth() + 1,
+                      1,
                     ),
                   )
                 }
@@ -342,6 +338,7 @@ export default function DashboardPage() {
                     new Date(
                       currentMonth.getFullYear(),
                       currentMonth.getMonth() - 1,
+                      1,
                     ),
                   )
                 }
@@ -690,54 +687,29 @@ function TradingCalendar({
     return <Loading text="در حال بارگذاری تقویم..." />;
   }
 
-  // Generate calendar days
-  const firstDay = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth(),
-    1,
-  );
-  const lastDay = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth() + 1,
-    0,
-  );
-  const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  // Generate calendar days (always include the last day, including the 31st)
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Create array of days with empty cells for proper alignment
   const calendarDays = [];
-
-  // Add empty cells for days before the first day of month
   for (let i = 0; i < startingDayOfWeek; i++) {
     calendarDays.push(null);
   }
-
-  // Add actual days
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push(day);
   }
+  while (calendarDays.length % 7 !== 0) {
+    calendarDays.push(null);
+  }
 
-  // Calculate weekly summaries
   const weeks = [];
-  let currentWeek = [];
-
-  calendarDays.forEach((day, index) => {
-    currentWeek.push(day);
-
-    if ((index + 1) % 7 === 0) {
-      weeks.push(currentWeek);
-      currentWeek = [];
-    }
-  });
-
-  // Add remaining days as last week (pad with nulls to make it 7 days)
-  if (currentWeek.length > 0) {
-    while (currentWeek.length < 7) {
-      currentWeek.push(null);
-    }
-    weeks.push(currentWeek);
+  for (let i = 0; i < calendarDays.length; i += 7) {
+    weeks.push(calendarDays.slice(i, i + 7));
   }
 
   const weekdayNames = [

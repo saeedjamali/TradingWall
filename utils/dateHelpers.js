@@ -79,3 +79,35 @@ export function formatDateTime(date) {
   
   return `${gregorian}\n(${jalali})`
 }
+
+/** Local calendar month: day 1 00:00:00.000 → last day 23:59:59.999 */
+export function monthLocalBounds(year, monthIndex) {
+  const start = new Date(year, monthIndex, 1)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(year, monthIndex + 1, 0)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
+/**
+ * Query bound from YYYY-MM-DD (local calendar day) or a full ISO timestamp.
+ * Full ISO is used as-is so the client's timezone is preserved.
+ */
+export function parseQueryDayBound(value, { end = false } = {}) {
+  if (value == null || value === '') return null
+  const raw = String(value).trim()
+  const dayOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw)
+  if (dayOnly) {
+    const d = new Date(
+      Number(dayOnly[1]),
+      Number(dayOnly[2]) - 1,
+      Number(dayOnly[3]),
+    )
+    if (end) d.setHours(23, 59, 59, 999)
+    else d.setHours(0, 0, 0, 0)
+    return d
+  }
+  const d = new Date(raw)
+  if (Number.isNaN(d.getTime())) return null
+  return d
+}

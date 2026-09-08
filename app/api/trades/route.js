@@ -5,6 +5,7 @@ import Setup from '@/models/Setup'
 import Symbol from '@/models/Symbol'
 import { assertActiveSymbol } from '@/utils/symbolSeed'
 import { requireActiveUser } from '@/utils/requireActiveUser'
+import { parseQueryDayBound } from '@/utils/dateHelpers'
 
 // GET: Fetch trades with filters
 export async function GET(request) {
@@ -43,14 +44,12 @@ export async function GET(request) {
     if (startDate || endDate) {
       query.closeTime = {}
       if (startDate) {
-        const start = new Date(startDate)
-        start.setHours(0, 0, 0, 0)
-        query.closeTime.$gte = start
+        const start = parseQueryDayBound(startDate, { end: false })
+        if (start) query.closeTime.$gte = start
       }
       if (endDate) {
-        const end = new Date(endDate)
-        end.setHours(23, 59, 59, 999)
-        query.closeTime.$lte = end
+        const end = parseQueryDayBound(endDate, { end: true })
+        if (end) query.closeTime.$lte = end
       }
     }
     

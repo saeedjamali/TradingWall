@@ -2,6 +2,7 @@ import "./globals.css";
 import { Vazirmatn, Orbitron } from "next/font/google";
 import SiteFooter from "@/components/SiteFooter";
 import ActiveSessionGuard from "@/components/ActiveSessionGuard";
+import SiteLogTracker from "@/components/SiteLogTracker";
 import SeoJsonLd from "@/components/SeoJsonLd";
 import {
   SITE_DESCRIPTION,
@@ -102,6 +103,7 @@ export default function RootLayout({ children }) {
       >
         <SeoJsonLd />
         <ActiveSessionGuard />
+        <SiteLogTracker />
         <div className="flex-1 flex flex-col">{children}</div>
         <SiteFooter />
       </body>
