@@ -111,7 +111,7 @@ export default async function sitemap() {
     }))
 
     const posts = await BlogPost.find(publicPostFilter())
-      .select('slug updatedAt publishedAt')
+      .select('slug updatedAt publishedAt isPinned')
       .sort({ publishedAt: -1 })
       .limit(2000)
       .lean()
@@ -120,7 +120,7 @@ export default async function sitemap() {
       url: `${siteUrl}/blog/${post.slug}`,
       lastModified: post.updatedAt || post.publishedAt || now,
       changeFrequency: 'weekly',
-      priority: 0.8,
+      priority: post.isPinned ? 0.9 : 0.8,
     }))
   } catch (error) {
     console.error('Sitemap wall/blog entries skipped:', error?.message || error)

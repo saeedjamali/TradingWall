@@ -565,6 +565,55 @@ html.theme-light .blog-callout {
   color: #92400e;
 }
 
+html.theme-light .blog-featured,
+html.theme-light .blog-featured h2,
+html.theme-light .blog-featured h3,
+html.theme-light .blog-featured p,
+html.theme-light .blog-featured .text-white,
+html.theme-light .blog-featured .text-white\/70,
+html.theme-light .blog-featured .text-emerald-200\/90,
+html.theme-light .blog-featured .text-amber-200 {
+  color: #f8fafc !important;
+}
+
+html.theme-light .blog-featured .text-white\/45 {
+  color: rgb(248 250 252 / 0.72) !important;
+}
+
+.blog-figure {
+  position: relative;
+  margin: 0;
+}
+
+.blog-figure img[data-zoom='true'] {
+  cursor: zoom-in;
+}
+
+.blog-watermark {
+  position: absolute;
+  bottom: 0.7rem;
+  inset-inline-end: 0.75rem;
+  z-index: 2;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+  background: rgba(2, 8, 23, 0.45);
+  backdrop-filter: blur(6px);
+  padding: 0.18rem 0.55rem;
+  border-radius: 0.45rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.blog-watermark-lg {
+  font-size: 0.95rem;
+  bottom: 1rem;
+  inset-inline-end: 1rem;
+  padding: 0.3rem 0.7rem;
+}
+
 html.theme-light .page-shell .text-cyan-50,
 html.theme-light .page-shell .text-cyan-50\/90,
 html.theme-light .page-shell .text-cyan-100,

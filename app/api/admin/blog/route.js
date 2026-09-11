@@ -4,7 +4,7 @@ import BlogPost, { BLOG_CATEGORIES } from '@/models/BlogPost'
 import BlogComment from '@/models/BlogComment'
 import BlogRating from '@/models/BlogRating'
 import { requireAdmin } from '@/utils/adminAuth'
-import { slugify, splitCsv } from '@/utils/blog'
+import { slugify, splitCsv, clampPinPriority } from '@/utils/blog'
 
 function serializeFaqs(faqs) {
   if (!Array.isArray(faqs)) return []
@@ -51,6 +51,8 @@ function buildPayload(body, author) {
     howToSteps: serializeHowTo(body.howToSteps),
     isActive: body.isActive !== false,
     isVisible: body.isVisible !== false,
+    isPinned: body.isPinned === true,
+    pinPriority: clampPinPriority(body.pinPriority, body.isPinned === true),
     commentsEnabled: body.commentsEnabled !== false,
     commentsRequireApproval: body.commentsRequireApproval !== false,
     publishedAt: body.publishedAt ? new Date(body.publishedAt) : new Date(),
@@ -78,7 +80,10 @@ export async function GET(request) {
       ]
     }
 
-    const posts = await BlogPost.find(filter).sort({ updatedAt: -1 }).limit(200).lean()
+    const posts = await BlogPost.find(filter)
+      .sort({ isPinned: -1, pinPriority: -1, updatedAt: -1 })
+      .limit(200)
+      .lean()
     return NextResponse.json({ success: true, posts, categories: BLOG_CATEGORIES })
   } catch (error) {
     console.error('Admin blog GET error:', error)

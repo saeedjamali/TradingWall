@@ -5,6 +5,7 @@ import { BLOG_CATEGORY_LABELS, renderBlogHtml, commentsNeedApproval } from '@/ut
 import { absoluteUrl, getSiteUrl, SITE_NAME_FA } from '@/utils/site'
 import BlogVideo from '@/components/BlogVideo'
 import BlogEngage from '@/components/BlogEngage'
+import BlogZoomRoot, { BlogFigure } from '@/components/BlogMedia'
 
 export const dynamic = 'force-dynamic'
 
@@ -162,45 +163,49 @@ export default async function BlogPostPage({ params }) {
         </p>
       </header>
 
-      {post.coverImage ? (
-        <figure className="rounded-3xl overflow-hidden border border-cyan-400/20 bg-slate-950/70 p-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+      <BlogZoomRoot className="space-y-6">
+        {post.coverImage ? (
+          <BlogFigure
             src={post.coverImage}
             alt={post.coverImageAlt || post.title}
-            className="w-full rounded-2xl max-h-[520px] object-contain"
+            className="rounded-3xl overflow-hidden border border-cyan-400/20 bg-slate-950/70 p-2"
+            imgClassName="w-full rounded-2xl max-h-[520px] object-contain"
           />
-        </figure>
-      ) : null}
+        ) : null}
 
-      {(post.videoUrl || post.videoFile) && (
-        <section className="rounded-3xl border border-violet-400/25 bg-violet-950/25 p-3">
-          <BlogVideo url={post.videoUrl} file={post.videoFile} />
-        </section>
-      )}
+        {(post.videoUrl || post.videoFile) && (
+          <section className="rounded-3xl border border-violet-400/25 bg-violet-950/25 p-3">
+            <BlogVideo url={post.videoUrl} file={post.videoFile} />
+          </section>
+        )}
 
-      {post.excerpt ? (
-        <p className="rounded-2xl border border-cyan-400/25 bg-cyan-950/25 px-5 py-4 text-lg text-cyan-50/90 leading-relaxed">
-          {post.excerpt}
-        </p>
-      ) : null}
+        {post.excerpt ? (
+          <p className="rounded-2xl border border-cyan-400/25 bg-cyan-950/25 px-5 py-4 text-lg text-cyan-50/90 leading-relaxed">
+            {post.excerpt}
+          </p>
+        ) : null}
 
-      <article
-        className="blog-body rounded-3xl border border-white/10 bg-white/[0.035] p-5 md:p-8"
-        dangerouslySetInnerHTML={{ __html: renderBlogHtml(post.body) }}
-      />
+        <article
+          className="blog-body rounded-3xl border border-white/10 bg-white/[0.035] p-5 md:p-8"
+          dangerouslySetInnerHTML={{ __html: renderBlogHtml(post.body) }}
+        />
 
-      {(post.gallery || []).length > 0 && (
-        <section className="rounded-3xl border border-sky-400/20 bg-sky-950/20 p-4">
-          <h2 className="text-sm font-bold text-sky-200 mb-3">گالری</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {post.gallery.map((src) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={src} src={src} alt={post.title} className="rounded-xl w-full object-cover max-h-48" />
-            ))}
-          </div>
-        </section>
-      )}
+        {(post.gallery || []).length > 0 && (
+          <section className="rounded-3xl border border-sky-400/20 bg-sky-950/20 p-4">
+            <h2 className="text-sm font-bold text-sky-200 mb-3">گالری</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {post.gallery.map((src) => (
+                <BlogFigure
+                  key={src}
+                  src={src}
+                  alt={post.title}
+                  imgClassName="rounded-xl w-full object-cover max-h-48"
+                />
+              ))}
+            </div>
+          </section>
+        )}
+      </BlogZoomRoot>
 
       {(post.tags || []).length > 0 && (
         <section className="rounded-2xl border border-amber-400/25 bg-amber-950/20 p-4">

@@ -30,9 +30,11 @@ const emptyForm = {
   faq2a: '',
   isActive: false,
   isVisible: true,
-  commentsEnabled: true,
-  commentsRequireApproval: true,
-  publishedAt: '',
+      commentsEnabled: true,
+      commentsRequireApproval: true,
+      isPinned: false,
+      pinPriority: 10,
+      publishedAt: '',
 }
 
 function toLocalInput(value) {
@@ -125,6 +127,8 @@ export default function AdminBlogPage() {
       isVisible: post.isVisible !== false,
       commentsEnabled: post.commentsEnabled !== false,
       commentsRequireApproval: post.commentsRequireApproval !== false,
+      isPinned: post.isPinned === true,
+      pinPriority: post.isPinned ? (post.pinPriority || 10) : 10,
       publishedAt: toLocalInput(post.publishedAt),
     })
     setShowForm(true)
@@ -245,6 +249,7 @@ export default function AdminBlogPage() {
             <h2 className="text-2xl font-bold text-gray-800">بلاگ و مقالات سئو</h2>
             <p className="text-sm text-gray-500 mt-1">
               هر مقاله باید یک کلمه کلیدی اصلی، عنوان یکتا و متن مفید داشته باشد.
+              پست‌های ثابت با اولویت بالاتر، بالای صفحه بلاگ می‌مانند.
             </p>
           </div>
           <div className="flex gap-2">
@@ -471,6 +476,28 @@ export default function AdminBlogPage() {
                     <input type="checkbox" checked={form.isVisible} onChange={(e) => setField('isVisible', e.target.checked)} />
                     نمایش در لیست و سایت‌مپ
                   </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={form.isPinned}
+                      onChange={(e) => setField('isPinned', e.target.checked)}
+                    />
+                    پست ثابت (بالای صفحه بلاگ)
+                  </label>
+                  {form.isPinned ? (
+                    <label className="text-sm min-w-[160px]">
+                      اولویت نمایش
+                      <input
+                        type="number"
+                        min="1"
+                        max="99"
+                        className="mt-1 block w-28 border rounded-lg px-3 py-2"
+                        value={form.pinPriority}
+                        onChange={(e) => setField('pinPriority', e.target.value)}
+                      />
+                      <span className="block text-[11px] text-gray-500 mt-1">عدد بزرگ‌تر بالاتر می‌آید (۱ تا ۹۹)</span>
+                    </label>
+                  ) : null}
                   <label className="text-sm min-w-[240px]">
                     نظرات
                     <select
@@ -516,9 +543,16 @@ export default function AdminBlogPage() {
                   <p className="p-8 text-center text-gray-500">هنوز مقاله‌ای نیست</p>
                 ) : (
                   posts.map((post) => (
-                    <div key={post._id} className="p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div key={post._id} className={`p-4 flex flex-wrap items-center justify-between gap-3 ${post.isPinned ? 'bg-amber-50/80' : ''}`}>
                       <div>
-                        <p className="font-bold text-gray-900">{post.title}</p>
+                        <p className="font-bold text-gray-900 flex flex-wrap items-center gap-2">
+                          {post.title}
+                          {post.isPinned ? (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-200 text-amber-900">
+                              ثابت · اولویت {post.pinPriority || 0}
+                            </span>
+                          ) : null}
+                        </p>
                         <p className="text-xs text-gray-500 mt-1">
                           /blog/{post.slug} · {BLOG_CATEGORY_LABELS[post.category] || post.category}
                           {post.isActive ? ' · فعال' : ' · غیرفعال'}

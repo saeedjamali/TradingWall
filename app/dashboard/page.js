@@ -252,7 +252,7 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-8">
           <StatCard
             title="تعداد معاملات"
             value={stats?.totalTrades || 0}
@@ -651,20 +651,26 @@ function StatCard({ title, value, icon, accent = "sky", valueTone = "neutral" })
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-6 shadow-md ${theme.card}`}
+      className={`relative overflow-hidden rounded-xl border bg-gradient-to-br px-3 py-3.5 sm:p-5 shadow-md h-full ${theme.card}`}
       title={tooltips[title]}
     >
       <div className={`absolute inset-y-0 right-0 w-1 ${theme.bar}`} />
-      <div className="flex justify-between items-start gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3 pr-1.5 sm:pr-2 h-full">
         <div
-          className={`flex h-11 w-11 items-center justify-center rounded-lg text-2xl ${theme.icon}`}
+          className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-lg text-lg sm:text-2xl ${theme.icon}`}
         >
           {icon}
         </div>
-        <div className="text-right min-w-0">
-          <p className="text-sm text-gray-600">{title}</p>
-          <p className={`text-2xl font-bold mt-1 tabular-nums ${valueClass}`}>
-            {value}
+        <div className="min-w-0 flex-1 text-start">
+          <p className="text-[11px] sm:text-sm text-gray-600 leading-tight truncate">
+            {title}
+          </p>
+          <p
+            className={`mt-0.5 sm:mt-1 text-base sm:text-2xl font-bold tabular-nums leading-none tracking-tight ${valueClass}`}
+          >
+            <span dir="ltr" className="inline-block">
+              {value}
+            </span>
           </p>
         </div>
       </div>

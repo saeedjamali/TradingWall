@@ -59,6 +59,8 @@ const BlogPostSchema = new mongoose.Schema(
     howToSteps: { type: [HowToStepSchema], default: [] },
     isActive: { type: Boolean, default: false, index: true },
     isVisible: { type: Boolean, default: true, index: true },
+    isPinned: { type: Boolean, default: false, index: true },
+    pinPriority: { type: Number, default: 0, min: 0, max: 99 },
     commentsEnabled: { type: Boolean, default: true },
     commentsRequireApproval: { type: Boolean, default: true },
     isDemo: { type: Boolean, default: false, index: true },
@@ -76,7 +78,7 @@ const BlogPostSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-BlogPostSchema.index({ isActive: 1, isVisible: 1, publishedAt: -1 })
+BlogPostSchema.index({ isActive: 1, isVisible: 1, isPinned: -1, pinPriority: -1, publishedAt: -1 })
 BlogPostSchema.index({ tags: 1 })
 
 BlogPostSchema.virtual('ratingAvg').get(function ratingAvg() {
@@ -84,4 +86,18 @@ BlogPostSchema.virtual('ratingAvg').get(function ratingAvg() {
   return Math.round((this.ratingSum / this.ratingCount) * 10) / 10
 })
 
-export default mongoose.models.BlogPost || mongoose.model('BlogPost', BlogPostSchema)
+function getBlogPostModel() {
+  const existing = mongoose.models.BlogPost
+  if (existing) {
+    if (!existing.schema.path('isPinned')) {
+      existing.schema.add({
+        isPinned: { type: Boolean, default: false, index: true },
+        pinPriority: { type: Number, default: 0, min: 0, max: 99 },
+      })
+    }
+    return existing
+  }
+  return mongoose.model('BlogPost', BlogPostSchema)
+}
+
+export default getBlogPostModel()

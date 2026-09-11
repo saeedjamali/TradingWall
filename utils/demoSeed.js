@@ -380,12 +380,13 @@ async function seedDemoBlogPosts() {
       isDemo: true,
       isActive: true,
       isVisible: true,
+      isPinned: post.isPinned === true,
+      pinPriority: post.isPinned === true ? Number(post.pinPriority) || 10 : 0,
       publishedAt: post.publishedAt || now,
     }
     const existing = await BlogPost.findOne({ slug: post.slug })
     if (existing) {
-      Object.assign(existing, payload)
-      await existing.save()
+      await BlogPost.updateOne({ _id: existing._id }, { $set: payload })
       updated += 1
     } else {
       await BlogPost.create(payload)

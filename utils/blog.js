@@ -26,6 +26,16 @@ export function publicPostFilter(now = new Date()) {
   }
 }
 
+/** Pinned posts first (higher pinPriority wins), then newest. */
+export const PUBLIC_POST_SORT = { isPinned: -1, pinPriority: -1, publishedAt: -1 }
+
+export function clampPinPriority(value, isPinned) {
+  if (!isPinned) return 0
+  const n = Number.parseInt(value, 10)
+  if (!Number.isFinite(n)) return 10
+  return Math.min(99, Math.max(1, n))
+}
+
 export function isPublicPost(post, now = new Date()) {
   if (!post) return false
   if (!post.isActive) return false
@@ -60,7 +70,7 @@ export function renderBlogHtml(raw) {
   const withMedia = escaped
     .replace(
       /!\[([^\]]*)\]\((https?:\/\/[^)\s]+|\/[^)\s]+)\)/g,
-      '<img src="$2" alt="$1" class="rounded-xl my-5 w-full max-h-[520px] object-contain bg-slate-950/70 border border-white/10" />',
+      '<figure class="blog-figure my-5"><img src="$2" alt="$1" data-zoom="true" title="برای بزرگ‌نمایی کلیک کنید" class="rounded-xl w-full max-h-[520px] object-contain bg-slate-950/70 border border-white/10" /><span class="blog-watermark" aria-hidden="true">tradingwall.ir</span></figure>',
     )
     .replace(
       /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
@@ -80,7 +90,7 @@ export function renderBlogHtml(raw) {
     .map((block) => {
       const trimmed = block.trim()
       if (!trimmed) return ''
-      if (trimmed.startsWith('<h') || trimmed.startsWith('<img')) return trimmed
+      if (trimmed.startsWith('<h') || trimmed.startsWith('<img') || trimmed.startsWith('<figure')) return trimmed
 
       const lines = trimmed.split('\n').filter((line) => line.trim())
       if (lines.length && lines.every((line) => /^&gt;\s?/.test(line))) {

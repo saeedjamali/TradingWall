@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import BlogPost from '@/models/BlogPost'
-import { publicPostFilter, ratingAverage } from '@/utils/blog'
+import { publicPostFilter, PUBLIC_POST_SORT, ratingAverage } from '@/utils/blog'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,9 +30,9 @@ export async function GET(request) {
     const [items, total] = await Promise.all([
       BlogPost.find(filter)
         .select(
-          'title slug excerpt coverImage coverImageAlt category tags publishedAt updatedAt views ratingSum ratingCount readingHint authorName',
+          'title slug excerpt coverImage coverImageAlt category tags publishedAt updatedAt views ratingSum ratingCount readingHint authorName isPinned pinPriority',
         )
-        .sort({ publishedAt: -1 })
+        .sort(PUBLIC_POST_SORT)
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),

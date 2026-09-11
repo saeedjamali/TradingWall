@@ -65,7 +65,7 @@ export default function AdminDemoDataPage() {
     if (action === 'seed') {
       const msg = replace
         ? 'دیتای دمو فعلی پاک و دوباره ساخته می‌شود. ادامه؟'
-        : '۱۰ کاربر دمو با معاملات از ابتدای سال تا امروز و پست بلاگ متاتریدر ساخته می‌شود. ادامه؟'
+        : '۱۰ کاربر دمو با معاملات از ابتدای سال تا امروز و پست‌های آموزشی بلاگ ساخته می‌شود. ادامه؟'
       if (!confirm(msg)) return
     }
     if (action === 'clear') {
@@ -119,7 +119,8 @@ export default function AdminDemoDataPage() {
           <h2 className="text-2xl font-bold text-gray-900">دیتای دمو</h2>
           <p className="text-gray-600 mt-1 text-sm leading-relaxed">
             ۱۰ کاربر واقعی‌نما با معاملات از ابتدای سال جاری تا امروز، دیوار
-            عمومی، ستاپ، فعالیت، و پست بلاگ آموزش خروجی History از متاتریدر ۵.
+            عمومی، ستاپ، فعالیت و پست‌های آموزشی بلاگ، شامل آموزش Market Replay
+            سی‌تریدر برای بک‌تست داوجونز.
           </p>
         </div>
 

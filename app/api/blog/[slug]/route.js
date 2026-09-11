@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import BlogPost from '@/models/BlogPost'
 import BlogComment from '@/models/BlogComment'
-import { isPublicPost, publicPostFilter, ratingAverage, readingMinutes } from '@/utils/blog'
+import { isPublicPost, publicPostFilter, PUBLIC_POST_SORT, ratingAverage, readingMinutes } from '@/utils/blog'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +26,7 @@ export async function GET(_request, { params }) {
       ],
     })
       .select('title slug excerpt coverImage category publishedAt')
-      .sort({ publishedAt: -1 })
+      .sort(PUBLIC_POST_SORT)
       .limit(3)
       .lean()
 
