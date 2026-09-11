@@ -3,8 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #111827;
+  --foreground: #f8fafc;
+  --shell-from: #111827;
+  --shell-via: #1f2937;
+  --shell-to: #111827;
+}
+
+html {
+  color-scheme: dark;
+}
+
+html.theme-light {
+  color-scheme: light;
+  --background: #f1f5f9;
+  --foreground: #0f172a;
+  --shell-from: #f8fafc;
+  --shell-via: #e8eef5;
+  --shell-to: #f1f5f9;
 }
 
 /* Smaller base type on phones; desktop stays at browser default (16px) */
@@ -34,11 +50,63 @@ body {
   line-height: 1.6;
 }
 
-/* Shared dark page shell (same as homepage) */
+/* White cards/modals stay readable in dark theme (native inputs follow color-scheme).
+   Kept in @layer base so Tailwind text-* / bg-* utilities still win on the same node. */
+@layer base {
+  html:not(.theme-light) :is(
+    .bg-white,
+    .bg-white\/70,
+    .bg-white\/80,
+    .bg-white\/95,
+    .bg-gray-50,
+    .from-slate-50,
+    .from-primary-50,
+    .bg-sky-50,
+    .bg-sky-50\/90
+  ) {
+    color-scheme: light;
+    color: #1e293b;
+  }
+
+  html:not(.theme-light) :is(
+    .bg-white,
+    .bg-white\/70,
+    .bg-white\/80,
+    .bg-white\/95,
+    .bg-gray-50,
+    .from-slate-50,
+    .from-primary-50
+  ) :is(input, select, textarea):not([type='checkbox']):not([type='radio']):not([type='file']):not([type='hidden']):not(.sr-only) {
+    background-color: #ffffff;
+    color: #111827;
+    color-scheme: light;
+  }
+
+  html:not(.theme-light) :is(.bg-white, .bg-gray-50, .from-slate-50) :is(input, textarea)::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+  }
+
+  html:not(.theme-light) :is(.bg-white, .bg-gray-50, .from-slate-50) option {
+    background-color: #ffffff;
+    color: #111827;
+  }
+}
+
+/* Shared page shell (dark by default, light via html.theme-light) */
+.page-shell,
+.theme-surface {
+  background-image: linear-gradient(
+    to bottom right,
+    var(--shell-from),
+    var(--shell-via),
+    var(--shell-to)
+  );
+}
+
 .page-shell {
   min-height: 100vh;
   position: relative;
-  background-image: linear-gradient(to bottom right, #111827, #1f2937, #111827);
 }
 
 .page-shell::before {
@@ -235,4 +303,317 @@ body {
   border: 1px solid rgba(251, 191, 36, 0.35);
   color: #fde68a;
   line-height: 1.9;
+}
+
+/* ——— Light theme remaps (html.theme-light) ——— */
+html.theme-light .page-shell::before {
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg width='72' height='72' viewBox='0 0 72 72' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.55'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+html.theme-light header img[src*="tradinggwall-logo-horizontal"],
+html.theme-light nav img[src*="tradinggwall-logo-horizontal"] {
+  background-color: #475569;
+  border-radius: 0.65rem;
+  padding: 0.3rem 0.55rem;
+}
+
+html.theme-light .page-shell,
+html.theme-light .theme-surface {
+  color: #0f172a;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-white,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/95,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/90 {
+  color: #0f172a;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/80,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/75,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/85 {
+  color: rgb(15 23 42 / 0.82);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/70,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/65 {
+  color: rgb(15 23 42 / 0.72);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/60,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/55 {
+  color: rgb(51 65 85 / 0.95);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/50,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/45,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/40 {
+  color: #64748b;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/35,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/30,
+html.theme-light :is(.page-shell, .theme-surface) .text-white\/25 {
+  color: #94a3b8;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .hover\:text-white:hover {
+  color: #0f172a;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-gray-200,
+html.theme-light :is(.page-shell, .theme-surface) .text-gray-300 {
+  color: #334155;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-gray-400 {
+  color: #475569;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-gray-500 {
+  color: #64748b;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-emerald-300,
+html.theme-light :is(.page-shell, .theme-surface) .text-emerald-400 {
+  color: #047857;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-cyan-300 {
+  color: #0e7490;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-primary-300,
+html.theme-light :is(.page-shell, .theme-surface) .text-primary-400 {
+  color: #0369a1;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-amber-200,
+html.theme-light :is(.page-shell, .theme-surface) .text-amber-300 {
+  color: #b45309;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-rose-300,
+html.theme-light :is(.page-shell, .theme-surface) .text-rose-300\/90,
+html.theme-light :is(.page-shell, .theme-surface) .text-rose-300\/80 {
+  color: #e11d48;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .text-emerald-300\/90,
+html.theme-light :is(.page-shell, .theme-surface) .text-emerald-300\/80 {
+  color: #047857;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/10,
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/5,
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/3,
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.02\],
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.03\],
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.035\],
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.04\],
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.06\],
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.07\],
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.08\],
+html.theme-light :is(.page-shell, .theme-surface) .bg-white\/\[0\.09\] {
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.07);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .hover\:bg-white\/10:hover,
+html.theme-light :is(.page-shell, .theme-surface) .hover\:bg-white\/5:hover,
+html.theme-light :is(.page-shell, .theme-surface) .hover\:bg-white\/\[0\.08\]:hover,
+html.theme-light :is(.page-shell, .theme-surface) .hover\:bg-white\/\[0\.09\]:hover {
+  background-color: #f8fafc;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .hover\:bg-white\/20:hover {
+  background-color: rgb(15 23 42 / 0.08);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .border-white\/5,
+html.theme-light :is(.page-shell, .theme-surface) .border-white\/10,
+html.theme-light :is(.page-shell, .theme-surface) .border-white\/15,
+html.theme-light :is(.page-shell, .theme-surface) .border-white\/20 {
+  border-color: rgb(15 23 42 / 0.12);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .bg-black\/20,
+html.theme-light :is(.page-shell, .theme-surface) .bg-black\/25,
+html.theme-light :is(.page-shell, .theme-surface) .bg-black\/30 {
+  background-color: rgb(255 255 255 / 0.78);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .bg-gray-800,
+html.theme-light :is(.page-shell, .theme-surface) .bg-gray-900,
+html.theme-light :is(.page-shell, .theme-surface) .bg-\[\#0b1220\] {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .placeholder\:text-gray-500::placeholder {
+  color: #94a3b8;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) option {
+  color: #0f172a;
+  background-color: #fff;
+}
+
+/* Keep label text white on saturated action buttons */
+html.theme-light :is(.page-shell, .theme-surface) :is(
+  .bg-primary-600,
+  .bg-primary-700,
+  .bg-emerald-600,
+  .bg-emerald-500,
+  .bg-red-600,
+  .bg-red-700,
+  .bg-cyan-600,
+  .bg-cyan-500,
+  .bg-amber-600,
+  .bg-amber-500,
+  .bg-blue-600,
+  .bg-orange-600,
+  .bg-yellow-500
+) {
+  color: #fff;
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .theme-toggle {
+  color: #0f172a;
+  background-color: #ffffff;
+  border-color: rgb(15 23 42 / 0.16);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+html.theme-light :is(.page-shell, .theme-surface) .theme-toggle:hover {
+  background-color: rgb(15 23 42 / 0.06);
+  color: #0f172a;
+}
+
+/* Homepage banner stays the dark artwork in both themes */
+html.theme-light .home-hero-banner,
+html.theme-light .home-hero-banner .text-white,
+html.theme-light .home-hero-banner .text-white\/90 {
+  color: #fff;
+}
+
+html.theme-light .home-hero-banner .text-gray-300,
+html.theme-light .home-hero-banner .text-gray-400 {
+  color: #d1d5db;
+}
+
+html.theme-light .page-shell .from-emerald-950\/40,
+html.theme-light .page-shell .from-white\/\[0\.07\],
+html.theme-light .page-shell .via-gray-900\/80,
+html.theme-light .page-shell .to-amber-950\/30,
+html.theme-light .page-shell .to-white\/\[0\.02\] {
+  background-image: none;
+  background-color: #ffffff;
+}
+
+html.theme-light .site-footer {
+  background-image: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+  color: #475569;
+  border-color: rgb(15 23 42 / 0.1);
+}
+
+html.theme-light .site-footer .text-white {
+  color: #0f172a;
+}
+
+html.theme-light .site-footer .text-gray-300,
+html.theme-light .site-footer .text-gray-400,
+html.theme-light .site-footer .text-gray-500,
+html.theme-light .site-footer .text-gray-600 {
+  color: #64748b;
+}
+
+html.theme-light .site-footer .border-white\/5,
+html.theme-light .site-footer .border-white\/10 {
+  border-color: rgb(15 23 42 / 0.1);
+}
+
+html.theme-light .blog-p,
+html.theme-light .blog-bullets,
+html.theme-light .blog-steps li {
+  color: #334155;
+}
+
+html.theme-light .blog-h2 {
+  color: #064e3b;
+}
+
+html.theme-light .blog-body .blog-h2:nth-of-type(3n + 1) {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.04));
+}
+
+html.theme-light .blog-body .blog-h2:nth-of-type(3n + 2) {
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.16), rgba(6, 182, 212, 0.04));
+  color: #164e63;
+}
+
+html.theme-light .blog-body .blog-h2:nth-of-type(3n) {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.04));
+  color: #78350f;
+}
+
+html.theme-light .blog-h3 {
+  color: #0e7490;
+}
+
+html.theme-light .blog-callout {
+  color: #92400e;
+}
+
+html.theme-light .page-shell .text-cyan-50,
+html.theme-light .page-shell .text-cyan-50\/90,
+html.theme-light .page-shell .text-cyan-100,
+html.theme-light .page-shell .text-cyan-200,
+html.theme-light .page-shell .text-emerald-200,
+html.theme-light .page-shell .text-emerald-200\/70,
+html.theme-light .page-shell .text-sky-200,
+html.theme-light .page-shell .text-amber-100,
+html.theme-light .page-shell .text-violet-100,
+html.theme-light .page-shell .text-fuchsia-100 {
+  color: #134e4a;
+}
+
+html.theme-light .page-shell .bg-cyan-950\/25 {
+  background-color: #ecfeff;
+}
+
+html.theme-light .page-shell .bg-violet-950\/25 {
+  background-color: #f5f3ff;
+}
+
+html.theme-light .page-shell .bg-sky-950\/20 {
+  background-color: #f0f9ff;
+}
+
+html.theme-light .page-shell .bg-amber-950\/20 {
+  background-color: #fffbeb;
+}
+
+html.theme-light .page-shell .bg-slate-950\/70,
+html.theme-light .page-shell .bg-white\/\[0\.035\] {
+  background-color: #ffffff;
+}
+
+html.theme-light .page-shell .from-emerald-950\/55 {
+  background-image: linear-gradient(to bottom right, #ecfdf5, #f8fafc, #ecfeff) !important;
+}
+
+html.theme-light .page-shell .text-amber-100,
+html.theme-light .page-shell .text-emerald-100,
+html.theme-light .page-shell .text-emerald-100\/90,
+html.theme-light .page-shell .text-rose-200 {
+  color: #134e4a;
+}
+
+html.theme-light .page-shell .text-amber-100 {
+  color: #92400e;
+}
+
+html.theme-light .page-shell .text-rose-200 {
+  color: #be123c;
 }

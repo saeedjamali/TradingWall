@@ -293,7 +293,7 @@ export default function BacktestModal({
             <select
               value={form.direction}
               onChange={(e) => setField('direction', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
               required
             >
               <option value="buy">Buy</option>
@@ -307,7 +307,7 @@ export default function BacktestModal({
             <select
               value={form.timeframe}
               onChange={(e) => setField('timeframe', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
             >
               {BACKTEST_TIMEFRAMES.map((tf) => (
                 <option key={tf} value={tf}>
@@ -323,7 +323,7 @@ export default function BacktestModal({
             <select
               value={form.session}
               onChange={(e) => setField('session', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
             >
               {BACKTEST_SESSIONS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -513,7 +513,7 @@ export default function BacktestModal({
                 rows={2}
                 value={form.weaknesses}
                 onChange={(e) => setField('weaknesses', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none bg-white text-gray-900"
               />
             </div>
             <div>
@@ -524,7 +524,7 @@ export default function BacktestModal({
                 rows={2}
                 value={form.strengths}
                 onChange={(e) => setField('strengths', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none bg-white text-gray-900"
               />
             </div>
             <div>
@@ -535,7 +535,7 @@ export default function BacktestModal({
                 rows={2}
                 value={form.lesson}
                 onChange={(e) => setField('lesson', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none bg-white text-gray-900"
               />
             </div>
             <div>
@@ -546,7 +546,7 @@ export default function BacktestModal({
                 rows={2}
                 value={form.notes}
                 onChange={(e) => setField('notes', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none bg-white text-gray-900"
               />
             </div>
 

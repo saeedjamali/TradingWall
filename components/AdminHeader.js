@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { UserName } from "@/components/VerifiedBadge";
 import { CountBadge, useInboxCounts } from "@/components/useInboxCounts";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navItems = [
   { href: "/admin", label: "داشبورد", icon: "🏠", exact: true },
@@ -67,6 +68,7 @@ export default function AdminHeader({ user }) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle />
             <Link
               href="/dashboard"
               title="نمای کاربری"

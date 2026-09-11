@@ -60,6 +60,7 @@ const BlogPostSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: false, index: true },
     isVisible: { type: Boolean, default: true, index: true },
     commentsEnabled: { type: Boolean, default: true },
+    commentsRequireApproval: { type: Boolean, default: true },
     isDemo: { type: Boolean, default: false, index: true },
     publishedAt: { type: Date, default: null, index: true },
     authorId: {

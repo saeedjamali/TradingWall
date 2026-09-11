@@ -52,6 +52,7 @@ function buildPayload(body, author) {
     isActive: body.isActive !== false,
     isVisible: body.isVisible !== false,
     commentsEnabled: body.commentsEnabled !== false,
+    commentsRequireApproval: body.commentsRequireApproval !== false,
     publishedAt: body.publishedAt ? new Date(body.publishedAt) : new Date(),
     authorId: author?._id || null,
     authorName: author?.publicName || 'دیوار معاملاتی',

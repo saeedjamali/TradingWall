@@ -1,9 +1,12 @@
 import "./globals.css";
+import Script from "next/script";
 import { Vazirmatn, Orbitron } from "next/font/google";
 import SiteFooter from "@/components/SiteFooter";
+import BackToTop from "@/components/BackToTop";
 import ActiveSessionGuard from "@/components/ActiveSessionGuard";
 import SiteLogTracker from "@/components/SiteLogTracker";
 import SeoJsonLd from "@/components/SeoJsonLd";
+import { THEME_BOOTSTRAP } from "@/utils/theme";
 import {
   HOME_TITLE,
   SITE_DESCRIPTION,
@@ -103,15 +106,19 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fa" dir="rtl">
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
       <body
         className={`${vazir.variable} ${orbitron.variable} antialiased min-h-screen flex flex-col`}
       >
+        <Script id="tw-theme" strategy="beforeInteractive">
+          {THEME_BOOTSTRAP}
+        </Script>
         <SeoJsonLd />
         <ActiveSessionGuard />
         <SiteLogTracker />
         <div className="flex-1 flex flex-col">{children}</div>
         <SiteFooter />
+        <BackToTop />
       </body>
     </html>
   );

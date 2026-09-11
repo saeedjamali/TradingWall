@@ -7,6 +7,7 @@ import Image from "next/image";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import { LoadingSpinner } from "@/components/Loading";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   buildSupportRedirect,
   isInactiveAccountError,
@@ -99,7 +100,10 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+    <div className="page-shell flex items-center justify-center p-4">
+      <div className="fixed top-4 left-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo/Title */}
         <div className="text-center mb-8">
@@ -263,7 +267,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="page-shell flex items-center justify-center p-4">
           <div className="text-white text-center">در حال بارگذاری...</div>
         </div>
       }

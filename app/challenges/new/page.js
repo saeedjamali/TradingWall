@@ -8,6 +8,7 @@ import SelectedSetupNote from '@/components/SelectedSetupNote'
 import { getSessionUser } from '@/utils/session'
 import { BACKTEST_TIMEFRAMES } from '@/utils/backtest'
 import { formatDualDate, getChallengeTypeMeta, buildDefaultChallengeTitle } from '@/utils/challenge'
+import ThemeToggle from '@/components/ThemeToggle'
 
 function toInputDate(d) {
   const x = d instanceof Date ? d : new Date(d)
@@ -205,11 +206,14 @@ export default function NewChallengePage() {
   if (!user) return null
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+    <main className="page-shell text-white">
       <div className="container mx-auto px-4 py-8 max-w-2xl" dir="rtl">
-        <Link href="/challenges/browse" className="text-sm text-primary-300 hover:underline">
-          ← بازگشت به همه چالش‌ها
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/challenges/browse" className="text-sm text-primary-300 hover:underline">
+            ← بازگشت به همه چالش‌ها
+          </Link>
+          <ThemeToggle />
+        </div>
         <h1 className="text-2xl font-bold mt-4 mb-2">ایجاد چالش بک‌تست / چالش معامله</h1>
         <p className="text-sm text-gray-400 mb-6">
           هدف، شناسایی نقاط ضعف و قوت و تحلیل عملکرد است — نه رتبه‌بندی. نوع چالش، نماد

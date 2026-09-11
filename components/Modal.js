@@ -47,7 +47,7 @@ export default function Modal({
 
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-lg shadow-xl ${sizes[size] || sizes.md} w-full transform transition-all`}
+          className={`relative bg-white text-gray-900 rounded-lg shadow-xl ${sizes[size] || sizes.md} w-full transform transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
           {title && (

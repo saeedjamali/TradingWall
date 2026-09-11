@@ -17,7 +17,7 @@ export async function GET(request) {
     const comments = await BlogComment.find(filter)
       .populate('userId', 'publicName phone')
       .populate('postId', 'title slug')
-      .sort({ createdAt: -1 })
+      .sort({ isApproved: 1, createdAt: -1 })
       .limit(200)
       .lean()
 

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getPublicPostBySlug } from '@/lib/blogQueries'
-import { BLOG_CATEGORY_LABELS, renderBlogHtml } from '@/utils/blog'
+import { BLOG_CATEGORY_LABELS, renderBlogHtml, commentsNeedApproval } from '@/utils/blog'
 import { absoluteUrl, getSiteUrl, SITE_NAME_FA } from '@/utils/site'
 import BlogVideo from '@/components/BlogVideo'
 import BlogEngage from '@/components/BlogEngage'
@@ -236,6 +236,7 @@ export default async function BlogPostPage({ params }) {
       <BlogEngage
         slug={post.slug}
         commentsEnabled={post.commentsEnabled}
+        commentsRequireApproval={commentsNeedApproval(post)}
         initialComments={comments}
         ratingAvg={post.ratingAvg}
         ratingCount={post.ratingCount}

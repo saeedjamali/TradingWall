@@ -267,7 +267,7 @@ export default function DayTradesModal({
                     setNewSetup({ ...newSetup, title: e.target.value })
                   }
                   placeholder="عنوان ستاپ (مثال: Breakout Strategy)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
                 />
                 <textarea
                   value={newSetup.description}
@@ -276,7 +276,7 @@ export default function DayTradesModal({
                   }
                   placeholder="توضیحات ستاپ (اختیاری)"
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm resize-none bg-white text-gray-900"
                 />
                 <button
                   type="button"

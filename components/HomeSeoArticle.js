@@ -17,7 +17,7 @@ export default function HomeSeoArticle({ latestPosts = [] }) {
 
   return (
     <section
-      className="relative border-t border-white/10 bg-[#0b1220] text-gray-200"
+      className="theme-surface relative border-t border-white/10 bg-[#0b1220] text-gray-200"
       dir="rtl"
       aria-labelledby="seo-home-heading"
     >

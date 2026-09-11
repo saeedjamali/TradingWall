@@ -335,7 +335,7 @@ export default function ChallengeDetailPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="theme-surface text-white">
         <div className="container mx-auto px-4 py-8 max-w-6xl" dir="rtl">
           <Link href="/challenges/browse" className="text-sm text-primary-300 hover:underline">
             ← همه چالش‌ها

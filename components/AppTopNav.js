@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { CountBadge, useInboxCounts } from '@/components/useInboxCounts'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const ITEMS = [
   { href: '/dashboard', label: 'دیوار', match: (p) => p === '/dashboard' || p.startsWith('/dashboard/') },
@@ -68,6 +69,8 @@ export default function AppTopNav({
           خروج
         </button>
       )}
+
+      <ThemeToggle className="mr-0.5 md:mr-1" />
     </nav>
   )
 }

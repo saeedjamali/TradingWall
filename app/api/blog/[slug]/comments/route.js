@@ -3,7 +3,7 @@ import connectDB from '@/lib/mongodb'
 import BlogPost from '@/models/BlogPost'
 import BlogComment from '@/models/BlogComment'
 import User from '@/models/User'
-import { isPublicPost } from '@/utils/blog'
+import { isPublicPost, commentsNeedApproval } from '@/utils/blog'
 
 export async function GET(_request, { params }) {
   try {
@@ -52,18 +52,26 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'امکان ثبت نظر برای این مقاله نیست' }, { status: 400 })
     }
 
+    const pending = commentsNeedApproval(post)
     const comment = await BlogComment.create({
       postId: post._id,
       userId,
       body: text,
-      isApproved: true,
+      isApproved: !pending,
     })
 
     const populated = await BlogComment.findById(comment._id)
       .populate('userId', 'publicName verified')
       .lean()
 
-    return NextResponse.json({ success: true, comment: populated })
+    return NextResponse.json({
+      success: true,
+      comment: populated,
+      pending,
+      message: pending
+        ? 'نظر شما ثبت شد و پس از تایید مدیر نمایش داده می‌شود'
+        : 'نظر شما منتشر شد',
+    })
   } catch (error) {
     console.error('Blog comments POST error:', error)
     return NextResponse.json({ error: 'خطای سرور' }, { status: 500 })

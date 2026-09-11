@@ -27,6 +27,7 @@ export const DEMO_BLOG_POSTS = [
     isActive: true,
     isVisible: true,
     commentsEnabled: true,
+    commentsRequireApproval: true,
     authorName: 'دیوار معاملاتی',
     faqs: [
       {
@@ -156,6 +157,7 @@ export const DEMO_BLOG_POSTS = [
     isActive: true,
     isVisible: true,
     commentsEnabled: true,
+    commentsRequireApproval: true,
     authorName: 'دیوار معاملاتی',
     faqs: [
       {

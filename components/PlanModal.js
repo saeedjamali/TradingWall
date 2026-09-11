@@ -227,7 +227,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
           <select
             value={formData.period}
             onChange={(e) => handlePeriodChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
           >
             <option value="daily">📅 Daily (روزانه) - فقط برای این روز</option>
             <option value="weekly">📊 Weekly (هفتگی) - برای کل هفته جاری</option>
@@ -293,7 +293,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
               value={formData.maxTrades}
               onChange={(e) => setFormData({ ...formData, maxTrades: e.target.value })}
               placeholder="5"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
             />
           </div>
 
@@ -308,7 +308,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
               value={formData.maxLoss}
               onChange={(e) => setFormData({ ...formData, maxLoss: e.target.value })}
               placeholder="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
             />
             <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
               حداکثر ضرر مجاز هر معامله به دلار (مثلاً ۱۰$)
@@ -326,7 +326,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
               value={formData.maxLossPercent}
               onChange={(e) => setFormData({ ...formData, maxLossPercent: e.target.value })}
               placeholder="5"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
             />
             <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
               حداکثر ضرر مجاز نسبت به سرمایه (مثلاً ۲٪)
@@ -344,7 +344,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
               value={formData.targetProfit}
               onChange={(e) => setFormData({ ...formData, targetProfit: e.target.value })}
               placeholder="200"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
             />
           </div>
         </div>
@@ -384,7 +384,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
             placeholder="یادداشت های شما درباره این روز معاملاتی..."
           />
         </div>
@@ -420,7 +420,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
                   value={formData.tradeImage}
                   onChange={(e) => setFormData({ ...formData, tradeImage: e.target.value })}
                   placeholder="یا لینک تصویر"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white text-gray-900"
                 />
               </div>
             ) : (
@@ -453,7 +453,7 @@ export default function PlanModal({ isOpen, onClose, date, userId, existingPlan,
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm bg-white text-gray-700"
           >
             لغو
           </button>

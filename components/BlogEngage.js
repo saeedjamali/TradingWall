@@ -5,7 +5,14 @@ import Link from 'next/link'
 import { getSessionUser } from '@/utils/session'
 import { UserName } from '@/components/VerifiedBadge'
 
-export default function BlogEngage({ slug, commentsEnabled, initialComments, ratingAvg, ratingCount }) {
+export default function BlogEngage({
+  slug,
+  commentsEnabled,
+  commentsRequireApproval,
+  initialComments,
+  ratingAvg,
+  ratingCount,
+}) {
   const [sessionUser, setSessionUser] = useState(null)
   const [comments, setComments] = useState(initialComments || [])
   const [text, setText] = useState('')
@@ -31,9 +38,11 @@ export default function BlogEngage({ slug, commentsEnabled, initialComments, rat
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || 'خطا')
-      setComments((prev) => [data.comment, ...prev])
+      if (data.comment?.isApproved) {
+        setComments((prev) => [data.comment, ...prev])
+      }
       setText('')
-      setMessage('نظر شما ثبت شد')
+      setMessage(data.message || 'نظر شما ثبت شد')
     } catch (err) {
       setMessage(err.message)
     } finally {
@@ -89,6 +98,13 @@ export default function BlogEngage({ slug, commentsEnabled, initialComments, rat
           <h2 className="text-lg font-bold text-sky-100 mb-4">نظرات</h2>
           {sessionUser ? (
             <form onSubmit={submitComment} className="mb-6 space-y-3">
+              {commentsRequireApproval ? (
+                <p className="text-xs text-sky-200/80">
+                  نظر پس از تایید مدیر در صفحه نمایش داده می‌شود.
+                </p>
+              ) : (
+                <p className="text-xs text-sky-200/80">نظر شما بلافاصله منتشر می‌شود.</p>
+              )}
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}

@@ -31,6 +31,7 @@ const emptyForm = {
   isActive: false,
   isVisible: true,
   commentsEnabled: true,
+  commentsRequireApproval: true,
   publishedAt: '',
 }
 
@@ -53,6 +54,7 @@ export default function AdminBlogPage() {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [tab, setTab] = useState('posts')
+  const [commentFilter, setCommentFilter] = useState('pending')
 
   useEffect(() => {
     const raw = localStorage.getItem('user')
@@ -122,6 +124,7 @@ export default function AdminBlogPage() {
       isActive: post.isActive !== false,
       isVisible: post.isVisible !== false,
       commentsEnabled: post.commentsEnabled !== false,
+      commentsRequireApproval: post.commentsRequireApproval !== false,
       publishedAt: toLocalInput(post.publishedAt),
     })
     setShowForm(true)
@@ -226,6 +229,13 @@ export default function AdminBlogPage() {
 
   if (!user) return <Loading text="در حال بارگذاری..." />
 
+  const pendingCount = comments.filter((c) => !c.isApproved).length
+  const visibleComments = comments.filter((c) => {
+    if (commentFilter === 'pending') return !c.isApproved
+    if (commentFilter === 'approved') return c.isApproved
+    return true
+  })
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader user={user} />
@@ -251,6 +261,7 @@ export default function AdminBlogPage() {
               className={`px-3 py-2 rounded-lg text-sm ${tab === 'comments' ? 'bg-slate-800 text-white' : 'bg-white border'}`}
             >
               نظرات
+              {pendingCount > 0 ? ` (${pendingCount})` : ''}
             </button>
             {tab === 'posts' && (
               <Button
@@ -268,17 +279,38 @@ export default function AdminBlogPage() {
 
         {tab === 'comments' ? (
           <div className="bg-white rounded-xl border p-4 space-y-3">
-            {comments.length === 0 ? (
-              <p className="text-gray-500 text-sm">نظری نیست</p>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {[
+                { id: 'pending', label: `در انتظار تایید (${pendingCount})` },
+                { id: 'approved', label: 'منتشرشده' },
+                { id: 'all', label: 'همه' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setCommentFilter(item.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs ${
+                    commentFilter === item.id ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {visibleComments.length === 0 ? (
+              <p className="text-gray-500 text-sm">نظری در این وضعیت نیست</p>
             ) : (
-              comments.map((c) => (
-                <div key={c._id} className="border rounded-lg p-3">
+              visibleComments.map((c) => (
+                <div
+                  key={c._id}
+                  className={`border rounded-lg p-3 ${c.isApproved ? '' : 'border-amber-300 bg-amber-50'}`}
+                >
                   <p className="text-xs text-gray-500 mb-1">
                     {c.userId?.publicName || 'کاربر'} روی{' '}
                     <Link className="text-primary-700" href={`/blog/${c.postId?.slug || ''}`}>
                       {c.postId?.title || 'مقاله'}
                     </Link>
-                    {c.isApproved ? ' · تاییدشده' : ' · پنهان'}
+                    {c.isApproved ? ' · منتشرشده' : ' · در انتظار تایید'}
                   </p>
                   <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.body}</p>
                   <div className="flex gap-2 mt-2">
@@ -287,7 +319,7 @@ export default function AdminBlogPage() {
                       className="text-xs text-emerald-700"
                       onClick={() => toggleComment(c, !c.isApproved)}
                     >
-                      {c.isApproved ? 'عدم نمایش' : 'تایید نمایش'}
+                      {c.isApproved ? 'عدم نمایش' : 'تایید و انتشار'}
                     </button>
                     <button type="button" className="text-xs text-rose-700" onClick={() => deleteComment(c)}>
                       حذف
@@ -430,7 +462,7 @@ export default function AdminBlogPage() {
                   <label className="text-sm">سوال متداول ۲<input className="mt-1 w-full border rounded-lg px-3 py-2" value={form.faq2q} onChange={(e) => setField('faq2q', e.target.value)} /></label>
                   <label className="text-sm">پاسخ ۲<input className="mt-1 w-full border rounded-lg px-3 py-2" value={form.faq2a} onChange={(e) => setField('faq2a', e.target.value)} /></label>
                 </div>
-                <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex flex-wrap gap-4 text-sm items-end">
                   <label className="inline-flex items-center gap-2">
                     <input type="checkbox" checked={form.isActive} onChange={(e) => setField('isActive', e.target.checked)} />
                     فعال
@@ -439,9 +471,34 @@ export default function AdminBlogPage() {
                     <input type="checkbox" checked={form.isVisible} onChange={(e) => setField('isVisible', e.target.checked)} />
                     نمایش در لیست و سایت‌مپ
                   </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" checked={form.commentsEnabled} onChange={(e) => setField('commentsEnabled', e.target.checked)} />
-                    امکان نظر
+                  <label className="text-sm min-w-[240px]">
+                    نظرات
+                    <select
+                      className="mt-1 block w-full border rounded-lg px-3 py-2 bg-white"
+                      value={
+                        !form.commentsEnabled
+                          ? 'off'
+                          : form.commentsRequireApproval
+                            ? 'approve'
+                            : 'instant'
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === 'off') {
+                          setField('commentsEnabled', false)
+                          return
+                        }
+                        setForm((prev) => ({
+                          ...prev,
+                          commentsEnabled: true,
+                          commentsRequireApproval: value === 'approve',
+                        }))
+                      }}
+                    >
+                      <option value="off">غیرفعال</option>
+                      <option value="instant">انتشار بدون تایید ادمین</option>
+                      <option value="approve">انتشار پس از تایید ادمین</option>
+                    </select>
                   </label>
                 </div>
                 <div className="flex gap-2">
@@ -466,6 +523,11 @@ export default function AdminBlogPage() {
                           /blog/{post.slug} · {BLOG_CATEGORY_LABELS[post.category] || post.category}
                           {post.isActive ? ' · فعال' : ' · غیرفعال'}
                           {post.isVisible ? ' · نمایش' : ' · مخفی'}
+                          {!post.commentsEnabled
+                            ? ' · بدون نظر'
+                            : post.commentsRequireApproval !== false
+                              ? ' · نظر با تایید ادمین'
+                              : ' · نظر بدون تایید'}
                           {post.publishedAt ? ` · نمایش ${new Date(post.publishedAt).toLocaleString('fa-IR')}` : ''}
                           {post.updatedAt ? ` · ویرایش ${new Date(post.updatedAt).toLocaleString('fa-IR')}` : ''}
                         </p>

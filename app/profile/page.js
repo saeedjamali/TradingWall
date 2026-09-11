@@ -10,6 +10,7 @@ import Loading from "@/components/Loading";
 import VerifiedBadge, { UserName } from "@/components/VerifiedBadge";
 import { provinces, getCitiesByProvince } from "@/utils/iranLocations";
 import { getSessionUser } from "@/utils/session";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -444,7 +445,7 @@ export default function ProfilePage() {
   return (
     <div className="page-shell">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white border-b border-gray-200 text-gray-900">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
@@ -481,16 +482,18 @@ export default function ProfilePage() {
                     className="w-11 h-11 md:w-12 md:h-12"
                   />
                 </div>
-                <h1 className="text-xl md:text-2xl font-bold">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                   پروفایل کاربری
                 </h1>
               </Link>
             </div>
-            <button
-              onClick={handleLogout}
-              title="خروج"
-              className="flex items-center gap-2 px-2 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-            >
+            <div className="flex items-center gap-2">
+              <ThemeToggle onLight />
+              <button
+                onClick={handleLogout}
+                title="خروج"
+                className="flex items-center gap-2 px-2 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+              >
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -506,6 +509,7 @@ export default function ProfilePage() {
               </svg>
               <span className="hidden md:inline">خروج</span>
             </button>
+            </div>
           </div>
         </div>
       </header>
@@ -514,7 +518,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-md p-6 text-gray-900">
               <div className="text-center mb-6">
                 <div className="relative w-24 h-24 mx-auto mb-3">
                   {formData.profileImage ? (
@@ -529,7 +533,7 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
-                <h3 className="font-bold text-lg">
+                <h3 className="font-bold text-lg text-gray-900">
                   <UserName
                     name={formData.publicName}
                     verified={user?.verified}
@@ -550,7 +554,7 @@ export default function ProfilePage() {
                   className={`w-full text-right px-4 py-2 rounded-lg transition-colors ${
                     activeTab === "info"
                       ? "bg-primary-100 text-primary-700"
-                      : "hover:bg-gray-100"
+                      : "text-gray-800 hover:bg-gray-100"
                   }`}
                 >
                   👤 اطلاعات کاربری
@@ -560,7 +564,7 @@ export default function ProfilePage() {
                   className={`w-full text-right px-4 py-2 rounded-lg transition-colors ${
                     activeTab === "privacy"
                       ? "bg-primary-100 text-primary-700"
-                      : "hover:bg-gray-100"
+                      : "text-gray-800 hover:bg-gray-100"
                   }`}
                 >
                   🧱 تنظیمات دیوار کاربر
@@ -578,20 +582,20 @@ export default function ProfilePage() {
                   className={`w-full text-right px-4 py-2 rounded-lg transition-colors ${
                     activeTab === "password"
                       ? "bg-primary-100 text-primary-700"
-                      : "hover:bg-gray-100"
+                      : "text-gray-800 hover:bg-gray-100"
                   }`}
                 >
                   🔑 تغییر رمز عبور
                 </button>
                 <Link
                   href="/profile/setups"
-                  className="w-full text-right px-4 py-2 rounded-lg transition-colors hover:bg-gray-100 block"
+                  className="w-full text-right px-4 py-2 rounded-lg transition-colors text-gray-800 hover:bg-gray-100 block"
                 >
                   📊 ستاپ‌های معاملاتی
                 </Link>
                 <Link
                   href="/profile/checklists"
-                  className="w-full text-right px-4 py-2 rounded-lg transition-colors hover:bg-gray-100 block"
+                  className="w-full text-right px-4 py-2 rounded-lg transition-colors text-gray-800 hover:bg-gray-100 block"
                 >
                   ✅ چک‌لیست‌های معاملاتی
                 </Link>
@@ -600,7 +604,7 @@ export default function ProfilePage() {
                   className={`w-full text-right px-4 py-2 rounded-lg transition-colors ${
                     activeTab === "achievements"
                       ? "bg-primary-100 text-primary-700"
-                      : "hover:bg-gray-100"
+                      : "text-gray-800 hover:bg-gray-100"
                   }`}
                 >
                   🏆 دستاوردها
@@ -610,7 +614,7 @@ export default function ProfilePage() {
                   className={`w-full text-right px-4 py-2 rounded-lg transition-colors ${
                     activeTab === "activities"
                       ? "bg-primary-100 text-primary-700"
-                      : "hover:bg-gray-100"
+                      : "text-gray-800 hover:bg-gray-100"
                   }`}
                 >
                   📚 فعالیت‌ها
@@ -620,7 +624,7 @@ export default function ProfilePage() {
                   className={`w-full text-right px-4 py-2 rounded-lg transition-colors flex items-center justify-between gap-2 ${
                     activeTab === "messages"
                       ? "bg-primary-100 text-primary-700"
-                      : "hover:bg-gray-100"
+                      : "text-gray-800 hover:bg-gray-100"
                   }`}
                 >
                   <span>💬 پیام‌ها</span>
@@ -637,7 +641,7 @@ export default function ProfilePage() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {activeTab === "info" && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-6 text-gray-900">
                 <h2 className="text-xl font-bold mb-6">👤 اطلاعات کاربری</h2>
 
                 <div className="space-y-6">
@@ -725,7 +729,7 @@ export default function ProfilePage() {
                       <select
                         value={formData.province}
                         onChange={handleProvinceChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-700"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-gray-900"
                       >
                         <option value="">انتخاب استان</option>
                         {provinces.map((province) => (
@@ -746,7 +750,7 @@ export default function ProfilePage() {
                           setFormData({ ...formData, city: e.target.value })
                         }
                         disabled={!formData.province}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-700 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       >
                         <option value="">
                           {formData.province
@@ -799,7 +803,7 @@ export default function ProfilePage() {
             )}
 
             {activeTab === "privacy" && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-6 text-gray-900">
                 <h2 className="text-xl font-bold mb-2">
                   🧱 تنظیمات دیوار کاربر
                 </h2>
@@ -970,7 +974,7 @@ export default function ProfilePage() {
 
             {/* Password Tab */}
             {activeTab === "password" && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-6 text-gray-900">
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold flex items-center gap-2">
                     🔑 تغییر رمز عبور
@@ -1036,7 +1040,7 @@ export default function ProfilePage() {
             )}
 
             {activeTab === "achievements" && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-6 text-gray-900">
                 <h2 className="text-xl font-bold mb-6">🏆 دستاوردها</h2>
                 {achievements.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
@@ -1077,7 +1081,7 @@ export default function ProfilePage() {
             )}
 
             {activeTab === "activities" && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-6 text-gray-900">
                 <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
                   <h2 className="text-xl font-bold">📚 فعالیت‌های آموزشی</h2>
                   <Button
@@ -1109,7 +1113,7 @@ export default function ProfilePage() {
                           description: e.target.value,
                         })
                       }
-                      className="w-full border rounded-lg px-3 py-2 text-sm min-h-[80px]"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[80px] bg-white text-gray-900 placeholder:text-gray-400"
                     />
                     <div className="flex flex-wrap gap-3">
                       <select
@@ -1120,7 +1124,7 @@ export default function ProfilePage() {
                             type: e.target.value,
                           })
                         }
-                        className="border rounded-lg px-3 py-2 text-sm"
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900"
                       >
                         <option value="book">کتاب</option>
                         <option value="video">ویدیو</option>
@@ -1196,7 +1200,7 @@ export default function ProfilePage() {
             )}
 
             {activeTab === "messages" && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-6 text-gray-900">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                   <h2 className="text-xl font-bold flex items-center gap-2">
                     💬 پیام‌ها
@@ -1209,7 +1213,7 @@ export default function ProfilePage() {
                   <select
                     value={msgFilter}
                     onChange={(e) => setMsgFilter(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900"
                   >
                     <option value="all">همه</option>
                     <option value="site_feedback">نظرات سایت من</option>
@@ -1402,7 +1406,7 @@ export default function ProfilePage() {
                                     [m._id]: e.target.value,
                                   }))
                                 }
-                                className="w-full border rounded-lg px-3 py-2 text-sm min-h-[72px]"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[72px] bg-white text-gray-900 placeholder:text-gray-400"
                                 placeholder="پیام بعدی را بنویسید..."
                               />
                               <Button
@@ -1452,7 +1456,7 @@ function PrivacyToggle({ title, description, checked, onChange }) {
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
       <div>
-        <h3 className="font-semibold">{title}</h3>
+        <h3 className="font-semibold text-gray-900">{title}</h3>
         <p className="text-sm text-gray-600">{description}</p>
       </div>
       <label className="relative inline-flex items-center cursor-pointer">

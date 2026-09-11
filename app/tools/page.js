@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import Image from 'next/image'
+import PublicPageHeader from '@/components/PublicPageHeader'
 
 export const metadata = {
   title: 'ابزار معامله فارکس | ساعت سشن، ماشین‌حساب و بک‌تست',
@@ -103,38 +103,27 @@ export default function ToolsHubPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <Image
-              src="/logo/tradinggwall-logo-horizontal.svg"
-              alt="Trading Wall"
-              width={160}
-              height={40}
-              className="h-8 md:h-10 w-auto"
-            />
+      <PublicPageHeader>
+        <nav className="flex items-center gap-2 text-sm">
+          <Link href="/" className="text-white/70 hover:text-white px-2 hidden sm:inline">
+            خانه
           </Link>
-          <nav className="flex items-center gap-2 text-sm">
-            <Link href="/" className="text-white/70 hover:text-white px-2 hidden sm:inline">
-              خانه
-            </Link>
-            <Link
-              href="/dashboard"
-              className="text-white/70 hover:text-white px-2 hidden sm:inline"
-            >
-              داشبورد
-            </Link>
-            <span className="text-primary-300 font-semibold px-2">ابزار معامله</span>
-          </nav>
-        </div>
-      </header>
+          <Link
+            href="/dashboard"
+            className="text-white/70 hover:text-white px-2 hidden sm:inline"
+          >
+            داشبورد
+          </Link>
+          <span className="text-primary-300 font-semibold px-2">ابزار معامله</span>
+        </nav>
+      </PublicPageHeader>
 
       <div className="container mx-auto px-4 py-10 md:py-14" dir="rtl">
         <div className="max-w-2xl mb-8">
           <p className="text-primary-300 text-sm font-medium mb-2">Trading Tools</p>
           <h1 className="text-3xl md:text-4xl font-bold mb-3">ابزار معامله</h1>
           <p className="text-white/60 leading-relaxed text-sm md:text-base">
-            ابزارهای ضروری در چند بخش مرتب — بدون شلوغی.
+            ابزارهای ضروری در چند بخش مرتب برای معامله گران.
           </p>
         </div>
 

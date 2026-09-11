@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Loading from '@/components/Loading'
 import AppTopNav from '@/components/AppTopNav'
+import ThemeToggle from '@/components/ThemeToggle'
 import { UserName } from '@/components/VerifiedBadge'
 import { getSessionUser } from '@/utils/session'
 import { BACKTEST_TIMEFRAMES } from '@/utils/backtest'
@@ -155,7 +156,7 @@ function BrowseChallengesInner() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+    <main className="page-shell text-white">
       <header className="border-b border-white/10 bg-black/25 backdrop-blur-sm sticky top-0 z-30">
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 md:gap-3 min-w-0">
@@ -184,12 +185,15 @@ function BrowseChallengesInner() {
           {user ? (
             <AppTopNav isAdmin={user.role === 'admin'} onLogout={handleLogout} />
           ) : (
-            <Link
-              href="/auth/login?next=/challenges/browse"
-              className="text-sm px-3 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 font-semibold"
-            >
-              ورود
-            </Link>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Link
+                href="/auth/login?next=/challenges/browse"
+                className="text-sm px-3 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 font-semibold"
+              >
+                ورود
+              </Link>
+            </div>
           )}
         </div>
       </header>
@@ -507,7 +511,7 @@ export default function BrowseChallengesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="page-shell flex items-center justify-center">
           <Loading text="در حال بارگذاری چالش‌ها..." />
         </div>
       }

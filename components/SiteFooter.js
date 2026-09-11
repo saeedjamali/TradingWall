@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getSessionUser } from "@/utils/session";
+import { FooterBackToTop } from "@/components/BackToTop";
 
 /** Deterministic pseudo-random candle heights for SSR-stable render */
 const CANDLES = [
@@ -141,7 +142,10 @@ export default function SiteFooter() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>© {year} Trading Wall · تمامی حقوق محفوظ است</p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <p>© {year} Trading Wall · تمامی حقوق محفوظ است</p>
+            <FooterBackToTop />
+          </div>
           <p className="flex items-center gap-2 flex-wrap justify-center order-3 sm:order-none">
             <a
               href="mailto:info@tradingwall.ir"

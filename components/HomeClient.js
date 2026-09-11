@@ -9,6 +9,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import Modal from "@/components/Modal";
 import { getSessionUser } from "@/utils/session";
 import { FEEDBACK_CATEGORY_VALUES } from "@/utils/feedbackCategories";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   const router = useRouter();
@@ -90,14 +91,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
+    <main className="page-shell overflow-hidden">
       <div className="relative z-10">
         <header className="container mx-auto px-4 py-4 md:py-6">
           <nav className="flex justify-between items-center gap-2">
@@ -112,6 +106,7 @@ export default function Home() {
               />
             </Link>
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <ThemeToggle />
               <Link
                 href="/blog"
                 title="بلاگ آموزشی"
@@ -172,7 +167,7 @@ export default function Home() {
 
         {/* Hero — logo banner */}
         <section className="container mx-auto px-4 pt-6 pb-8 md:pt-10 md:pb-12">
-          <div className="relative max-w-4xl mx-auto overflow-hidden rounded-2xl md:rounded-3xl border border-white/10 bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950/40 shadow-[0_20px_60px_-24px_rgba(16,185,129,0.35)]">
+          <div className="home-hero-banner relative max-w-4xl mx-auto overflow-hidden rounded-2xl md:rounded-3xl border border-white/10 bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950/40 shadow-[0_20px_60px_-24px_rgba(16,185,129,0.35)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.18),_transparent_55%)]" />
             <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M20 18h-2v4h-4v2h4v4h2v-4h4v-2h-4v-4zm0-16h-2v4h-4v2h4v4h2V8h4V6h-4V2zM4 18H2v4H0v2h2v4h2v-4h2v-2H4v-4zM4 2H2v4H0v2h2v4h2V8h2V6H4V2z'/%3E%3C/g%3E%3C/svg%3E")`,

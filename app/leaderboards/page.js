@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import LeaderboardBoard from "@/components/LeaderboardBoard";
 import LeaderboardInsights from "@/components/LeaderboardInsights";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   MONTH_NAMES,
   listWeeksInMonth,
@@ -195,8 +196,11 @@ export default function LeaderboardsPage() {
   }, [histFilters, weekOptions]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="page-shell">
       <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-2">
+          <ThemeToggle />
+        </div>
         <div className="text-center mb-10">
           <Link
             href="/"

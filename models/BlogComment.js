@@ -15,7 +15,7 @@ const BlogCommentSchema = new mongoose.Schema(
       index: true,
     },
     body: { type: String, required: true, trim: true, maxlength: 1500 },
-    isApproved: { type: Boolean, default: true, index: true },
+    isApproved: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 )

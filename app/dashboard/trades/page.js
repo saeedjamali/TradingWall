@@ -12,6 +12,7 @@ import { formatDateTime } from "@/utils/dateHelpers";
 import { getSessionUser } from "@/utils/session";
 import SelectedSetupNote from "@/components/SelectedSetupNote";
 import { formatTradeSymbol } from "@/utils/tradeSymbol";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function TradesListPage() {
   const router = useRouter();
@@ -261,6 +262,7 @@ export default function TradesListPage() {
             </div>
 
             <div className="flex gap-2 items-center">
+              <ThemeToggle onLight />
               {/* Desktop */}
               <Link href="/dashboard/trades/upload" className="hidden md:block">
                 <Button variant="outline">بارگذاری فایل</Button>

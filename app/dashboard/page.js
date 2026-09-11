@@ -318,66 +318,81 @@ export default function DashboardPage() {
           {/* Calendar Header */}
           {/* Pre-Trade Checklist */}
           {user && (
-            <div className="flex items-stretch gap-2 mb-6">
-              <div className="flex-1 min-w-0">
-                <PreTradeChecklist userId={user.id} />
-              </div>
-              <a
-                href="#quick-actions"
-                className="shrink-0 w-12 sm:w-auto sm:min-w-[7.5rem] rounded-lg bg-primary-600 hover:bg-primary-700 text-white flex flex-col sm:flex-row items-center justify-center gap-1 px-2 sm:px-3 text-xs sm:text-sm font-semibold shadow-sm"
-                title="رفتن به افزودن معامله"
-              >
-                <span className="text-base sm:text-lg leading-none">📤</span>
-                <span className="hidden sm:inline">افزودن معامله</span>
-              </a>
+            <div className="mb-6">
+              <PreTradeChecklist userId={user.id} />
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-6 mb-8">
-            {/* Title - Centered */}
-            <div className="text-center mb-4 md:mb-6 relative px-12 sm:px-28">
-              <div className="flex items-center justify-center gap-2 md:gap-3 mb-2">
-                <span className="text-2xl md:text-4xl">📊</span>
-                <h2 className="text-xl md:text-3xl font-bold text-gray-800">
-                  Trading Calendar
-                </h2>
-              </div>
-              <p className="text-xs md:text-sm text-gray-500">تقویم معاملاتی</p>
-
-              {/* Export Button */}
-              <button
-                onClick={handleExportCalendar}
-                disabled={isExporting}
-                className="absolute left-0 top-0 p-2 md:px-4 md:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                title="دانلود تصویر تقویم و نمودار"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          <div className="rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-6 mb-8 text-slate-800">
+            {/* Title + actions */}
+            <div className="mb-4 md:mb-6 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setShowMonthPlans(true)}
+                  className="p-2 md:px-4 md:py-2 bg-white border border-primary-200 text-primary-700 rounded-lg hover:bg-primary-50 transition-colors flex items-center gap-2 text-sm shrink-0"
+                  title="مشاهده پلن‌های این ماه"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-                <span className="hidden sm:inline">
-                  {isExporting ? "در حال آماده‌سازی..." : "Export Image"}
-                </span>
-              </button>
+                  <span>📋</span>
+                  <span className="hidden sm:inline">پلن‌های این ماه</span>
+                </button>
 
-              {/* Month plans list */}
-              <button
-                onClick={() => setShowMonthPlans(true)}
-                className="absolute right-0 top-0 p-2 md:px-4 md:py-2 bg-white border border-primary-200 text-primary-700 rounded-lg hover:bg-primary-50 transition-colors flex items-center gap-2 text-sm"
-                title="مشاهده پلن‌های این ماه"
-              >
-                <span>📋</span>
-                <span className="hidden sm:inline">پلن‌های این ماه</span>
-              </button>
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <a
+                    href="#quick-actions"
+                    title="رفتن به بارگذاری فایل معامله"
+                    className="p-2 md:px-4 md:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2 text-sm"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
+                    </svg>
+                    <span className="hidden sm:inline">افزودن معامله</span>
+                  </a>
+                  <button
+                    onClick={handleExportCalendar}
+                    disabled={isExporting}
+                    className="p-2 md:px-4 md:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="دانلود تصویر تقویم و نمودار"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    <span className="hidden sm:inline">
+                      {isExporting ? "در حال آماده‌سازی..." : "Export Image"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 md:gap-3 mb-1 md:mb-2">
+                  <span className="text-2xl md:text-4xl">📊</span>
+                  <h2 className="text-xl md:text-3xl font-bold text-gray-800">
+                    Trading Calendar
+                  </h2>
+                </div>
+                <p className="text-xs md:text-sm text-gray-500">تقویم معاملاتی</p>
+              </div>
             </div>
 
             {/* Month Navigation - Centered */}
@@ -447,7 +462,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Color Legend */}
-            <div className="flex flex-wrap gap-3 mb-4 text-xs bg-white/70 border border-slate-200 p-3 rounded-xl">
+            <div className="flex flex-wrap gap-3 mb-4 text-xs text-slate-700 bg-white/70 border border-slate-200 p-3 rounded-xl">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-emerald-100 border border-emerald-300 rounded"></div>
                 <span>Profit Day (روز سودده)</span>
@@ -556,7 +571,7 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div
           id="quick-actions"
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 scroll-mt-6"
+          className="grid grid-cols-1 md:grid-cols-4 gap-4 scroll-mt-24"
         >
           {user && (
             <FileUploadCard
@@ -1451,10 +1466,10 @@ function QuickActionCard({ title, description, icon, href }) {
   return (
     <Link
       href={href}
-      className="bg-white rounded-lg p-6 border border-gray-200 hover:border-primary-500 hover:shadow-md transition-all"
+      className="bg-white rounded-lg p-6 border border-gray-200 hover:border-primary-500 hover:shadow-md transition-all text-gray-900"
     >
       <div className="text-4xl mb-3">{icon}</div>
-      <h3 className="text-lg font-bold mb-2">{title}</h3>
+      <h3 className="text-lg font-bold mb-2 text-gray-900">{title}</h3>
       <p className="text-gray-600 text-sm">{description}</p>
     </Link>
   );

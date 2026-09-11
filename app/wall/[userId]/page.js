@@ -109,7 +109,7 @@ export default function UserWallPage() {
 
   if (isPrivate) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="page-shell text-white">
         <div className="container mx-auto px-4 py-16 text-center max-w-lg">
           <Link
             href="/leaderboards"
@@ -156,7 +156,7 @@ export default function UserWallPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="theme-surface text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <Link

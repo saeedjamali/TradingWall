@@ -142,6 +142,11 @@ export function parseVideoEmbed(url) {
   return { type: 'iframe', src: value }
 }
 
+export function commentsNeedApproval(post) {
+  if (!post) return true
+  return post.commentsRequireApproval !== false
+}
+
 export function ratingAverage(sum, count) {
   if (!count) return 0
   return Math.round((Number(sum) / Number(count)) * 10) / 10

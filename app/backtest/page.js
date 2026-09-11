@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import BacktestApp from '@/components/BacktestApp'
+import ThemeToggle from '@/components/ThemeToggle'
 import { getSessionUser } from '@/utils/session'
 
 export default function BacktestPage() {
@@ -44,6 +45,7 @@ function BacktestLanding() {
             >
               ورود به بک‌تست
             </Link>
+            <ThemeToggle />
           </nav>
         </div>
       </header>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-export default function PreTradeChecklist({ userId }) {
+export default function PreTradeChecklist({ userId, className = '' }) {
   const [checklists, setChecklists] = useState([])
   const [status, setStatus] = useState(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -118,7 +118,7 @@ export default function PreTradeChecklist({ userId }) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div className={`bg-white rounded-lg shadow-md p-4 ${className}`}>
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3"></div>
         </div>
@@ -135,11 +135,10 @@ export default function PreTradeChecklist({ userId }) {
   const progressPercentage =
     totalItems > 0 ? (checkedCount / totalItems) * 100 : 0
   const pct = Math.round(progressPercentage)
-  const radius = 18
-  const circumference = 2 * Math.PI * radius
+  const done = pct === 100
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${className}`}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -158,42 +157,54 @@ export default function PreTradeChecklist({ userId }) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="relative w-10 h-10 sm:w-12 sm:h-12 shrink-0">
-            <svg
-              className="w-full h-full -rotate-90"
-              viewBox="0 0 48 48"
-              aria-hidden="true"
-            >
-              <circle
-                cx="24"
-                cy="24"
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                className="text-gray-200"
-              />
-              <circle
-                cx="24"
-                cy="24"
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={circumference * (1 - progressPercentage / 100)}
-                className={`transition-all ${
-                  progressPercentage === 100
-                    ? 'text-profit'
-                    : 'text-primary-500'
-                }`}
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-[10px] sm:text-xs font-bold text-gray-700 leading-none tabular-nums">
-                {pct}%
+          <div
+            className={`flex items-center gap-2 rounded-2xl px-2.5 py-1.5 ${
+              done
+                ? 'bg-emerald-50 ring-1 ring-emerald-200'
+                : 'bg-slate-50 ring-1 ring-slate-200'
+            }`}
+          >
+            {done ? (
+              <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
               </span>
+            ) : null}
+            <div className="flex w-[3.75rem] sm:w-[5.25rem] flex-col items-stretch gap-1">
+              <div className="flex items-baseline justify-between gap-1">
+                <span className="text-[10px] font-medium text-slate-500 tabular-nums">
+                  {checkedCount}/{totalItems}
+                </span>
+                <span
+                  className={`text-sm sm:text-base font-black tabular-nums leading-none ${
+                    done ? 'text-emerald-700' : 'text-primary-700'
+                  }`}
+                >
+                  {pct}%
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    done
+                      ? 'bg-emerald-500'
+                      : 'bg-gradient-to-l from-primary-500 to-sky-400'
+                  }`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
             </div>
           </div>
           <svg
