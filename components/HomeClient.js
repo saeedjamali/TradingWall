@@ -113,6 +113,16 @@ export default function Home() {
             </Link>
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <Link
+                href="/blog"
+                title="بلاگ آموزشی"
+                className="flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+              >
+                <NavIcon path="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                <span className="hidden md:inline text-sm font-medium">
+                  بلاگ
+                </span>
+              </Link>
+              <Link
                 href="/tools"
                 title="ابزار معامله"
                 className="flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
@@ -252,7 +262,12 @@ export default function Home() {
             />
           </div>
 
-          <div className="max-w-5xl mx-auto mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3" dir="rtl">
+          <div className="max-w-5xl mx-auto mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" dir="rtl">
+            <MiniCapability
+              href="/blog"
+              title="بلاگ"
+              subtitle="آموزش ژورنال و بک‌تست"
+            />
             <MiniCapability
               href="/leaderboards"
               title="لیدربورد"

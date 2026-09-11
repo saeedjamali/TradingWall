@@ -17,6 +17,12 @@ const TradeSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  /** True when the broker code is not yet in the official symbol list */
+  symbolPending: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
   type: {
     type: String,
     enum: ['buy', 'sell'],

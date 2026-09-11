@@ -1,5 +1,6 @@
 import HomeClient from '@/components/HomeClient'
 import HomeSeoArticle from '@/components/HomeSeoArticle'
+import { getPublicPosts } from '@/lib/blogQueries'
 import {
   HOME_TITLE,
   SITE_DESCRIPTION,
@@ -36,11 +37,19 @@ export const metadata = {
   },
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  let latestPosts = []
+  try {
+    const data = await getPublicPosts({ limit: 3 })
+    latestPosts = data.posts || []
+  } catch (error) {
+    console.error('Home blog posts skipped:', error?.message || error)
+  }
+
   return (
     <>
       <HomeClient />
-      <HomeSeoArticle />
+      <HomeSeoArticle latestPosts={latestPosts} />
     </>
   )
 }

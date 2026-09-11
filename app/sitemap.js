@@ -1,5 +1,7 @@
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
+import BlogPost from '@/models/BlogPost'
+import { publicPostFilter } from '@/utils/blog'
 import { PRODUCTION_SITE_URL } from '@/utils/site'
 
 export const dynamic = 'force-dynamic'
@@ -80,9 +82,16 @@ export default async function sitemap() {
       changeFrequency: 'hourly',
       priority: 0.9,
     },
+    {
+      url: `${siteUrl}/blog`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
   ]
 
   let wallRoutes = []
+  let blogRoutes = []
   try {
     await connectDB()
     const publicUsers = await User.find({
@@ -100,9 +109,22 @@ export default async function sitemap() {
       changeFrequency: 'weekly',
       priority: 0.6,
     }))
+
+    const posts = await BlogPost.find(publicPostFilter())
+      .select('slug updatedAt publishedAt')
+      .sort({ publishedAt: -1 })
+      .limit(2000)
+      .lean()
+
+    blogRoutes = posts.map((post) => ({
+      url: `${siteUrl}/blog/${post.slug}`,
+      lastModified: post.updatedAt || post.publishedAt || now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }))
   } catch (error) {
-    console.error('Sitemap wall entries skipped:', error?.message || error)
+    console.error('Sitemap wall/blog entries skipped:', error?.message || error)
   }
 
-  return [...staticRoutes, ...wallRoutes]
+  return [...staticRoutes, ...blogRoutes, ...wallRoutes]
 }

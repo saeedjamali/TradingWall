@@ -10,6 +10,20 @@ import {
   FEEDBACK_CATEGORIES,
   getFeedbackCategoryLabel,
 } from '@/utils/feedbackCategories'
+import { CATEGORY_LABELS } from '@/utils/symbolSeed'
+
+const SYMBOL_CATEGORIES = [
+  'forex_major',
+  'forex_minor',
+  'forex_exotic',
+  'metals',
+  'energy',
+  'indices',
+  'crypto',
+  'stocks',
+  'commodities',
+  'other',
+]
 
 export default function AdminMessagesPage() {
   const router = useRouter()
@@ -27,6 +41,13 @@ export default function AdminMessagesPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [addingSetup, setAddingSetup] = useState(false)
+  const [resolvingSymbol, setResolvingSymbol] = useState(false)
+  const [symbolForm, setSymbolForm] = useState({
+    code: '',
+    name: '',
+    nameFa: '',
+    category: 'other',
+  })
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -49,6 +70,19 @@ export default function AdminMessagesPage() {
     if (user) fetchMessages()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filter, statusFilter, categoryFilter, phoneQuery])
+
+  useEffect(() => {
+    const meta = selected?.meta
+    if (meta?.kind === 'unknown_symbol') {
+      const similar = meta.similar?.[0]
+      setSymbolForm({
+        code: meta.symbolCode || '',
+        name: similar?.name || meta.symbolCode || '',
+        nameFa: similar?.nameFa || '',
+        category: similar?.category || 'other',
+      })
+    }
+  }, [selected?._id])
 
   const fetchMessages = async () => {
     setLoading(true)
@@ -157,6 +191,50 @@ export default function AdminMessagesPage() {
     }
   }
 
+  const resolveUnknownSymbol = async (action) => {
+    if (!selected || selected.meta?.kind !== 'unknown_symbol') return
+    if (selected.meta?.resolved) return
+    if (action === 'approve_symbol') {
+      if (!symbolForm.code.trim() || !symbolForm.name.trim() || !symbolForm.category) {
+        alert('کد، نام و دسته‌بندی را کامل کنید')
+        return
+      }
+      if (!confirm(`نماد «${symbolForm.code}» به فهرست اضافه شود و به کاربر اطلاع داده شود؟`)) return
+    } else if (
+      !confirm(
+        `همه معاملات این کاربر با نماد «${selected.meta.symbolCode}» حذف شود و به او اطلاع داده شود؟`
+      )
+    ) {
+      return
+    }
+
+    setResolvingSymbol(true)
+    try {
+      const res = await fetch('/api/admin/messages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.id,
+          messageId: selected._id,
+          action,
+          code: symbolForm.code,
+          name: symbolForm.name,
+          nameFa: symbolForm.nameFa,
+          category: symbolForm.category,
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || 'خطا')
+      setSelected(data.item)
+      fetchMessages()
+      alert(data.message || 'انجام شد')
+    } catch (err) {
+      alert(err.message || 'خطا در رسیدگی به نماد')
+    } finally {
+      setResolvingSymbol(false)
+    }
+  }
+
   if (!user) return <Loading text="در حال بارگذاری..." />
 
   return (
@@ -258,7 +336,10 @@ export default function AdminMessagesPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-semibold text-gray-900 truncate">{m.title}</span>
+                        <span className="font-semibold text-gray-900 truncate">
+                          {m.title}
+                          {m.meta?.kind === 'unknown_symbol' && !m.meta?.resolved ? ' · نماد جدید' : ''}
+                        </span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${
                           (m.thread?.length || 0) > 0 || m.status === 'replied'
                             ? 'bg-emerald-50 text-emerald-700'
@@ -353,6 +434,98 @@ export default function AdminMessagesPage() {
                     >
                       {addingSetup ? 'در حال افزودن…' : 'تایید و افزودن به ستاپ‌های استاندارد'}
                     </button>
+                  )}
+                  {selected.meta?.kind === 'unknown_symbol' && (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3" dir="rtl">
+                      <p className="text-sm font-semibold text-amber-900">
+                        رسیدگی به نماد «{selected.meta.symbolCode}»
+                        {selected.meta.tradeCount
+                          ? ` · ${selected.meta.tradeCount} معامله`
+                          : ''}
+                      </p>
+                      {selected.meta.similar?.length > 0 && (
+                        <p className="text-xs text-amber-800">
+                          نماد نزدیک:{' '}
+                          {selected.meta.similar.map((s) => s.code || s).join('، ')}
+                        </p>
+                      )}
+                      {selected.meta.resolved ? (
+                        <p className="text-sm text-emerald-800">
+                          {selected.meta.resolved === 'approved'
+                            ? `تایید شده${selected.meta.resolvedCode ? ` (${selected.meta.resolvedCode})` : ''}`
+                            : 'رد شده و معاملات حذف شد'}
+                        </p>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label className="text-xs text-gray-600">
+                              کد نماد
+                              <input
+                                value={symbolForm.code}
+                                onChange={(e) =>
+                                  setSymbolForm((f) => ({ ...f, code: e.target.value }))
+                                }
+                                className="mt-1 w-full border rounded-lg px-2 py-1.5 text-sm"
+                              />
+                            </label>
+                            <label className="text-xs text-gray-600">
+                              نام
+                              <input
+                                value={symbolForm.name}
+                                onChange={(e) =>
+                                  setSymbolForm((f) => ({ ...f, name: e.target.value }))
+                                }
+                                className="mt-1 w-full border rounded-lg px-2 py-1.5 text-sm"
+                              />
+                            </label>
+                            <label className="text-xs text-gray-600">
+                              نام فارسی
+                              <input
+                                value={symbolForm.nameFa}
+                                onChange={(e) =>
+                                  setSymbolForm((f) => ({ ...f, nameFa: e.target.value }))
+                                }
+                                className="mt-1 w-full border rounded-lg px-2 py-1.5 text-sm"
+                              />
+                            </label>
+                            <label className="text-xs text-gray-600">
+                              دسته‌بندی
+                              <select
+                                value={symbolForm.category}
+                                onChange={(e) =>
+                                  setSymbolForm((f) => ({ ...f, category: e.target.value }))
+                                }
+                                className="mt-1 w-full border rounded-lg px-2 py-1.5 text-sm bg-white"
+                              >
+                                {SYMBOL_CATEGORIES.map((cat) => (
+                                  <option key={cat} value={cat}>
+                                    {CATEGORY_LABELS[cat] || cat}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => resolveUnknownSymbol('approve_symbol')}
+                              disabled={resolvingSymbol}
+                              className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50"
+                            >
+                              {resolvingSymbol ? 'در حال ثبت…' : 'افزودن به فهرست نمادها'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => resolveUnknownSymbol('reject_symbol')}
+                              disabled={resolvingSymbol}
+                              className="px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold disabled:opacity-50"
+                            >
+                              حذف معاملات این نماد
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
 

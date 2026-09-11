@@ -18,6 +18,9 @@ export default async function robots() {
           '/backtest',
           '/challenges',
           '/challenges/',
+          '/blog',
+          '/blog/',
+          '/uploads/blog/',
         ],
         disallow: [
           '/admin/',
@@ -40,6 +43,9 @@ export default async function robots() {
           '/backtest',
           '/challenges',
           '/challenges/',
+          '/blog',
+          '/blog/',
+          '/uploads/blog/',
         ],
         disallow: [
           '/admin/',

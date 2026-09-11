@@ -43,7 +43,7 @@ export function parseMetaTraderFile(fileBuffer, fileType = 'xlsx') {
     
     // Parse trades
     const trades = []
-    const headers = data[headerRowIndex]
+    let skippedRows = 0
     
     for (let i = headerRowIndex + 1; i < data.length; i++) {
       const row = data[i]
@@ -52,7 +52,10 @@ export function parseMetaTraderFile(fileBuffer, fileType = 'xlsx') {
       if (!row || row.length === 0 || !row[0]) continue
       
       // Skip if row doesn't have enough data
-      if (!row || row.length < 13) continue
+      if (!row || row.length < 13) {
+        skippedRows += 1
+        continue
+      }
       
       // Map row data to trade object
       const trade = {
@@ -78,6 +81,8 @@ export function parseMetaTraderFile(fileBuffer, fileType = 'xlsx') {
           trade.closeTime &&
           (trade.type === 'buy' || trade.type === 'sell')) {
         trades.push(trade)
+      } else {
+        skippedRows += 1
       }
     }
     
@@ -86,6 +91,7 @@ export function parseMetaTraderFile(fileBuffer, fileType = 'xlsx') {
       userInfo,
       trades,
       totalTrades: trades.length,
+      skippedRows,
     }
   } catch (error) {
     console.error('Error parsing MetaTrader file:', error)

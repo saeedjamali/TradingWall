@@ -6,8 +6,11 @@ import Message, {
   clearUnreadForUser,
 } from '@/models/Message'
 import User from '@/models/User'
+import Trade from '@/models/Trade'
+import Symbol, { SYMBOL_CATEGORIES } from '@/models/Symbol'
 import { requireAdmin } from '@/utils/adminAuth'
 import { FEEDBACK_CATEGORY_VALUES } from '@/utils/feedbackCategories'
+import { normalizeSymbolCode } from '@/utils/symbolMatch'
 
 function populateAdmin(query) {
   return query
@@ -33,6 +36,14 @@ export async function GET(request) {
     const admin = await requireAdmin(adminUserId)
     if (!admin) {
       return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 403 })
+    }
+
+    if (searchParams.get('countOnly') === '1') {
+      const inboxCount = await Message.countDocuments({
+        type: 'site_feedback',
+        $or: [{ adminUnread: true }, { status: 'open' }],
+      })
+      return NextResponse.json({ success: true, inboxCount })
     }
 
     const query = {}
@@ -83,27 +94,54 @@ export async function GET(request) {
 }
 
 /**
- * PUT /api/admin/messages — append reply to thread
+ * PUT /api/admin/messages
  * body: { adminUserId, messageId, replyBody, replyImage? }
+ * or { adminUserId, messageId, action: 'approve_symbol' | 'reject_symbol', code, name, nameFa, category }
  */
 export async function PUT(request) {
   try {
     await connectDB()
     const body = await request.json()
-    const { adminUserId, messageId, replyBody, replyImage } = body
+    const { adminUserId, messageId, replyBody, replyImage, action } = body
 
     const admin = await requireAdmin(adminUserId)
     if (!admin) {
       return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 403 })
     }
 
-    if (!messageId || !replyBody?.trim()) {
-      return NextResponse.json({ error: 'شناسه پیام و متن پاسخ الزامی است' }, { status: 400 })
+    if (!messageId) {
+      return NextResponse.json({ error: 'شناسه پیام الزامی است' }, { status: 400 })
     }
 
     const message = await Message.findById(messageId)
     if (!message) {
       return NextResponse.json({ error: 'پیام یافت نشد' }, { status: 404 })
+    }
+
+    if (action === 'approve_symbol' || action === 'reject_symbol') {
+      const result = await resolveUnknownSymbolTicket({
+        adminUserId,
+        message,
+        action,
+        body,
+      })
+      if (result.error) {
+        return NextResponse.json({ error: result.error }, { status: result.status || 400 })
+      }
+
+      const populated = normalizeMessageThread(
+        await populateAdmin(Message.findById(messageId)).lean()
+      )
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        item: populated,
+        deletedCount: result.deletedCount,
+      })
+    }
+
+    if (!replyBody?.trim()) {
+      return NextResponse.json({ error: 'شناسه پیام و متن پاسخ الزامی است' }, { status: 400 })
     }
 
     if (message.status === 'closed') {
@@ -117,6 +155,7 @@ export async function PUT(request) {
       createdAt: new Date(),
     })
     message.status = 'replied'
+    message.adminUnread = false
     setUnreadForOthers(message, adminUserId)
     clearUnreadForUser(message, adminUserId)
     await message.save()
@@ -133,5 +172,111 @@ export async function PUT(request) {
   } catch (error) {
     console.error('Admin Messages PUT Error:', error)
     return NextResponse.json({ error: 'خطای سرور' }, { status: 500 })
+  }
+}
+
+async function resolveUnknownSymbolTicket({
+  adminUserId,
+  message,
+  action,
+  body,
+}) {
+  const meta = message.meta || {}
+  if (message.category !== 'add_symbol' || meta.kind !== 'unknown_symbol') {
+    return { error: 'این پیام تیکت نماد جدید نیست' }
+  }
+  if (meta.resolved) {
+    return { error: 'این تیکت قبلاً رسیدگی شده است' }
+  }
+  if (!message.fromUserId) {
+    return { error: 'کاربر ارسال‌کننده مشخص نیست' }
+  }
+
+  const originalCode = normalizeSymbolCode(meta.symbolCode)
+  if (!originalCode) {
+    return { error: 'کد نماد در تیکت موجود نیست' }
+  }
+
+  let replyText = ''
+  let deletedCount = 0
+
+  if (action === 'approve_symbol') {
+    const code = normalizeSymbolCode(body.code || originalCode)
+    const name = String(body.name || '').trim()
+    const nameFa = String(body.nameFa || '').trim()
+    const category = body.category
+
+    if (!code || !name || !category) {
+      return { error: 'کد، نام و دسته‌بندی الزامی است' }
+    }
+    if (!SYMBOL_CATEGORIES.includes(category)) {
+      return { error: 'دسته‌بندی نامعتبر است' }
+    }
+
+    const existing = await Symbol.findOne({ code })
+    if (!existing) {
+      await Symbol.create({
+        code,
+        name,
+        nameFa,
+        category,
+        isActive: true,
+        sortOrder: 0,
+      })
+    } else if (!existing.isActive) {
+      existing.isActive = true
+      if (name) existing.name = name
+      if (nameFa) existing.nameFa = nameFa
+      if (category) existing.category = category
+      await existing.save()
+    }
+
+    await Trade.updateMany(
+      {
+        userId: message.fromUserId,
+        symbol: originalCode,
+        symbolPending: true,
+      },
+      { $set: { symbol: code, symbolPending: false } }
+    )
+
+    replyText = existing
+      ? `نماد «${originalCode}» بررسی شد و به نماد معتبر «${code}» وصل شد. معاملات شما در ژورنال باقی می‌ماند.`
+      : `نماد «${code}» به فهرست نمادهای سامانه اضافه شد. معاملات شما با این نماد در ژورنال باقی می‌ماند.`
+  } else {
+    const deleted = await Trade.deleteMany({
+      userId: message.fromUserId,
+      symbol: originalCode,
+    })
+    deletedCount = deleted.deletedCount || 0
+    replyText =
+      `نماد «${originalCode}» معتبر نیست و به فهرست نمادها اضافه نشد. ` +
+      `${deletedCount} معامله شما با این نماد حذف شد.`
+  }
+
+  message.thread.push({
+    body: replyText,
+    image: null,
+    fromUserId: adminUserId,
+    createdAt: new Date(),
+  })
+  message.status = 'replied'
+  message.adminUnread = false
+  message.meta = {
+    ...meta,
+    resolved: action === 'approve_symbol' ? 'approved' : 'rejected',
+    resolvedAt: new Date().toISOString(),
+    resolvedBy: String(adminUserId),
+    resolvedCode: action === 'approve_symbol'
+      ? normalizeSymbolCode(body.code || originalCode)
+      : originalCode,
+  }
+  setUnreadForOthers(message, adminUserId)
+  clearUnreadForUser(message, adminUserId)
+  await message.save()
+
+  return {
+    message: action === 'approve_symbol' ? 'نماد تایید شد و به کاربر اطلاع داده شد' : 'معاملات حذف شد و به کاربر اطلاع داده شد',
+    deletedCount,
   }
 }

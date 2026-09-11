@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { HOME_FAQS } from '@/utils/seoFaqs'
 
-export default function HomeSeoArticle() {
+export default function HomeSeoArticle({ latestPosts = [] }) {
   const faqLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -99,7 +99,39 @@ export default function HomeSeoArticle() {
             <Link href="/tools" className="text-emerald-300 hover:text-emerald-200">
               ابزار فارکس
             </Link>
+            <Link href="/blog" className="text-emerald-300 hover:text-emerald-200">
+              بلاگ آموزشی
+            </Link>
           </div>
+        </article>
+
+        <article className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6">
+          <h3 className="text-lg font-bold text-white">بلاگ ژورنال معاملاتی</h3>
+          <p className="mt-3 text-sm text-gray-400 leading-relaxed">
+            در بلاگ، آموزش ثبت ژورنال، بک‌تست استراتژی، روانشناسی معامله و استفاده از
+            ابزارهای فارکس را با کلمات کلیدی واقعی گوگل می‌نویسیم تا هم برای تریدرها
+            مفید باشد و هم در جستجو پیدا شود.
+          </p>
+          {latestPosts.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {latestPosts.map((post) => (
+                <li key={post.slug}>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="text-sm text-emerald-300 hover:text-emerald-200"
+                  >
+                    {post.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <Link
+            href="/blog"
+            className="inline-block mt-4 text-sm text-emerald-300 hover:text-emerald-200"
+          >
+            مشاهده همه مقالات ←
+          </Link>
         </article>
 
         <div className="mt-12">

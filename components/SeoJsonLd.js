@@ -65,6 +65,11 @@ export default function SeoJsonLd() {
         name: 'لیدربورد تریدرها',
         url: absoluteUrl('/leaderboards'),
       },
+      {
+        '@type': 'Blog',
+        name: 'بلاگ آموزشی دیوار معاملاتی',
+        url: absoluteUrl('/blog'),
+      },
     ],
   }
 
@@ -93,6 +98,7 @@ export default function SeoJsonLd() {
       'چالش معامله',
       'ماشین‌حساب ریسک و پیپ',
       'ساعت سشن‌های بازار',
+      'بلاگ آموزشی فارکس',
     ],
     hasPart: [
       {

@@ -3,6 +3,10 @@ export const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB
 export const MAX_IMAGE_MB = 3
 export const MAX_IMAGE_LABEL = `${MAX_IMAGE_MB} مگابایت`
 
+export const MAX_VIDEO_BYTES = 40 * 1024 * 1024
+export const MAX_VIDEO_LABEL = '۴۰ مگابایت'
+export const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm']
+
 export const IMAGE_MIME_TYPES = [
   'image/jpeg',
   'image/jpg',

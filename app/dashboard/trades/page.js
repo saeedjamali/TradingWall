@@ -11,6 +11,7 @@ import Modal from "@/components/Modal";
 import { formatDateTime } from "@/utils/dateHelpers";
 import { getSessionUser } from "@/utils/session";
 import SelectedSetupNote from "@/components/SelectedSetupNote";
+import { formatTradeSymbol } from "@/utils/tradeSymbol";
 
 export default function TradesListPage() {
   const router = useRouter();
@@ -537,7 +538,7 @@ export default function TradesListPage() {
                             {formatDateTime(trade.closeTime)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {trade.symbol}
+                            {formatTradeSymbol(trade)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span
@@ -727,7 +728,7 @@ export default function TradesListPage() {
           {selectedTrade && (
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-sm">
-                <strong>نماد:</strong> {selectedTrade.symbol}
+                <strong>نماد:</strong> {formatTradeSymbol(selectedTrade)}
               </p>
               <p className="text-sm">
                 <strong>سود/زیان:</strong> ${selectedTrade.profit.toFixed(2)}
@@ -764,7 +765,7 @@ export default function TradesListPage() {
           {selectedTrade && (
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
               <p className="text-sm">
-                <strong>نماد:</strong> {selectedTrade.symbol}
+                <strong>نماد:</strong> {formatTradeSymbol(selectedTrade)}
               </p>
               <p className="text-sm">
                 <strong>نوع:</strong>{" "}

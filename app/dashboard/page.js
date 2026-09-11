@@ -17,6 +17,7 @@ import PreTradeChecklist from "@/components/PreTradeChecklist";
 import FileUploadCard from "@/components/FileUploadCard";
 import { UserName } from "@/components/VerifiedBadge";
 import AppTopNav from "@/components/AppTopNav";
+import { useInboxCounts } from "@/components/useInboxCounts";
 import { checkPlanCompliance, getPlanForDate } from "@/utils/planCompliance";
 import { getSessionUser } from "@/utils/session";
 import { monthLocalBounds } from "@/utils/dateHelpers";
@@ -30,6 +31,11 @@ export default function DashboardPage() {
   const [monthTrades, setMonthTrades] = useState([]);
   const [isExporting, setIsExporting] = useState(false);
   const [showMonthPlans, setShowMonthPlans] = useState(false);
+  const [showProfileReminder, setShowProfileReminder] = useState(false);
+  const { userUnread, adminInbox } = useInboxCounts({
+    userId: user?.id,
+    isAdmin: user?.role === "admin",
+  });
 
   useEffect(() => {
     const parsedUser = getSessionUser();
@@ -40,12 +46,27 @@ export default function DashboardPage() {
 
     setUser(parsedUser);
     fetchStats(parsedUser.id);
+    try {
+      const dismissed = localStorage.getItem(
+        `tw_dismiss_profile_reminder_${parsedUser.id}`,
+      );
+      setShowProfileReminder(dismissed !== "1");
+    } catch {
+      setShowProfileReminder(true);
+    }
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("tokenExpiry");
     router.push("/");
+  };
+
+  const dismissProfileReminder = () => {
+    if (user?.id) {
+      localStorage.setItem(`tw_dismiss_profile_reminder_${user.id}`, "1");
+    }
+    setShowProfileReminder(false);
   };
 
   useEffect(() => {
@@ -174,12 +195,62 @@ export default function DashboardPage() {
             <AppTopNav
               isAdmin={user?.role === "admin"}
               onLogout={handleLogout}
+              userId={user?.id}
             />
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {(userUnread > 0 || (user?.role === "admin" && adminInbox > 0)) && (
+          <div className="mb-4 space-y-2" dir="rtl">
+            {userUnread > 0 && (
+              <Link
+                href="/profile?tab=messages"
+                className="flex items-center justify-between gap-3 rounded-lg border border-sky-400/30 bg-sky-500/15 px-3 py-2 text-xs sm:text-sm text-sky-100 hover:bg-sky-500/25"
+              >
+                <span>
+                  {userUnread} پیام جدید دارید — برای مشاهده کلیک کنید
+                </span>
+                <span className="shrink-0 font-semibold">پیام‌ها ←</span>
+              </Link>
+            )}
+            {user?.role === "admin" && adminInbox > 0 && (
+              <Link
+                href="/admin/messages"
+                className="flex items-center justify-between gap-3 rounded-lg border border-amber-400/30 bg-amber-500/15 px-3 py-2 text-xs sm:text-sm text-amber-100 hover:bg-amber-500/25"
+              >
+                <span>
+                  {adminInbox} نظر یا تیکت جدید در پنل ادمین
+                </span>
+                <span className="shrink-0 font-semibold">مشاهده ←</span>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {showProfileReminder && user && (
+          <div
+            className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-xs sm:text-sm text-amber-100"
+            dir="rtl"
+          >
+            <Link
+              href="/profile"
+              className="hover:text-white underline-offset-2 hover:underline min-w-0"
+            >
+              پروفایل را یک‌بار بررسی کنید — نام نمایشی و تصویر را می‌توانید ویرایش کنید.
+            </Link>
+            <button
+              type="button"
+              onClick={dismissProfileReminder}
+              className="shrink-0 rounded-md px-2 py-0.5 text-amber-200/80 hover:text-white hover:bg-white/10"
+              aria-label="بستن یادآوری"
+            >
+              بستن
+            </button>
+          </div>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <StatCard
@@ -246,7 +317,21 @@ export default function DashboardPage() {
         <div className="calendar-export-section">
           {/* Calendar Header */}
           {/* Pre-Trade Checklist */}
-          {user && <PreTradeChecklist userId={user.id} />}
+          {user && (
+            <div className="flex items-stretch gap-2 mb-6">
+              <div className="flex-1 min-w-0">
+                <PreTradeChecklist userId={user.id} />
+              </div>
+              <a
+                href="#quick-actions"
+                className="shrink-0 w-12 sm:w-auto sm:min-w-[7.5rem] rounded-lg bg-primary-600 hover:bg-primary-700 text-white flex flex-col sm:flex-row items-center justify-center gap-1 px-2 sm:px-3 text-xs sm:text-sm font-semibold shadow-sm"
+                title="رفتن به افزودن معامله"
+              >
+                <span className="text-base sm:text-lg leading-none">📤</span>
+                <span className="hidden sm:inline">افزودن معامله</span>
+              </a>
+            </div>
+          )}
 
           <div className="rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-6 mb-8">
             {/* Title - Centered */}
@@ -469,8 +554,10 @@ export default function DashboardPage() {
         {/* End Export Section */}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Compact File Upload */}
+        <div
+          id="quick-actions"
+          className="grid grid-cols-1 md:grid-cols-4 gap-4 scroll-mt-6"
+        >
           {user && (
             <FileUploadCard
               userId={user.id}
@@ -478,7 +565,6 @@ export default function DashboardPage() {
               onUploadSuccess={() => fetchMonthTrades(user.id)}
             />
           )}
-
           <QuickActionCard
             title="Add New Trade"
             description="ثبت معامله به صورت دستی"

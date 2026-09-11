@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { UserName } from "@/components/VerifiedBadge";
+import { CountBadge, useInboxCounts } from "@/components/useInboxCounts";
 
 const navItems = [
   { href: "/admin", label: "داشبورد", icon: "🏠", exact: true },
@@ -11,6 +12,7 @@ const navItems = [
   { href: "/admin/trades", label: "معاملات", icon: "📊" },
   { href: "/admin/symbols", label: "نمادها", icon: "📈" },
   { href: "/admin/setups", label: "ستاپ‌ها", icon: "⚙️" },
+  { href: "/admin/blog", label: "بلاگ", icon: "✍️" },
   { href: "/admin/messages", label: "نظرات", icon: "💬" },
   { href: "/admin/demo-data", label: "دیتای دمو", icon: "🧪" },
   { href: "/admin/logs", label: "لاگ", icon: "📋" },
@@ -19,6 +21,10 @@ const navItems = [
 export default function AdminHeader({ user }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { adminInbox } = useInboxCounts({
+    userId: user?.id,
+    isAdmin: true,
+  });
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -116,7 +122,7 @@ export default function AdminHeader({ user }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${
+              className={`relative flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${
                 isActive(item)
                   ? "bg-white text-slate-900 font-semibold"
                   : "bg-white/10 hover:bg-white/20 text-white"
@@ -124,6 +130,9 @@ export default function AdminHeader({ user }) {
             >
               <span>{item.icon}</span>
               <span className="hidden sm:inline">{item.label}</span>
+              {item.href === "/admin/messages" && (
+                <CountBadge count={adminInbox} inline />
+              )}
             </Link>
           ))}
         </nav>

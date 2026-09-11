@@ -11,7 +11,11 @@ import Setup from '@/models/Setup'
 import Activity from '@/models/Activity'
 import Achievement from '@/models/Achievement'
 import LeaderboardSnapshot from '@/models/LeaderboardSnapshot'
+import BlogPost from '@/models/BlogPost'
+import BlogComment from '@/models/BlogComment'
+import BlogRating from '@/models/BlogRating'
 import { seedDefaultSymbols } from '@/utils/symbolSeed'
+import { DEMO_BLOG_POSTS } from '@/utils/demoBlogPosts'
 
 export const DEMO_PHONE_PREFIX = '09000000'
 export const DEMO_PASSWORD = 'Demo@1234'
@@ -334,13 +338,14 @@ export async function getDemoDataStatus() {
     .select('_id phone publicName verified privacySettings createdAt')
     .lean()
   const userIds = users.map((u) => u._id)
-  const [tradeCount, planCount, setupCount, activityCount] = await Promise.all([
+  const [tradeCount, planCount, setupCount, activityCount, blogCount] = await Promise.all([
     userIds.length ? Trade.countDocuments({ userId: { $in: userIds } }) : 0,
     userIds.length ? Plan.countDocuments({ userId: { $in: userIds } }) : 0,
     userIds.length
       ? Setup.countDocuments({ userId: { $in: userIds }, type: 'custom' })
       : 0,
     userIds.length ? Activity.countDocuments({ userId: { $in: userIds } }) : 0,
+    BlogPost.countDocuments({ isDemo: true }),
   ])
 
   return {
@@ -349,6 +354,7 @@ export async function getDemoDataStatus() {
     planCount,
     setupCount,
     activityCount,
+    blogCount,
     users: users.map((u) => ({
       id: u._id,
       phone: u.phone,
@@ -363,6 +369,53 @@ async function clearLiveLeaderboardCache() {
   await LeaderboardSnapshot.deleteMany({ isFinal: false })
 }
 
+async function seedDemoBlogPosts() {
+  let created = 0
+  let updated = 0
+  const now = new Date()
+
+  for (const post of DEMO_BLOG_POSTS) {
+    const payload = {
+      ...post,
+      isDemo: true,
+      isActive: true,
+      isVisible: true,
+      publishedAt: post.publishedAt || now,
+    }
+    const existing = await BlogPost.findOne({ slug: post.slug })
+    if (existing) {
+      Object.assign(existing, payload)
+      await existing.save()
+      updated += 1
+    } else {
+      await BlogPost.create(payload)
+      created += 1
+    }
+  }
+
+  return { created, updated, total: DEMO_BLOG_POSTS.length }
+}
+
+async function clearDemoBlogPosts() {
+  const posts = await BlogPost.find({ isDemo: true }).select('_id').lean()
+  const ids = posts.map((p) => p._id)
+  if (!ids.length) {
+    return { deletedBlogPosts: 0, deletedBlogComments: 0, deletedBlogRatings: 0 }
+  }
+
+  const [comments, ratings, deleted] = await Promise.all([
+    BlogComment.deleteMany({ postId: { $in: ids } }),
+    BlogRating.deleteMany({ postId: { $in: ids } }),
+    BlogPost.deleteMany({ _id: { $in: ids } }),
+  ])
+
+  return {
+    deletedBlogPosts: deleted.deletedCount || 0,
+    deletedBlogComments: comments.deletedCount || 0,
+    deletedBlogRatings: ratings.deletedCount || 0,
+  }
+}
+
 /**
  * Remove all demo users and related documents.
  */
@@ -371,6 +424,7 @@ export async function clearDemoData() {
   const ids = demoUsers.map((u) => u._id)
 
   if (ids.length === 0) {
+    const blog = await clearDemoBlogPosts()
     await clearLiveLeaderboardCache()
     return {
       deletedUsers: 0,
@@ -379,6 +433,7 @@ export async function clearDemoData() {
       deletedSetups: 0,
       deletedActivities: 0,
       deletedAchievements: 0,
+      ...blog,
     }
   }
 
@@ -397,6 +452,7 @@ export async function clearDemoData() {
   ])
 
   const users = await User.deleteMany({ _id: { $in: ids } })
+  const blog = await clearDemoBlogPosts()
   await clearLiveLeaderboardCache()
 
   return {
@@ -406,6 +462,7 @@ export async function clearDemoData() {
     deletedSetups: setups.deletedCount || 0,
     deletedActivities: activities.deletedCount || 0,
     deletedAchievements: achievements.deletedCount || 0,
+    ...blog,
   }
 }
 
@@ -418,10 +475,13 @@ export async function seedDemoData(opts = {}) {
 
   const existing = await User.countDocuments({ isDemo: true })
   if (existing > 0 && !replace) {
+    const blog = await seedDemoBlogPosts()
     return {
       skipped: true,
       message: 'دیتای دمو از قبل وجود دارد. برای جایگزینی، گزینه «جایگزینی» را بزنید.',
       existing,
+      createdBlogPosts: blog.created,
+      updatedBlogPosts: blog.updated,
     }
   }
 
@@ -540,6 +600,7 @@ export async function seedDemoData(opts = {}) {
   }
 
   await clearLiveLeaderboardCache()
+  const blog = await seedDemoBlogPosts()
 
   return {
     skipped: false,
@@ -548,6 +609,8 @@ export async function seedDemoData(opts = {}) {
     createdPlans,
     createdSetups,
     createdActivities,
+    createdBlogPosts: blog.created,
+    updatedBlogPosts: blog.updated,
     passwordHint: DEMO_PASSWORD,
     phones: DEMO_USERS.map((u) => u.phone),
   }

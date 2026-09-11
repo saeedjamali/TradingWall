@@ -120,6 +120,16 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
+          <Link href="/admin/blog" className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-transparent hover:border-emerald-200">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center text-2xl">✍️</div>
+              <div>
+                <h3 className="font-bold text-lg">بلاگ و مقالات</h3>
+                <p className="text-sm text-gray-600">نوشتن مقاله، تگ، سئو و نظرات</p>
+              </div>
+            </div>
+          </Link>
+
           <Link href="/admin/messages" className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-transparent hover:border-sky-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-sky-100 rounded-lg flex items-center justify-center text-2xl">💬</div>

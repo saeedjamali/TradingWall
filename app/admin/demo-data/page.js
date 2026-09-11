@@ -65,13 +65,13 @@ export default function AdminDemoDataPage() {
     if (action === 'seed') {
       const msg = replace
         ? 'دیتای دمو فعلی پاک و دوباره ساخته می‌شود. ادامه؟'
-        : '۱۰ کاربر دمو با معاملات از ابتدای سال تا امروز ساخته می‌شود. ادامه؟'
+        : '۱۰ کاربر دمو با معاملات از ابتدای سال تا امروز و پست بلاگ متاتریدر ساخته می‌شود. ادامه؟'
       if (!confirm(msg)) return
     }
     if (action === 'clear') {
       if (
         !confirm(
-          'همه کاربران دمو، معاملات، پلن‌ها، ستاپ‌ها و فعالیت‌های مرتبط حذف می‌شوند. ادامه؟',
+          'همه کاربران دمو، معاملات، پلن‌ها، ستاپ‌ها، فعالیت‌ها و پست‌های بلاگ دمو حذف می‌شوند. ادامه؟',
         )
       ) {
         return
@@ -118,19 +118,19 @@ export default function AdminDemoDataPage() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">دیتای دمو</h2>
           <p className="text-gray-600 mt-1 text-sm leading-relaxed">
-            ۱۰ کاربر واقعی‌نما با معاملات از ابتدای سال جاری تا امروز (حدود یک
-            معامله در هر روز کاری، سود و حد ضرر حداکثر حدود ۹۰–۱۰۰ دلار)، دیوار
-            عمومی، ستاپ و فعالیت — برای پر کردن لیدربورد و دیوار معاملاتی.
+            ۱۰ کاربر واقعی‌نما با معاملات از ابتدای سال جاری تا امروز، دیوار
+            عمومی، ستاپ، فعالیت، و پست بلاگ آموزش خروجی History از متاتریدر ۵.
           </p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <Stat label="کاربران دمو" value={status?.userCount ?? '—'} />
           <Stat label="معاملات" value={status?.tradeCount ?? '—'} />
           <Stat label="پلن‌ها" value={status?.planCount ?? '—'} />
           <Stat label="ستاپ‌ها" value={status?.setupCount ?? '—'} />
           <Stat label="فعالیت‌ها" value={status?.activityCount ?? '—'} />
+          <Stat label="پست بلاگ" value={status?.blogCount ?? '—'} />
         </div>
 
         {/* Actions */}
@@ -185,7 +185,15 @@ export default function AdminDemoDataPage() {
         {lastResult && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 text-sm text-emerald-900">
             {lastResult.action === 'seed' && lastResult.skipped && (
-              <p>{lastResult.message}</p>
+              <div className="space-y-1">
+                <p>{lastResult.message}</p>
+                {(lastResult.createdBlogPosts || lastResult.updatedBlogPosts) ? (
+                  <p>
+                    پست بلاگ دمو هم همگام شد (
+                    {(lastResult.createdBlogPosts || 0) + (lastResult.updatedBlogPosts || 0)}).
+                  </p>
+                ) : null}
+              </div>
             )}
             {lastResult.action === 'seed' && !lastResult.skipped && (
               <ul className="space-y-1 list-disc list-inside">
@@ -194,6 +202,7 @@ export default function AdminDemoDataPage() {
                 <li>پلن: {lastResult.createdPlans}</li>
                 <li>ستاپ: {lastResult.createdSetups}</li>
                 <li>فعالیت: {lastResult.createdActivities}</li>
+                <li>پست بلاگ: {(lastResult.createdBlogPosts || 0) + (lastResult.updatedBlogPosts || 0)}</li>
               </ul>
             )}
             {lastResult.action === 'clear' && (
@@ -203,6 +212,7 @@ export default function AdminDemoDataPage() {
                 <li>حذف پلن: {lastResult.deletedPlans}</li>
                 <li>حذف ستاپ: {lastResult.deletedSetups}</li>
                 <li>حذف فعالیت: {lastResult.deletedActivities}</li>
+                <li>حذف پست بلاگ: {lastResult.deletedBlogPosts ?? 0}</li>
               </ul>
             )}
           </div>

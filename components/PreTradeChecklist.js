@@ -139,7 +139,7 @@ export default function PreTradeChecklist({ userId }) {
   const circumference = 2 * Math.PI * radius
 
   return (
-    <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

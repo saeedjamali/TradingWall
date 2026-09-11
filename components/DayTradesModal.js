@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Modal from './Modal'
 import SelectedSetupNote from '@/components/SelectedSetupNote'
 import { formatDate } from '@/utils/dateHelpers'
+import { formatTradeSymbol } from '@/utils/tradeSymbol'
 
 export default function DayTradesModal({
   isOpen,
@@ -313,7 +314,7 @@ export default function DayTradesModal({
                         {trade.type === 'buy' ? '📈' : '📉'}
                       </span>
                       <span className="font-bold text-gray-800">
-                        {trade.symbol}
+                        {formatTradeSymbol(trade)}
                       </span>
                       <span
                         className={`text-xs px-2 py-1 rounded ${

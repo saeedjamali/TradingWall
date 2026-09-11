@@ -73,6 +73,11 @@ const MessageSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  /** Structured payload for admin workflows (unknown-symbol tickets, …) */
+  meta: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
   status: {
     type: String,
     enum: ['open', 'replied', 'closed'],
@@ -102,6 +107,12 @@ const MessageSchema = new mongoose.Schema({
   readByRecipient: {
     type: Boolean,
     default: false,
+  },
+  /** True when site_feedback needs admin attention */
+  adminUnread: {
+    type: Boolean,
+    default: false,
+    index: true,
   },
 }, {
   timestamps: true,

@@ -158,6 +158,9 @@ export async function POST(request) {
         createdAt: new Date(),
       })
       message.status = 'replied'
+      if (message.type === 'site_feedback' && user.role !== 'admin') {
+        message.adminUnread = true
+      }
       setUnreadForOthers(message, userId)
       clearUnreadForUser(message, userId)
       await message.save()
@@ -259,6 +262,7 @@ export async function POST(request) {
       status: 'open',
       thread: [],
       unreadBy,
+      adminUnread: type === 'site_feedback',
       readByRecipient: type === 'site_feedback',
     })
 

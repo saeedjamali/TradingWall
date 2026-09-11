@@ -134,3 +134,105 @@ body {
     animation: none;
   }
 }
+
+/* Blog article sections */
+.blog-p {
+  line-height: 2;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 1rem;
+}
+
+.blog-h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-top: 1.75rem;
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.9rem;
+  color: #ecfdf5;
+}
+
+.blog-body .blog-h2:nth-of-type(3n + 1) {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.22), rgba(16, 185, 129, 0.05));
+  border-right: 3px solid #34d399;
+}
+
+.blog-body .blog-h2:nth-of-type(3n + 2) {
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.22), rgba(6, 182, 212, 0.05));
+  border-right: 3px solid #22d3ee;
+  color: #ecfeff;
+}
+
+.blog-body .blog-h2:nth-of-type(3n) {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+  border-right: 3px solid #fbbf24;
+  color: #fffbeb;
+}
+
+.blog-h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.5rem;
+  color: #a5f3fc;
+}
+
+.blog-steps {
+  list-style: none;
+  counter-reset: blog-step;
+  margin: 1rem 0 1.5rem;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.blog-steps li {
+  counter-increment: blog-step;
+  position: relative;
+  padding-block: 0.85rem;
+  padding-inline-start: 3.1rem;
+  padding-inline-end: 1rem;
+  border-radius: 0.9rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.22);
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.9;
+}
+
+.blog-steps li::before {
+  content: counter(blog-step);
+  position: absolute;
+  top: 0.75rem;
+  inset-inline-start: 0.75rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: #10b981;
+  color: #042f2e;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blog-bullets {
+  margin: 0.75rem 0 1.25rem;
+  padding-right: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.blog-bullets li::marker {
+  color: #22d3ee;
+}
+
+.blog-callout {
+  margin: 1.1rem 0 1.5rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.06));
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fde68a;
+  line-height: 1.9;
+}

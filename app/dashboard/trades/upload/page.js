@@ -23,10 +23,6 @@ export default function UploadTradePage() {
     setLoading(false)
   }, [router])
 
-  const handleUploadSuccess = () => {
-    router.push('/dashboard/trades')
-  }
-
   if (loading) {
     return <Loading text="در حال بارگذاری..." />
   }
@@ -54,10 +50,7 @@ export default function UploadTradePage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <FileUploadCard 
-            userId={user?.id} 
-            onUploadSuccess={handleUploadSuccess}
-          />
+          <FileUploadCard userId={user?.id} />
         </div>
       </div>
     </div>

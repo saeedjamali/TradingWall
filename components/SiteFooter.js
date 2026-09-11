@@ -35,6 +35,7 @@ const CANDLES = [
 
 const PUBLIC_SEO_LINKS = [
   { href: "/", label: "ژورنال معاملاتی" },
+  { href: "/blog", label: "بلاگ آموزشی" },
   { href: "/backtest", label: "بک‌تست فارکس" },
   { href: "/challenges", label: "چالش بک‌تست" },
   { href: "/tools", label: "ابزار فارکس" },

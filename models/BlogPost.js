@@ -1,0 +1,86 @@
+import mongoose from 'mongoose'
+
+export const BLOG_CATEGORIES = [
+  'journal',
+  'backtest',
+  'psychology',
+  'education',
+  'tools',
+  'market',
+]
+
+const FaqSchema = new mongoose.Schema(
+  {
+    q: { type: String, trim: true, maxlength: 200 },
+    a: { type: String, trim: true, maxlength: 1000 },
+  },
+  { _id: false },
+)
+
+const HowToStepSchema = new mongoose.Schema(
+  {
+    name: { type: String, trim: true, maxlength: 160 },
+    text: { type: String, trim: true, maxlength: 600 },
+  },
+  { _id: false },
+)
+
+const BlogPostSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, trim: true, maxlength: 180 },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      maxlength: 180,
+      index: true,
+    },
+    excerpt: { type: String, default: '', trim: true, maxlength: 400 },
+    body: { type: String, required: true, maxlength: 80000 },
+    coverImage: { type: String, default: null },
+    coverImageAlt: { type: String, default: '', trim: true, maxlength: 180 },
+    videoUrl: { type: String, default: '', trim: true, maxlength: 500 },
+    videoFile: { type: String, default: null },
+    gallery: [{ type: String }],
+    category: {
+      type: String,
+      enum: BLOG_CATEGORIES,
+      default: 'education',
+      index: true,
+    },
+    tags: [{ type: String, trim: true, maxlength: 40 }],
+    keywords: [{ type: String, trim: true, maxlength: 60 }],
+    focusKeyword: { type: String, default: '', trim: true, maxlength: 80 },
+    seoTitle: { type: String, default: '', trim: true, maxlength: 180 },
+    seoDescription: { type: String, default: '', trim: true, maxlength: 320 },
+    faqs: { type: [FaqSchema], default: [] },
+    howToSteps: { type: [HowToStepSchema], default: [] },
+    isActive: { type: Boolean, default: false, index: true },
+    isVisible: { type: Boolean, default: true, index: true },
+    commentsEnabled: { type: Boolean, default: true },
+    isDemo: { type: Boolean, default: false, index: true },
+    publishedAt: { type: Date, default: null, index: true },
+    authorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    authorName: { type: String, default: 'دیوار معاملاتی', trim: true },
+    views: { type: Number, default: 0 },
+    ratingSum: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
+  },
+  { timestamps: true },
+)
+
+BlogPostSchema.index({ isActive: 1, isVisible: 1, publishedAt: -1 })
+BlogPostSchema.index({ tags: 1 })
+
+BlogPostSchema.virtual('ratingAvg').get(function ratingAvg() {
+  if (!this.ratingCount) return 0
+  return Math.round((this.ratingSum / this.ratingCount) * 10) / 10
+})
+
+export default mongoose.models.BlogPost || mongoose.model('BlogPost', BlogPostSchema)

@@ -69,6 +69,12 @@ export default function ProfilePage() {
 
     setUser(parsedUser);
     fetchProfile(parsedUser.id);
+    try {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (tab === "messages") setActiveTab("messages");
+    } catch {
+      // ignore
+    }
   }, [router]);
 
   const handleLogout = () => {

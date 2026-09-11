@@ -1,12 +1,97 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import Button from './Button'
+
+function UploadResultPanel({ result, compact }) {
+  if (!result) return null
+
+  const unknown = result.unknownSymbols || []
+  const errorItems = result.errorItems || []
+  const hasWarning = unknown.length > 0 || errorItems.length > 0 || result.duplicates > 0
+  const tone = result.success
+    ? hasWarning
+      ? 'amber'
+      : 'emerald'
+    : 'rose'
+  const box =
+    tone === 'emerald'
+      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+      : tone === 'amber'
+        ? 'bg-amber-50 border-amber-200 text-amber-950'
+        : 'bg-rose-50 border-rose-200 text-rose-900'
+
+  return (
+    <div className={`mt-3 rounded-lg border p-3 text-right ${box}`} dir="rtl">
+      <p className={`font-semibold ${compact ? 'text-sm' : 'text-base'}`}>
+        {result.error && !result.totalParsed ? result.error : result.message}
+      </p>
+
+      {result.totalParsed != null && (
+        <p className="text-xs mt-1 opacity-80">
+          خوانده‌شده: {result.totalParsed}
+          {result.totalSaved != null ? ` · ذخیره‌شده: ${result.totalSaved}` : ''}
+          {result.duplicates ? ` · تکراری: ${result.duplicates}` : ''}
+          {result.skippedRows ? ` · ردیف نامعتبر: ${result.skippedRows}` : ''}
+        </p>
+      )}
+
+      {unknown.length > 0 && (
+        <div className="mt-2 text-sm space-y-1">
+          {unknown.map((item) => (
+            <p key={item.code}>
+              نماد «{item.code}» در فهرست نبود
+              {item.similar?.length ? ` (نزدیک به ${item.similar.join('، ')})` : ''}
+              ؛ {item.count} معامله به‌عنوان <strong>نماد جدید</strong> ذخیره شد
+              و برای بررسی به مدیر ارسال شد.
+            </p>
+          ))}
+          <p className="text-xs">
+            نتیجه را در{' '}
+            <Link href="/profile" className="underline font-semibold">
+              پیام‌های پروفایل
+            </Link>{' '}
+            هم می‌بینید.
+          </p>
+        </div>
+      )}
+
+      {errorItems.length > 0 && (
+        <div className="mt-2 text-sm">
+          <p className="font-medium">معاملات ذخیره‌نشده:</p>
+          <ul className="list-disc list-inside text-xs mt-1 space-y-0.5 max-h-36 overflow-y-auto">
+            {errorItems.slice(0, 12).map((item, idx) => (
+              <li key={`${item.trade}-${idx}`}>
+                {item.symbol ? `نماد ${item.symbol}` : 'بدون نماد'}
+                {item.trade ? ` (شماره ${item.trade})` : ''}
+                {item.error ? ` — ${item.error}` : ''}
+              </li>
+            ))}
+          </ul>
+          {errorItems.length > 12 && (
+            <p className="text-xs mt-1">و {errorItems.length - 12} مورد دیگر</p>
+          )}
+        </div>
+      )}
+
+      {result.totalSaved > 0 && (
+        <Link
+          href="/dashboard/trades"
+          className="inline-block mt-2 text-xs font-semibold underline"
+        >
+          مشاهده معاملات
+        </Link>
+      )}
+    </div>
+  )
+}
 
 export default function FileUploadCard({ userId, onUploadSuccess, compact = false }) {
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [result, setResult] = useState(null)
 
   const handleDrag = (e) => {
     e.preventDefault()
@@ -22,9 +107,10 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setFile(e.dataTransfer.files[0])
+      setResult(null)
     }
   }
 
@@ -32,16 +118,18 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
     e.preventDefault()
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
+      setResult(null)
     }
   }
 
   const handleUpload = async () => {
     if (!file || !userId) {
-      alert('لطفاً یک فایل انتخاب کنید')
+      setResult({ success: false, error: 'لطفاً یک فایل انتخاب کنید', message: 'لطفاً یک فایل انتخاب کنید' })
       return
     }
 
     setUploading(true)
+    setResult(null)
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -54,18 +142,28 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
 
       const data = await response.json()
 
-      if (data.success) {
-        alert(data.message || `${data.totalSaved} معامله با موفقیت وارد شد`)
+      if (!response.ok && !data.message) {
+        setResult({
+          success: false,
+          error: data.error || 'خطا در آپلود فایل',
+          message: data.error || 'خطا در آپلود فایل',
+          skippedRows: data.skippedRows,
+        })
+        return
+      }
+
+      setResult(data)
+      if (data.totalSaved > 0) {
         setFile(null)
-        if (onUploadSuccess) {
-          onUploadSuccess()
-        }
-      } else {
-        alert(data.error || 'خطا در آپلود فایل')
+        if (onUploadSuccess) onUploadSuccess(data)
       }
     } catch (error) {
       console.error('Upload error:', error)
-      alert('خطا در آپلود فایل')
+      setResult({
+        success: false,
+        error: 'ارتباط با سرور برقرار نشد. دوباره تلاش کنید.',
+        message: 'ارتباط با سرور برقرار نشد. دوباره تلاش کنید.',
+      })
     } finally {
       setUploading(false)
     }
@@ -95,12 +193,12 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
               انتخاب فایل
             </label>
           </div>
-          
+
           {file && (
             <div className="bg-white rounded-lg p-3 text-center">
               <p className="text-sm text-gray-700 truncate">{file.name}</p>
-              <Button 
-                onClick={handleUpload} 
+              <Button
+                onClick={handleUpload}
                 disabled={uploading}
                 size="sm"
                 className="mt-2 w-full"
@@ -109,6 +207,8 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
               </Button>
             </div>
           )}
+
+          <UploadResultPanel result={result} compact />
 
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
@@ -132,8 +232,7 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">📤 بارگذاری معاملات</h2>
-      
-      {/* Download Templates */}
+
       <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <h3 className="font-semibold text-gray-800 mb-3">📥 دانلود الگوها و نمونه‌ها</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -147,7 +246,7 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
               <div className="text-xs text-gray-600">Excel قابل ویرایش</div>
             </div>
           </button>
-          
+
           <button
             onClick={() => handleDownload('sample')}
             className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
@@ -173,11 +272,10 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
         </div>
       </div>
 
-      {/* Upload Area */}
       <div
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          dragActive 
-            ? 'border-primary-500 bg-primary-50' 
+          dragActive
+            ? 'border-primary-500 bg-primary-50'
             : 'border-gray-300 bg-gray-50'
         }`}
         onDragEnter={handleDrag}
@@ -188,7 +286,7 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
         <div className="mb-4">
           <span className="text-6xl">📁</span>
         </div>
-        
+
         {file ? (
           <div className="space-y-3">
             <div className="bg-white rounded-lg p-4 inline-block">
@@ -198,14 +296,14 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
                 {(file.size / 1024).toFixed(2)} KB
               </p>
             </div>
-            
+
             <div className="flex gap-3 justify-center">
               <Button onClick={handleUpload} disabled={uploading}>
                 {uploading ? 'در حال آپلود...' : '✅ آپلود فایل'}
               </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => setFile(null)}
+              <Button
+                variant="ghost"
+                onClick={() => { setFile(null); setResult(null) }}
                 disabled={uploading}
               >
                 ❌ انصراف
@@ -237,13 +335,14 @@ export default function FileUploadCard({ userId, onUploadSuccess, compact = fals
         )}
       </div>
 
-      {/* Help Text */}
+      <UploadResultPanel result={result} compact={false} />
+
       <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
         <h4 className="font-semibold text-gray-800 mb-2">💡 راهنما:</h4>
         <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
           <li>فایل باید خروجی History از متاتریدر باشد</li>
           <li>فرمت‌های پشتیبانی: Excel (.xlsx, .xls) و CSV (.csv)</li>
-          <li>برای راحتی، ابتدا الگوی نمونه را دانلود کنید</li>
+          <li>اگر نماد فایل در فهرست نباشد، معامله به‌عنوان نماد جدید ذخیره می‌شود و برای مدیر تیکت ثبت می‌گردد</li>
         </ul>
       </div>
     </div>

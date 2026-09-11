@@ -8,6 +8,7 @@ import Button from '@/components/Button'
 import Input from '@/components/Input'
 import { UserName } from '@/components/VerifiedBadge'
 import { formatDateTime } from '@/utils/dateHelpers'
+import { formatTradeSymbol } from '@/utils/tradeSymbol'
 
 export default function AdminTradesPage() {
   const router = useRouter()
@@ -179,7 +180,7 @@ export default function AdminTradesPage() {
                             />
                             <div className="text-xs text-gray-500">{trade.userId?.phone}</div>
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{trade.symbol}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{formatTradeSymbol(trade)}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
                               trade.type === 'buy'
