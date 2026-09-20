@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Button from '@/components/Button'
-import {
-  FEEDBACK_CATEGORIES,
-  FEEDBACK_CATEGORY_VALUES,
-} from '@/utils/feedbackCategories'
+import { FEEDBACK_CATEGORIES } from '@/utils/feedbackCategories'
 
 /**
  * Shared form: category + title + body + optional image
@@ -24,10 +21,12 @@ export default function ProposalForm({
   defaultPhone = '',
   defaultTitle = '',
 }) {
-  const initialCategory = FEEDBACK_CATEGORY_VALUES.includes(defaultCategory)
+  const initialCategory = /^[a-z0-9-]+$/.test(defaultCategory)
     ? defaultCategory
     : 'other'
 
+  const [feedbackCategories, setFeedbackCategories] =
+    useState(FEEDBACK_CATEGORIES)
   const [category, setCategory] = useState(initialCategory)
   const [title, setTitle] = useState(defaultTitle || '')
   const [body, setBody] = useState('')
@@ -39,10 +38,32 @@ export default function ProposalForm({
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    if (FEEDBACK_CATEGORY_VALUES.includes(defaultCategory)) {
+    if (/^[a-z0-9-]+$/.test(defaultCategory)) {
       setCategory(defaultCategory)
     }
   }, [defaultCategory])
+
+  useEffect(() => {
+    if (!showCategory) return
+    let active = true
+    fetch('/api/site-config')
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active || !data.success || !data.feedbackCategories?.length) return
+        const items = data.feedbackCategories.map((item) => ({
+          value: item.slug,
+          label: item.label,
+        }))
+        setFeedbackCategories(items)
+        setCategory((current) =>
+          items.some((item) => item.value === current) ? current : 'other',
+        )
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [showCategory])
 
   useEffect(() => {
     if (defaultPhone) setPhone(defaultPhone)
@@ -154,7 +175,7 @@ export default function ProposalForm({
             className={inputCls}
             required
           >
-            {FEEDBACK_CATEGORIES.map((item) => (
+            {feedbackCategories.map((item) => (
               <option key={item.value} value={item.value} className="text-gray-900">
                 {item.label}
               </option>

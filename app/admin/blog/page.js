@@ -18,7 +18,7 @@ const emptyForm = {
   videoUrl: '',
   videoFile: '',
   gallery: [],
-  category: 'education',
+  categories: ['education'],
   tags: '',
   keywords: '',
   focusKeyword: '',
@@ -50,6 +50,12 @@ export default function AdminBlogPage() {
   const [user, setUser] = useState(null)
   const [posts, setPosts] = useState([])
   const [comments, setComments] = useState([])
+  const [blogCategories, setBlogCategories] = useState(
+    Object.entries(BLOG_CATEGORY_LABELS).map(([slug, label]) => ({
+      slug,
+      label,
+    })),
+  )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -85,7 +91,10 @@ export default function AdminBlogPage() {
     try {
       const res = await fetch(`/api/admin/blog?adminUserId=${user.id}`)
       const data = await res.json()
-      if (data.success) setPosts(data.posts || [])
+      if (data.success) {
+        setPosts(data.posts || [])
+        if (data.categories?.length) setBlogCategories(data.categories)
+      }
       else alert(data.error)
     } finally {
       setLoading(false)
@@ -113,7 +122,10 @@ export default function AdminBlogPage() {
       videoUrl: post.videoUrl || '',
       videoFile: post.videoFile || '',
       gallery: post.gallery || [],
-      category: post.category || 'education',
+      categories:
+        post.categories?.length
+          ? post.categories
+          : [post.category || 'education'],
       tags: (post.tags || []).join('، '),
       keywords: (post.keywords || []).join('، '),
       focusKeyword: post.focusKeyword || '',
@@ -164,6 +176,10 @@ export default function AdminBlogPage() {
   const savePost = async () => {
     if (!form.title.trim() || !form.body.trim()) {
       alert('عنوان و متن مقاله الزامی است')
+      return
+    }
+    if (!form.categories?.length) {
+      alert('حداقل یک دسته برای مقاله انتخاب کنید')
       return
     }
     setSaving(true)
@@ -428,14 +444,37 @@ export default function AdminBlogPage() {
                   </label>
                 </div>
                 <div className="grid md:grid-cols-2 gap-3">
-                  <label className="text-sm">
-                    دسته
-                    <select className="mt-1 w-full border rounded-lg px-3 py-2 bg-white" value={form.category} onChange={(e) => setField('category', e.target.value)}>
-                      {Object.entries(BLOG_CATEGORY_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
+                  <fieldset className="text-sm">
+                    <legend>دسته‌ها (امکان انتخاب چند مورد)</legend>
+                    <div className="mt-1 flex min-h-[42px] flex-wrap gap-2 rounded-lg border bg-white p-2">
+                      {blogCategories.map((item) => (
+                        <label
+                          key={item.slug}
+                          className="flex cursor-pointer items-center gap-1.5 rounded-md bg-gray-50 px-2 py-1 text-xs"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(form.categories || []).includes(item.slug)}
+                            onChange={(event) => {
+                              const selected = form.categories || []
+                              setField(
+                                'categories',
+                                event.target.checked
+                                  ? [...new Set([...selected, item.slug])]
+                                  : selected.filter((slug) => slug !== item.slug),
+                              )
+                            }}
+                          />
+                          {item.label}
+                        </label>
                       ))}
-                    </select>
-                  </label>
+                    </div>
+                    {!(form.categories || []).length && (
+                      <span className="mt-1 block text-xs text-rose-600">
+                        حداقل یک دسته انتخاب کنید.
+                      </span>
+                    )}
+                  </fieldset>
                   <label className="text-sm">
                     کلمه کلیدی اصلی
                     <input className="mt-1 w-full border rounded-lg px-3 py-2" value={form.focusKeyword} onChange={(e) => setField('focusKeyword', e.target.value)} placeholder="مثلاً ژورنال معاملاتی" />
@@ -554,7 +593,20 @@ export default function AdminBlogPage() {
                           ) : null}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          /blog/{post.slug} · {BLOG_CATEGORY_LABELS[post.category] || post.category}
+                          /blog/{post.slug} ·{' '}
+                          {(post.categories?.length
+                            ? post.categories
+                            : [post.category]
+                          )
+                            .filter(Boolean)
+                            .map(
+                              (slug) =>
+                                blogCategories.find((item) => item.slug === slug)
+                                  ?.label ||
+                                BLOG_CATEGORY_LABELS[slug] ||
+                                slug,
+                            )
+                            .join('، ')}
                           {post.isActive ? ' · فعال' : ' · غیرفعال'}
                           {post.isVisible ? ' · نمایش' : ' · مخفی'}
                           {!post.commentsEnabled

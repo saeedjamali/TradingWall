@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 export const BLOG_CATEGORIES = [
   'journal',
   'backtest',
+  'challenges',
   'psychology',
   'education',
   'tools',
@@ -46,8 +47,12 @@ const BlogPostSchema = new mongoose.Schema(
     gallery: [{ type: String }],
     category: {
       type: String,
-      enum: BLOG_CATEGORIES,
       default: 'education',
+      index: true,
+    },
+    categories: {
+      type: [{ type: String, trim: true, lowercase: true, maxlength: 60 }],
+      default: undefined,
       index: true,
     },
     tags: [{ type: String, trim: true, maxlength: 40 }],
@@ -81,6 +86,17 @@ const BlogPostSchema = new mongoose.Schema(
 BlogPostSchema.index({ isActive: 1, isVisible: 1, isPinned: -1, pinPriority: -1, publishedAt: -1 })
 BlogPostSchema.index({ tags: 1 })
 
+BlogPostSchema.pre('validate', function syncPrimaryCategory(next) {
+  const selected = [...new Set((this.categories || []).filter(Boolean))]
+  if (selected.length) {
+    this.categories = selected
+    this.category = selected[0]
+  } else if (this.category) {
+    this.categories = [this.category]
+  }
+  next()
+})
+
 BlogPostSchema.virtual('ratingAvg').get(function ratingAvg() {
   if (!this.ratingCount) return 0
   return Math.round((this.ratingSum / this.ratingCount) * 10) / 10
@@ -93,6 +109,22 @@ function getBlogPostModel() {
       existing.schema.add({
         isPinned: { type: Boolean, default: false, index: true },
         pinPriority: { type: Number, default: 0, min: 0, max: 99 },
+      })
+    }
+    const categoryPath = existing.schema.path('category')
+    if (categoryPath?.enumValues?.length) {
+      categoryPath.enumValues.splice(0)
+      categoryPath.validators = categoryPath.validators.filter(
+        (validator) => validator.type !== 'enum',
+      )
+    }
+    if (!existing.schema.path('categories')) {
+      existing.schema.add({
+        categories: {
+          type: [{ type: String, trim: true, lowercase: true, maxlength: 60 }],
+          default: undefined,
+          index: true,
+        },
       })
     }
     return existing

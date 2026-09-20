@@ -46,15 +46,48 @@ export default function DashboardPage() {
 
     setUser(parsedUser);
     fetchStats(parsedUser.id);
+    checkProfileReminder(parsedUser.id);
+  }, [router]);
+
+  const checkProfileReminder = async (userId) => {
+    let dismissed = false;
     try {
-      const dismissed = localStorage.getItem(
-        `tw_dismiss_profile_reminder_${parsedUser.id}`,
-      );
-      setShowProfileReminder(dismissed !== "1");
+      dismissed =
+        localStorage.getItem(`tw_dismiss_profile_reminder_${userId}`) === "1";
     } catch {
+      // Continue and determine visibility from the saved profile.
+    }
+
+    if (dismissed) {
+      setShowProfileReminder(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/profile?userId=${userId}`);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        setShowProfileReminder(true);
+        return;
+      }
+
+      const profile = data.user || {};
+      const publicName = String(profile.publicName || "").trim();
+      const hasCustomPublicName =
+        Boolean(publicName) &&
+        publicName !== "کاربر جدید" &&
+        !/^کاربر \d{4}$/.test(publicName);
+      const profileIsComplete = Boolean(
+        hasCustomPublicName &&
+          String(profile.profileImage || "").trim() &&
+          String(profile.city || "").trim(),
+      );
+      setShowProfileReminder(!profileIsComplete);
+    } catch (error) {
+      console.error("Error checking profile completion:", error);
       setShowProfileReminder(true);
     }
-  }, [router]);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -238,7 +271,7 @@ export default function DashboardPage() {
               href="/profile"
               className="hover:text-white underline-offset-2 hover:underline min-w-0"
             >
-              پروفایل را یک‌بار بررسی کنید — نام نمایشی و تصویر را می‌توانید ویرایش کنید.
+              پروفایل را یک‌بار بررسی کنید — نام نمایشی، تصویر و شهر را می‌توانید ویرایش کنید.
             </Link>
             <button
               type="button"

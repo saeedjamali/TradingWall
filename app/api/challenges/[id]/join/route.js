@@ -3,7 +3,7 @@ import connectDB from '@/lib/mongodb'
 import BacktestChallenge from '@/models/BacktestChallenge'
 import ChallengeParticipant from '@/models/ChallengeParticipant'
 import { requireActiveUser } from '@/utils/requireActiveUser'
-import { getChallengePhase } from '@/utils/challenge'
+import { challengeAcceptsJoins, getChallengePhase } from '@/utils/challenge'
 
 async function findChallenge(id) {
   if (/^[a-f0-9]{24}$/i.test(id)) {
@@ -40,8 +40,14 @@ export async function POST(request, { params }) {
     if (phase === 'cancelled') {
       return NextResponse.json({ error: 'این چالش لغو شده است' }, { status: 400 })
     }
-    if (phase === 'ended') {
+    if (phase === 'ended' || challenge.status === 'ended') {
       return NextResponse.json({ error: 'مهلت پیوستن به چالش تمام شده است' }, { status: 400 })
+    }
+    if (!challengeAcceptsJoins(challenge)) {
+      return NextResponse.json(
+        { error: 'امکان پیوستن به این چالش وجود ندارد' },
+        { status: 400 },
+      )
     }
 
     const existing = await ChallengeParticipant.findOne({

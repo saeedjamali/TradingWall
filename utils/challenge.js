@@ -311,6 +311,20 @@ export function getChallengePhase(challenge, now = new Date()) {
   return 'active'
 }
 
+/** Join is allowed only while the challenge is open and its deadline has not passed. */
+export function challengeAcceptsJoins(challenge, now = new Date()) {
+  if (!challenge) return false
+  if (challenge.status === 'ended' || challenge.status === 'cancelled') {
+    return false
+  }
+  const phase = getChallengePhase(challenge, now)
+  if (phase === 'ended' || phase === 'cancelled') return false
+  if (challenge.phase === 'ended' || challenge.phase === 'cancelled') return false
+  const { end } = challengeWindowBounds(challenge)
+  if (!end || Number.isNaN(end.getTime()) || now > end) return false
+  return challenge.status === 'open' && ['upcoming', 'active'].includes(phase)
+}
+
 /** Challenge start/end (not historical chart range) cannot be before today. */
 export function validateChallengeWindowNotPast(start, end, now = new Date()) {
   const today = startOfLocalDay(now)

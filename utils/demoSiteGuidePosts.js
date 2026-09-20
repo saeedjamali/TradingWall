@@ -390,7 +390,7 @@ export const DEMO_SITE_GUIDE_POSTS = [
       "مقایسه چالش بک‌تست روی چارت تاریخی و چالش معامله روی ژورنال واقعی",
     isPinned: false,
     pinPriority: 0,
-    category: "education",
+    category: "challenges",
     tags: ["چالش بک‌تست", "چالش معامله", "دعوت چالش", "ستاپ"],
     keywords: [
       "چالش بک تست",

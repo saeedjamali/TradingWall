@@ -44,16 +44,6 @@ const MessageSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: [
-      'add_symbol',
-      'add_setup',
-      'upload_error',
-      'account_activation',
-      'login_issue',
-      'bug_report',
-      'feature_request',
-      'other',
-    ],
     default: 'other',
     index: true,
   },
@@ -184,4 +174,19 @@ export function clearUnreadForUser(message, userId) {
   }
 }
 
-export default mongoose.models.Message || mongoose.model('Message', MessageSchema)
+function getMessageModel() {
+  const existing = mongoose.models.Message
+  if (existing) {
+    const categoryPath = existing.schema.path('category')
+    if (categoryPath?.enumValues?.length) {
+      categoryPath.enumValues.splice(0)
+      categoryPath.validators = categoryPath.validators.filter(
+        (validator) => validator.type !== 'enum',
+      )
+    }
+    return existing
+  }
+  return mongoose.model('Message', MessageSchema)
+}
+
+export default getMessageModel()

@@ -6,7 +6,7 @@ import Message, {
   clearUnreadForUser,
 } from '@/models/Message'
 import User from '@/models/User'
-import { FEEDBACK_CATEGORY_VALUES } from '@/utils/feedbackCategories'
+import { getActiveFeedbackCategories } from '@/utils/siteSettings'
 
 function populateMessage(query) {
   return query
@@ -186,7 +186,10 @@ export async function POST(request) {
 
     let senderId = userId || null
     let contactPhone = null
-    const feedbackCategory = FEEDBACK_CATEGORY_VALUES.includes(category)
+    const feedbackCategories = await getActiveFeedbackCategories()
+    const feedbackCategory = feedbackCategories.some(
+      (item) => item.slug === category,
+    )
       ? category
       : 'other'
 

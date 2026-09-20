@@ -8,7 +8,6 @@ import ProposalForm from "@/components/ProposalForm";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import Modal from "@/components/Modal";
 import { getSessionUser } from "@/utils/session";
-import { FEEDBACK_CATEGORY_VALUES } from "@/utils/feedbackCategories";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
@@ -33,7 +32,7 @@ export default function Home() {
       const params = new URLSearchParams(window.location.search);
       const category = params.get("category");
       setSupportCategory(
-        FEEDBACK_CATEGORY_VALUES.includes(category) ? category : "other",
+        category && /^[a-z0-9-]+$/.test(category) ? category : "other",
       );
       setSupportPhone(params.get("phone") || "");
       setSupportReason(params.get("reason") || "");

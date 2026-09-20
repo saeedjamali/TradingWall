@@ -1,6 +1,7 @@
 export const BLOG_CATEGORY_LABELS = {
   journal: 'ژورنال معاملاتی',
   backtest: 'بک‌تست',
+  challenges: 'چالش‌ها',
   psychology: 'روانشناسی معامله',
   education: 'آموزش فارکس',
   tools: 'ابزار معامله',

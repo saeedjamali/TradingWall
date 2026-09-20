@@ -17,15 +17,19 @@ export async function GET(_request, { params }) {
 
     await BlogPost.updateOne({ _id: post._id }, { $inc: { views: 1 } })
 
+    const postCategories = post.categories?.length
+      ? post.categories
+      : [post.category].filter(Boolean)
     const related = await BlogPost.find({
       ...publicPostFilter(),
       _id: { $ne: post._id },
       $or: [
-        { category: post.category },
+        { category: { $in: postCategories } },
+        { categories: { $in: postCategories } },
         { tags: { $in: post.tags || [] } },
       ],
     })
-      .select('title slug excerpt coverImage category publishedAt')
+      .select('title slug excerpt coverImage category categories publishedAt')
       .sort(PUBLIC_POST_SORT)
       .limit(3)
       .lean()

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getPinnedPosts, getPublicPosts } from '@/lib/blogQueries'
-import { BLOG_CATEGORY_LABELS } from '@/utils/blog'
+import { getActiveBlogCategories } from '@/utils/siteSettings'
 import { absoluteUrl, getSiteUrl, SITE_NAME_FA } from '@/utils/site'
 import { BlogPager, CompactPostCard, FeaturedPosts } from '@/components/BlogIndexCards'
 
@@ -13,6 +13,10 @@ export default async function BlogIndexPage({ searchParams }) {
   const q = params?.q || ''
   const page = Math.max(1, parseInt(params?.page || '1', 10) || 1)
   const searching = Boolean(q)
+  const blogCategories = await getActiveBlogCategories()
+  const categoryLabels = Object.fromEntries(
+    blogCategories.map((item) => [item.slug, item.label]),
+  )
 
   const pinned = searching ? [] : await getPinnedPosts({ category, tag, limit: 3 })
   const excludeIds = pinned.map((post) => post._id)
@@ -69,9 +73,9 @@ export default async function BlogIndexPage({ searchParams }) {
           <option value="" className="bg-slate-900 text-white">
             همه دسته‌ها
           </option>
-          {Object.entries(BLOG_CATEGORY_LABELS).map(([value, label]) => (
-            <option key={value} value={value} className="bg-slate-900 text-white">
-              {label}
+          {blogCategories.map((item) => (
+            <option key={item.slug} value={item.slug} className="bg-slate-900 text-white">
+              {item.label}
             </option>
           ))}
         </select>
@@ -94,17 +98,17 @@ export default async function BlogIndexPage({ searchParams }) {
         >
           همه
         </Link>
-        {Object.entries(BLOG_CATEGORY_LABELS).map(([value, label]) => (
+        {blogCategories.map((item) => (
           <Link
-            key={value}
-            href={`/blog?category=${value}`}
+            key={item.slug}
+            href={`/blog?category=${item.slug}`}
             className={`text-xs px-3 py-1.5 rounded-full border ${
-              category === value
+              category === item.slug
                 ? 'bg-emerald-400/15 border-emerald-400/30 text-emerald-200'
                 : 'border-white/10 text-white/55 hover:text-white'
             }`}
           >
-            {label}
+            {item.label}
           </Link>
         ))}
       </div>
@@ -125,7 +129,7 @@ export default async function BlogIndexPage({ searchParams }) {
                 <h2 className="text-lg font-bold">برگزیده‌ها</h2>
                 <p className="text-xs text-white/40">پست‌های ثابت در مورد معامله گری</p>
               </div>
-              <FeaturedPosts posts={featured} />
+              <FeaturedPosts posts={featured} categoryLabels={categoryLabels} />
             </section>
           ) : null}
 
@@ -139,7 +143,11 @@ export default async function BlogIndexPage({ searchParams }) {
               </div>
               <div className="grid md:grid-cols-2 gap-3">
                 {posts.map((post) => (
-                  <CompactPostCard key={post._id} post={post} />
+                  <CompactPostCard
+                    key={post._id}
+                    post={post}
+                    categoryLabels={categoryLabels}
+                  />
                 ))}
               </div>
             </section>

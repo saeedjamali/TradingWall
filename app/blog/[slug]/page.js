@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getPublicPostBySlug } from '@/lib/blogQueries'
 import { BLOG_CATEGORY_LABELS, renderBlogHtml, commentsNeedApproval } from '@/utils/blog'
+import { getActiveBlogCategories } from '@/utils/siteSettings'
 import { absoluteUrl, getSiteUrl, SITE_NAME_FA } from '@/utils/site'
 import BlogVideo from '@/components/BlogVideo'
 import BlogEngage from '@/components/BlogEngage'
@@ -47,6 +48,16 @@ export default async function BlogPostPage({ params }) {
   const data = await getPublicPostBySlug(slug, { countView: true })
   if (!data?.post) notFound()
   const { post, related, comments } = data
+  const managedCategories = await getActiveBlogCategories()
+  const categoryLabels = {
+    ...BLOG_CATEGORY_LABELS,
+    ...Object.fromEntries(
+      managedCategories.map((item) => [item.slug, item.label]),
+    ),
+  }
+  const postCategories = post.categories?.length
+    ? post.categories
+    : [post.category].filter(Boolean)
   const siteUrl = getSiteUrl()
 
   const articleLd = {
@@ -65,7 +76,9 @@ export default async function BlogPostPage({ params }) {
     mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`, siteUrl),
     image: post.coverImage ? [absoluteUrl(post.coverImage, siteUrl)] : undefined,
     keywords: (post.keywords || post.tags || []).join(', '),
-    articleSection: BLOG_CATEGORY_LABELS[post.category] || post.category,
+    articleSection: postCategories
+      .map((item) => categoryLabels[item] || item)
+      .join('، '),
     wordCount: String(post.body || '').trim().split(/\s+/).filter(Boolean).length,
   }
 
@@ -147,11 +160,19 @@ export default async function BlogPostPage({ params }) {
         <nav className="text-xs text-emerald-200/70 mb-4">
           <Link href="/blog" className="hover:text-white">بلاگ</Link>
           {' / '}
-          <span className="text-cyan-200">{BLOG_CATEGORY_LABELS[post.category] || post.category}</span>
+          <span className="text-cyan-200">{categoryLabels[post.category] || post.category}</span>
         </nav>
-        <p className="inline-flex text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-400/15 text-emerald-200 mb-3">
-          {BLOG_CATEGORY_LABELS[post.category] || post.category}
-        </p>
+        <div className="mb-3 flex flex-wrap gap-2">
+          {postCategories.map((item) => (
+            <Link
+              key={item}
+              href={`/blog?category=${encodeURIComponent(item)}`}
+              className="inline-flex rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-200"
+            >
+              {categoryLabels[item] || item}
+            </Link>
+          ))}
+        </div>
         <h1 className="text-3xl md:text-4xl font-black leading-snug text-white">{post.title}</h1>
         <p className="text-sm text-white/55 mt-4">
           {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('fa-IR') : ''}
@@ -258,7 +279,7 @@ export default async function BlogPostPage({ params }) {
                 className="rounded-xl border border-emerald-300/15 bg-black/20 p-4 hover:border-emerald-400/40"
               >
                 <p className="text-xs text-emerald-300 mb-1">
-                  {BLOG_CATEGORY_LABELS[item.category] || item.category}
+                  {categoryLabels[item.category] || item.category}
                 </p>
                 <h3 className="font-bold text-white">{item.title}</h3>
                 <p className="text-sm text-white/55 mt-1 line-clamp-2">{item.excerpt}</p>

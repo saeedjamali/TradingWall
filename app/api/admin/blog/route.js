@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
-import BlogPost, { BLOG_CATEGORIES } from '@/models/BlogPost'
+import BlogPost from '@/models/BlogPost'
 import BlogComment from '@/models/BlogComment'
 import BlogRating from '@/models/BlogRating'
 import { requireAdmin } from '@/utils/adminAuth'
 import { slugify, splitCsv, clampPinPriority } from '@/utils/blog'
+import { getActiveBlogCategories } from '@/utils/siteSettings'
 
 function serializeFaqs(faqs) {
   if (!Array.isArray(faqs)) return []
@@ -28,9 +29,23 @@ function serializeHowTo(steps) {
     .slice(0, 12)
 }
 
-function buildPayload(body, author) {
+function buildPayload(body, author, activeCategories) {
   const title = String(body.title || '').trim()
   const slug = slugify(body.slug || title)
+  const allowed = new Set(activeCategories.map((item) => item.slug))
+  const requested = Array.isArray(body.categories)
+    ? body.categories
+    : [body.category]
+  const categories = [
+    ...new Set(
+      requested
+        .map((item) => String(item || '').trim().toLowerCase())
+        .filter((item) => allowed.has(item)),
+    ),
+  ]
+  if (!categories.length) {
+    categories.push(allowed.has('education') ? 'education' : activeCategories[0]?.slug)
+  }
   const payload = {
     title,
     slug,
@@ -41,7 +56,8 @@ function buildPayload(body, author) {
     videoUrl: String(body.videoUrl || '').trim(),
     videoFile: body.videoFile || null,
     gallery: Array.isArray(body.gallery) ? body.gallery.filter(Boolean).slice(0, 8) : [],
-    category: BLOG_CATEGORIES.includes(body.category) ? body.category : 'education',
+    category: categories[0],
+    categories,
     tags: Array.isArray(body.tags) ? body.tags : splitCsv(body.tags),
     keywords: Array.isArray(body.keywords) ? body.keywords : splitCsv(body.keywords),
     focusKeyword: String(body.focusKeyword || '').trim(),
@@ -80,11 +96,14 @@ export async function GET(request) {
       ]
     }
 
-    const posts = await BlogPost.find(filter)
+    const [posts, categories] = await Promise.all([
+      BlogPost.find(filter)
       .sort({ isPinned: -1, pinPriority: -1, updatedAt: -1 })
       .limit(200)
-      .lean()
-    return NextResponse.json({ success: true, posts, categories: BLOG_CATEGORIES })
+      .lean(),
+      getActiveBlogCategories(),
+    ])
+    return NextResponse.json({ success: true, posts, categories })
   } catch (error) {
     console.error('Admin blog GET error:', error)
     return NextResponse.json({ error: 'خطای سرور' }, { status: 500 })
@@ -98,7 +117,8 @@ export async function POST(request) {
     const admin = await requireAdmin(body.adminUserId)
     if (!admin) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 403 })
 
-    const payload = buildPayload(body, admin)
+    const categories = await getActiveBlogCategories()
+    const payload = buildPayload(body, admin, categories)
     if (!payload.title || !payload.body || !payload.slug) {
       return NextResponse.json({ error: 'عنوان، متن و نامک الزامی است' }, { status: 400 })
     }
@@ -129,7 +149,8 @@ export async function PUT(request) {
     const post = await BlogPost.findById(body.postId)
     if (!post) return NextResponse.json({ error: 'مقاله یافت نشد' }, { status: 404 })
 
-    const payload = buildPayload(body, admin)
+    const categories = await getActiveBlogCategories()
+    const payload = buildPayload(body, admin, categories)
     if (payload.slug !== post.slug) {
       const clash = await BlogPost.findOne({ slug: payload.slug, _id: { $ne: post._id } })
       if (clash) {

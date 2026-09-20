@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import BacktestChallenge from '@/models/BacktestChallenge'
 import ChallengeParticipant from '@/models/ChallengeParticipant'
+import ChallengeDiscussion from '@/models/ChallengeDiscussion'
+import ChallengeDiscussionVote from '@/models/ChallengeDiscussionVote'
 import User from '@/models/User'
 import '@/models/Setup'
 import { requireActiveUser } from '@/utils/requireActiveUser'
 import { requireAdmin } from '@/utils/adminAuth'
 import {
+  challengeAcceptsJoins,
   getChallengePhase,
   canViewChallengeResults,
   resolveChallengeType,
@@ -171,6 +174,14 @@ export async function GET(request, { params }) {
           serializeSuggestedSetup(challenge)?._id ||
           challenge.suggestedSetupId ||
           null,
+        acceptsJoins: challengeAcceptsJoins({
+          ...challenge,
+          status:
+            effectivePhase === 'ended' && challenge.status === 'open'
+              ? 'ended'
+              : challenge.status,
+          phase: effectivePhase,
+        }),
       },
       viewer: viewer
         ? {
@@ -487,7 +498,18 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    await ChallengeParticipant.deleteMany({ challengeId: challenge._id })
+    const discussionIds = await ChallengeDiscussion.find({
+      challengeId: challenge._id,
+    }).distinct('_id')
+    await Promise.all([
+      ChallengeParticipant.deleteMany({ challengeId: challenge._id }),
+      ChallengeDiscussion.deleteMany({ challengeId: challenge._id }),
+      discussionIds.length
+        ? ChallengeDiscussionVote.deleteMany({
+            discussionId: { $in: discussionIds },
+          })
+        : Promise.resolve(),
+    ])
     await BacktestChallenge.findByIdAndDelete(challenge._id)
 
     return NextResponse.json({ success: true, message: 'چالش حذف شد' })

@@ -13,6 +13,7 @@ export function getUploadSubDir(type = 'profile') {
   if (type === 'trade') return 'trades'
   if (type === 'backtest') return 'backtests'
   if (type === 'blog') return 'blog'
+  if (type === 'challengeDiscussion') return 'challenge-discussions'
   return 'profiles'
 }
 

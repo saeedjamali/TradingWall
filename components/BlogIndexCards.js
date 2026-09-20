@@ -6,7 +6,7 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString('fa-IR')
 }
 
-function Meta({ post, featured = false }) {
+function Meta({ post, featured = false, categoryLabels = BLOG_CATEGORY_LABELS }) {
   return (
     <p className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${featured ? 'text-xs text-emerald-200/90' : 'text-[11px] text-emerald-300/90'}`}>
       {post.isPinned ? (
@@ -14,14 +14,14 @@ function Meta({ post, featured = false }) {
           برگزیده
         </span>
       ) : null}
-      <span>{BLOG_CATEGORY_LABELS[post.category] || post.category}</span>
+      <span>{categoryLabels[post.category] || post.category}</span>
       {post.publishedAt ? <span className="text-white/45">· {formatDate(post.publishedAt)}</span> : null}
       {post.readingMinutes ? <span className="text-white/45">· {post.readingMinutes} دقیقه</span> : null}
     </p>
   )
 }
 
-export function FeaturedPosts({ posts }) {
+export function FeaturedPosts({ posts, categoryLabels }) {
   if (!posts?.length) return null
   const [hero, ...rest] = posts
 
@@ -41,7 +41,7 @@ export function FeaturedPosts({ posts }) {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-5 md:p-7 blog-featured text-white">
-            <Meta post={hero} featured />
+            <Meta post={hero} featured categoryLabels={categoryLabels} />
             <h2 className="text-2xl md:text-3xl font-black mt-2 leading-snug">{hero.title}</h2>
             {hero.excerpt ? (
               <p className="mt-2 text-sm text-white/70 line-clamp-2 max-w-3xl">{hero.excerpt}</p>
@@ -68,7 +68,7 @@ export function FeaturedPosts({ posts }) {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
           <div className="relative min-h-[280px] md:min-h-full flex flex-col justify-end p-5 md:p-7 blog-featured text-white">
-            <Meta post={hero} featured />
+            <Meta post={hero} featured categoryLabels={categoryLabels} />
             <h2 className="text-2xl md:text-[1.7rem] font-black mt-2 leading-snug">{hero.title}</h2>
             {hero.excerpt ? (
               <p className="mt-2 text-sm text-white/70 line-clamp-2">{hero.excerpt}</p>
@@ -94,7 +94,7 @@ export function FeaturedPosts({ posts }) {
                 <div className="w-[7.5rem] bg-slate-900 shrink-0" />
               )}
               <div className="p-3.5 flex-1 min-w-0">
-                <Meta post={post} />
+                <Meta post={post} categoryLabels={categoryLabels} />
                 <h3 className="font-bold mt-1.5 leading-snug line-clamp-3 group-hover:text-emerald-200">
                   {post.title}
                 </h3>
@@ -107,7 +107,7 @@ export function FeaturedPosts({ posts }) {
   )
 }
 
-export function CompactPostCard({ post }) {
+export function CompactPostCard({ post, categoryLabels }) {
   return (
     <article className="group rounded-xl border border-white/10 bg-white/[0.03] hover:border-emerald-400/30 transition-colors">
       <Link href={`/blog/${post.slug}`} className="flex gap-3 p-2.5 sm:p-3">
@@ -122,7 +122,7 @@ export function CompactPostCard({ post }) {
           <div className="w-[6.5rem] h-[4.6rem] sm:w-32 sm:h-[5.25rem] rounded-lg bg-slate-900 shrink-0" />
         )}
         <div className="min-w-0 flex-1 py-0.5">
-          <Meta post={post} />
+          <Meta post={post} categoryLabels={categoryLabels} />
           <h3 className="font-bold mt-1 text-[0.95rem] sm:text-base leading-snug line-clamp-2 group-hover:text-emerald-200">
             {post.title}
           </h3>

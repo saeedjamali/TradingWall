@@ -13,24 +13,32 @@ export async function GET(request) {
     const tag = searchParams.get('tag') || ''
     const q = (searchParams.get('q') || '').trim()
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
-    const limit = Math.min(24, Math.max(6, parseInt(searchParams.get('limit') || '12', 10)))
+    const limit = Math.min(24, Math.max(1, parseInt(searchParams.get('limit') || '12', 10)))
 
     const filter = publicPostFilter()
-    if (category) filter.category = category
+    const conditions = []
+    if (category) {
+      conditions.push({
+        $or: [{ category }, { categories: category }],
+      })
+    }
     if (tag) filter.tags = tag
     if (q) {
-      filter.$or = [
-        { title: { $regex: q, $options: 'i' } },
-        { excerpt: { $regex: q, $options: 'i' } },
-        { tags: { $regex: q, $options: 'i' } },
-        { keywords: { $regex: q, $options: 'i' } },
-      ]
+      conditions.push({
+        $or: [
+          { title: { $regex: q, $options: 'i' } },
+          { excerpt: { $regex: q, $options: 'i' } },
+          { tags: { $regex: q, $options: 'i' } },
+          { keywords: { $regex: q, $options: 'i' } },
+        ],
+      })
     }
+    if (conditions.length) filter.$and = conditions
 
     const [items, total] = await Promise.all([
       BlogPost.find(filter)
         .select(
-          'title slug excerpt coverImage coverImageAlt category tags publishedAt updatedAt views ratingSum ratingCount readingHint authorName isPinned pinPriority',
+          'title slug excerpt coverImage coverImageAlt category categories tags publishedAt updatedAt views ratingSum ratingCount readingHint authorName isPinned pinPriority',
         )
         .sort(PUBLIC_POST_SORT)
         .skip((page - 1) * limit)

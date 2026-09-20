@@ -6,10 +6,13 @@ import { useParams, useRouter } from 'next/navigation'
 import Loading from '@/components/Loading'
 import SymbolSelect from '@/components/SymbolSelect'
 import SelectedSetupNote from '@/components/SelectedSetupNote'
+import ChallengeDiscussionPanel from '@/components/ChallengeDiscussionPanel'
+import ThemeToggle from '@/components/ThemeToggle'
 import { UserName } from '@/components/VerifiedBadge'
 import { getSessionUser } from '@/utils/session'
 import { BACKTEST_TIMEFRAMES } from '@/utils/backtest'
 import {
+  challengeAcceptsJoins,
   formatDualDateRange,
   formatTopSetupLabel,
   getChallengeTypeMeta,
@@ -68,6 +71,7 @@ export default function ChallengeDetailPage() {
   const [editing, setEditing] = useState(false)
   const [editBusy, setEditBusy] = useState(false)
   const [editForm, setEditForm] = useState(null)
+  const [relatedPosts, setRelatedPosts] = useState([])
 
   useEffect(() => {
     setUser(getSessionUser())
@@ -126,6 +130,20 @@ export default function ChallengeDetailPage() {
         if (json.success) setStandardSetups(json.setups || [])
       } catch {
         // ignore
+      }
+    })()
+  }, [])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const response = await fetch('/api/blog?category=challenges&limit=3')
+        const json = await response.json()
+        if (response.ok && json.success) {
+          setRelatedPosts(json.posts || [])
+        }
+      } catch {
+        // Related educational links are optional.
       }
     })()
   }, [])
@@ -328,21 +346,36 @@ export default function ChallengeDetailPage() {
   const canEditOrDelete = !!(data.canEditOrDelete || viewer?.canEditOrDelete)
   const activityRange = formatDualDateRange(c.backtestRangeStart, c.backtestRangeEnd)
   const windowRange = formatDualDateRange(c.challengeStartAt, c.challengeEndAt)
+  const acceptsJoins =
+    c.acceptsJoins != null ? c.acceptsJoins : challengeAcceptsJoins(c)
   const canJoin =
-    c.phase !== 'ended' &&
-    c.phase !== 'cancelled' &&
+    acceptsJoins &&
     (!viewer || (!viewer.isParticipant && viewer.participationStatus !== 'pending'))
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 scroll-smooth">
       <div className="theme-surface text-white">
-        <div className="container mx-auto px-4 py-8 max-w-6xl" dir="rtl">
-          <Link href="/challenges/browse" className="text-sm text-primary-300 hover:underline">
-            ← همه چالش‌ها
-          </Link>
-          <div className="mt-4 flex flex-wrap items-start justify-between gap-5">
+        <div className="container mx-auto px-4 py-4 md:py-5 max-w-6xl" dir="rtl">
+          <div className="flex items-center justify-between gap-3">
+            <Link href="/challenges/browse" className="text-xs sm:text-sm text-primary-300 hover:underline">
+              ← همه چالش‌ها
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <nav
+                aria-label="میانبر بخش‌های چالش"
+                className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 p-0.5"
+              >
+                <JumpLink href="#challenge-manage" label="مدیریت چالش" icon={<ManageIcon />} />
+                <JumpLink href="#challenge-guides" label="راهنمای چالش‌ها" icon={<GuideIcon />} />
+                <JumpLink href="#challenge-discussion" label="گفتگوی شرکت‌کنندگان" icon={<ChatIcon />} />
+                <JumpLink href="#challenge-analysis" label="جدول تحلیل" icon={<TableIcon />} />
+              </nav>
+              <ThemeToggle />
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
                 <span
                   className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
                     isTrade
@@ -371,15 +404,15 @@ export default function ChallengeDetailPage() {
                 )}
               </div>
 
-              <h1 className="text-2xl md:text-3xl font-bold leading-snug">{c.title}</h1>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold leading-snug">{c.title}</h1>
 
               {c.description ? (
-                <p className="mt-2 text-sm text-gray-400 max-w-2xl line-clamp-2">
+                <p className="mt-1.5 text-xs sm:text-sm text-gray-400 max-w-2xl line-clamp-2">
                   {c.description}
                 </p>
               ) : null}
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                 <MetaChip>
                   <span className="text-gray-500">نماد</span>
                   <span className="text-emerald-300 font-bold" dir="ltr">
@@ -425,18 +458,18 @@ export default function ChallengeDetailPage() {
                 )}
               </div>
               {!isTrade && c.suggestedSetup?.description && (
-                <p className="mt-3 max-w-2xl rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap">
+                <p className="mt-2 max-w-2xl rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-2">
                   {c.suggestedSetup.description}
                 </p>
               )}
 
-              <div className="mt-4 grid grid-cols-1 gap-2 max-w-2xl">
+              <div className="mt-2.5 grid grid-cols-2 gap-1.5 max-w-2xl">
                 <RangeCard
-                  label={isTrade ? 'بازه معاملات / بازه چالش' : 'بازه چارت'}
+                  label={isTrade ? 'بازه معاملات / چالش' : 'بازه چارت'}
                   range={activityRange}
                 />
                 {!isTrade && (
-                  <RangeCard label="بازه چالش (مهلت انجام)" range={windowRange} />
+                  <RangeCard label="مهلت انجام" range={windowRange} />
                 )}
               </div>
 
@@ -447,9 +480,9 @@ export default function ChallengeDetailPage() {
                 if (!mine) return null
                 const pct = mine.progressPct ?? 0
                 return (
-                  <div className="mt-4 max-w-2xl rounded-xl border border-white/10 bg-white/[0.05] p-3">
-                    <div className="flex items-center justify-between gap-2 text-xs mb-2">
-                      <span className="text-gray-400">پیشرفت شما در چالش</span>
+                  <div className="mt-2.5 max-w-2xl rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-2 text-[11px] mb-1.5">
+                      <span className="text-gray-400">پیشرفت شما</span>
                       <span className="font-bold text-emerald-300 tabular-nums">
                         {pct}%
                         <span className="text-gray-500 font-normal mr-1">
@@ -457,7 +490,7 @@ export default function ChallengeDetailPage() {
                         </span>
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
                           pct >= 100 ? 'bg-emerald-400' : 'bg-primary-500'
@@ -465,21 +498,18 @@ export default function ChallengeDetailPage() {
                         style={{ width: `${Math.min(100, pct)}%` }}
                       />
                     </div>
-                    <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
-                      {typeMeta.progressHint}
-                    </p>
                   </div>
                 )
               })()}
             </div>
 
-            <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
+            <div className="flex flex-col gap-1.5 shrink-0 w-full sm:w-auto">
               {canJoin && (
                 <button
                   type="button"
                   onClick={handleJoin}
                   disabled={joining}
-                  className="px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 font-semibold text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 font-semibold text-sm disabled:opacity-50"
                 >
                   {!user
                     ? 'ورود و پیوستن به چالش'
@@ -490,6 +520,14 @@ export default function ChallengeDetailPage() {
                         : 'پیوستن به چالش'}
                 </button>
               )}
+              {!viewer?.isParticipant &&
+                viewer?.participationStatus !== 'pending' &&
+                !acceptsJoins &&
+                (c.phase === 'ended' || c.status === 'ended') && (
+                  <p className="text-xs text-gray-400 text-center sm:text-right">
+                    مهلت پیوستن به این چالش تمام شده است
+                  </p>
+                )}
               {viewer?.participationStatus === 'pending' && (
                 <p className="text-xs text-amber-200 text-center">در انتظار تایید سازنده</p>
               )}
@@ -506,7 +544,7 @@ export default function ChallengeDetailPage() {
                             : ''
                         }`
                   }
-                  className="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-center text-sm font-semibold hover:bg-white/15"
+                  className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-center text-sm font-semibold hover:bg-white/15"
                 >
                   {isTrade ? 'تقویم معاملاتی' : 'تقویم بک‌تست'}
                 </Link>
@@ -543,8 +581,11 @@ export default function ChallengeDetailPage() {
           </section>
         )}
 
-        {viewer?.isCreator && (
-          <section className="bg-white rounded-xl border border-amber-100 p-5 space-y-4">
+        {viewer?.isCreator ? (
+          <section
+            id="challenge-manage"
+            className="scroll-mt-24 bg-white rounded-xl border border-amber-100 p-5 space-y-4"
+          >
             <h2 className="font-bold text-gray-900">مدیریت چالش (سازنده)</h2>
 
             <div className="flex flex-wrap gap-2 items-center">
@@ -897,9 +938,35 @@ export default function ChallengeDetailPage() {
               </div>
             )}
           </section>
+        ) : (
+          <section
+            id="challenge-manage"
+            className="scroll-mt-24 rounded-xl border border-dashed border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-900/80"
+          >
+            <p className="font-semibold">مدیریت چالش</p>
+            <p className="mt-0.5 text-xs text-amber-800/80">
+              دعوت، ویرایش و پایان چالش فقط برای سازنده نمایش داده می‌شود.
+            </p>
+          </section>
         )}
 
-        <section className="bg-white rounded-xl border border-gray-100 p-4 md:p-5">
+        <section id="challenge-discussion" className="scroll-mt-24">
+          {(viewer?.isParticipant || viewer?.isAdmin) && user ? (
+            <ChallengeDiscussionPanel challengeCode={code} user={user} />
+          ) : (
+            <div className="rounded-xl border border-dashed border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-900/80">
+              <p className="font-semibold">گفتگوی شرکت‌کنندگان</p>
+              <p className="mt-0.5 text-xs text-sky-800/80">
+                پس از پیوستن به چالش می‌توانید پرسش بگذارید و به بقیه پاسخ دهید.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <section
+          id="challenge-analysis"
+          className="scroll-mt-24 bg-white rounded-xl border border-gray-100 p-4 md:p-5"
+        >
           <div className="flex flex-wrap items-end justify-between gap-2 mb-4">
             <div>
               <h2 className="font-bold text-lg text-gray-900">جدول تحلیل نقاط ضعف و قوت</h2>
@@ -922,7 +989,7 @@ export default function ChallengeDetailPage() {
                 </p>
               )}
             </div>
-            {!user && (
+            {!user && acceptsJoins && (
               <Link
                 href={`/auth/login?next=/challenges/${code}`}
                 className="text-sm text-primary-600 font-semibold"
@@ -1097,14 +1164,138 @@ export default function ChallengeDetailPage() {
             </div>
           )}
         </section>
+
+        <section
+          id="challenge-guides"
+          className="scroll-mt-24 rounded-xl border border-gray-100 bg-white p-4"
+        >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">
+                  راهنمای چالش‌ها
+                </h2>
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                  آموزش‌های کوتاه برای ساخت و اجرای بهتر چالش
+                </p>
+              </div>
+              <Link
+                href="/blog?category=challenges"
+                className="shrink-0 text-[11px] font-semibold text-primary-700 hover:underline"
+              >
+                همه مطالب
+              </Link>
+            </div>
+            {relatedPosts.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-3">
+                {relatedPosts.map((post) => (
+                  <Link
+                    key={post._id}
+                    href={`/blog/${post.slug}`}
+                    className="group flex min-w-0 items-center gap-2.5 rounded-lg border border-gray-100 bg-gray-50/70 p-2 hover:border-sky-200 hover:bg-sky-50/50"
+                  >
+                    {post.coverImage ? (
+                      <img
+                        src={post.coverImage}
+                        alt={post.coverImageAlt || post.title}
+                        className="h-14 w-16 shrink-0 rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="h-14 w-16 shrink-0 rounded-md bg-slate-200" />
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="line-clamp-2 text-xs font-bold leading-5 text-gray-800 group-hover:text-sky-800">
+                        {post.title}
+                      </h3>
+                      <span className="mt-0.5 block text-[10px] text-gray-400">
+                        مطالعه مقاله ←
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500">
+                مطلب آموزشی مرتبط هنوز منتشر نشده است.{' '}
+                <Link href="/blog?category=challenges" className="font-semibold text-primary-700 hover:underline">
+                  رفتن به دسته چالش‌ها
+                </Link>
+              </p>
+            )}
+        </section>
       </div>
     </main>
   )
 }
 
+function JumpLink({ href, label, icon }) {
+  return (
+    <a
+      href={href}
+      title={label}
+      aria-label={label}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sky-300 transition-colors hover:bg-white/15 hover:text-white"
+    >
+      {icon}
+    </a>
+  )
+}
+
+function ManageIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  )
+}
+
+function GuideIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+      />
+    </svg>
+  )
+}
+
+function ChatIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+      />
+    </svg>
+  )
+}
+
+function TableIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 10h18M3 14h18m-9-8v12M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"
+      />
+    </svg>
+  )
+}
+
 function MetaChip({ children }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs">
+    <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.06] px-2 py-1 text-[11px]">
       {children}
     </span>
   )
@@ -1112,12 +1303,12 @@ function MetaChip({ children }) {
 
 function RangeCard({ label, range }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5">
-      <div className="text-[10px] font-semibold text-gray-500 mb-1">{label}</div>
-      <div className="text-sm font-semibold text-white tabular-nums leading-snug">
+    <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5">
+      <div className="text-[10px] font-semibold text-gray-500">{label}</div>
+      <div className="text-xs sm:text-sm font-semibold text-white tabular-nums leading-snug">
         {range.fa}
       </div>
-      <div className="text-[11px] text-gray-500 mt-0.5 tabular-nums" dir="ltr">
+      <div className="text-[10px] text-gray-500 tabular-nums" dir="ltr">
         {range.en}
       </div>
     </div>

@@ -169,6 +169,16 @@ export default function AdminDashboard() {
               </div>
             </div>
           </Link>
+
+          <Link href="/admin/settings" className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-transparent hover:border-indigo-200">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-2xl">🔧</div>
+              <div>
+                <h3 className="font-bold text-lg">تنظیمات سیستم</h3>
+                <p className="text-sm text-gray-600">دسته‌های بلاگ، خطا و تنظیمات جزئی</p>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Recent Activity */}

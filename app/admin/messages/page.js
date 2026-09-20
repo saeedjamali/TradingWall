@@ -6,10 +6,7 @@ import Loading from '@/components/Loading'
 import AdminHeader from '@/components/AdminHeader'
 import Button from '@/components/Button'
 import { UserName } from '@/components/VerifiedBadge'
-import {
-  FEEDBACK_CATEGORIES,
-  getFeedbackCategoryLabel,
-} from '@/utils/feedbackCategories'
+import { FEEDBACK_CATEGORIES } from '@/utils/feedbackCategories'
 import { CATEGORY_LABELS } from '@/utils/symbolSeed'
 
 const SYMBOL_CATEGORIES = [
@@ -33,6 +30,8 @@ export default function AdminMessagesPage() {
   const [filter, setFilter] = useState('site_feedback')
   const [statusFilter, setStatusFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [feedbackCategories, setFeedbackCategories] =
+    useState(FEEDBACK_CATEGORIES)
   const [phoneSearch, setPhoneSearch] = useState('')
   const [phoneQuery, setPhoneQuery] = useState('')
   const [selected, setSelected] = useState(null)
@@ -70,6 +69,28 @@ export default function AdminMessagesPage() {
     if (user) fetchMessages()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filter, statusFilter, categoryFilter, phoneQuery])
+
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/site-config')
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success && data.feedbackCategories?.length) {
+          setFeedbackCategories(
+            data.feedbackCategories.map((item) => ({
+              value: item.slug,
+              label: item.label,
+            })),
+          )
+        }
+      })
+      .catch(() => {})
+  }, [user])
+
+  const feedbackLabel = (value) =>
+    feedbackCategories.find((item) => item.value === value)?.label ||
+    value ||
+    'سایر'
 
   useEffect(() => {
     const meta = selected?.meta
@@ -283,7 +304,7 @@ export default function AdminMessagesPage() {
               title={filter === 'job_offer' ? 'دسته‌بندی فقط برای نظرات سایت است' : ''}
             >
               <option value="">همه دسته‌بندی‌ها</option>
-              {FEEDBACK_CATEGORIES.map((c) => (
+              {feedbackCategories.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
                 </option>
@@ -352,7 +373,7 @@ export default function AdminMessagesPage() {
                       </div>
                       {m.type === 'site_feedback' && (
                         <p className="text-[10px] text-primary-700 mb-1">
-                          {getFeedbackCategoryLabel(m.category)}
+                          {feedbackLabel(m.category)}
                         </p>
                       )}
                       <p className="text-xs text-gray-500 truncate inline-flex items-center gap-1 max-w-full">
@@ -401,7 +422,7 @@ export default function AdminMessagesPage() {
                     </span>
                     {selected.type === 'site_feedback' && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                        {getFeedbackCategoryLabel(selected.category)}
+                        {feedbackLabel(selected.category)}
                       </span>
                     )}
                     <span className="text-xs text-gray-400 inline-flex items-center gap-1 flex-wrap">

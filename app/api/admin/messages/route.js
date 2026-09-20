@@ -9,7 +9,7 @@ import User from '@/models/User'
 import Trade from '@/models/Trade'
 import Symbol, { SYMBOL_CATEGORIES } from '@/models/Symbol'
 import { requireAdmin } from '@/utils/adminAuth'
-import { FEEDBACK_CATEGORY_VALUES } from '@/utils/feedbackCategories'
+import { getActiveFeedbackCategories } from '@/utils/siteSettings'
 import { normalizeSymbolCode } from '@/utils/symbolMatch'
 
 function populateAdmin(query) {
@@ -49,9 +49,10 @@ export async function GET(request) {
     const query = {}
     if (type && type !== 'all') query.type = type
     if (status) query.status = status
+    const feedbackCategories = await getActiveFeedbackCategories()
     if (
       category &&
-      FEEDBACK_CATEGORY_VALUES.includes(category) &&
+      feedbackCategories.some((item) => item.slug === category) &&
       type !== 'job_offer'
     ) {
       query.category = category

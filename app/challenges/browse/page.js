@@ -11,6 +11,7 @@ import { UserName } from '@/components/VerifiedBadge'
 import { getSessionUser } from '@/utils/session'
 import { BACKTEST_TIMEFRAMES } from '@/utils/backtest'
 import {
+  challengeAcceptsJoins,
   formatDualDateRange,
   getChallengeTypeMeta,
   resolveChallengeType,
@@ -375,7 +376,9 @@ function BrowseChallengesInner() {
               )
               const myStatus = c.myStatus
               const canRequestJoin =
-                c.phase !== 'ended' &&
+                (c.acceptsJoins != null
+                  ? c.acceptsJoins
+                  : challengeAcceptsJoins(c)) &&
                 !myStatus &&
                 String(c.creatorId) !== String(user?.id)
 

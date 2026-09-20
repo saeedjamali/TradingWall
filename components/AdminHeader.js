@@ -17,6 +17,7 @@ const navItems = [
   { href: "/admin/messages", label: "نظرات", icon: "💬" },
   { href: "/admin/demo-data", label: "دیتای دمو", icon: "🧪" },
   { href: "/admin/logs", label: "لاگ", icon: "📋" },
+  { href: "/admin/settings", label: "تنظیمات", icon: "🔧" },
 ];
 
 export default function AdminHeader({ user }) {

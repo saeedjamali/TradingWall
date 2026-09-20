@@ -6,7 +6,7 @@ import '@/models/Setup'
 import { requireActiveUser } from '@/utils/requireActiveUser'
 import { assertActiveSymbol } from '@/utils/symbolSeed'
 import { startOfLocalDay, endOfLocalDay } from '@/utils/backtest'
-import { getChallengePhase, resolveChallengeType, validateChallengeWindowNotPast } from '@/utils/challenge'
+import { challengeAcceptsJoins, getChallengePhase, resolveChallengeType, validateChallengeWindowNotPast } from '@/utils/challenge'
 import { resolveSuggestedSetupId, serializeSuggestedSetup } from '@/utils/challengeSetup'
 
 export async function GET(request) {
@@ -89,6 +89,7 @@ export async function GET(request) {
             type: resolvedType,
             challengeType: resolvedType,
             phase: getChallengePhase(c),
+            acceptsJoins: challengeAcceptsJoins(c),
             approvedCount: approved,
             creator: c.creatorId,
             creatorId: c.creatorId?._id || c.creatorId,

@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Vazirmatn, Orbitron } from "next/font/google";
 import SiteFooter from "@/components/SiteFooter";
 import BackToTop from "@/components/BackToTop";
+import SiteSupportButton from "@/components/SiteSupportButton";
 import ActiveSessionGuard from "@/components/ActiveSessionGuard";
 import SiteLogTracker from "@/components/SiteLogTracker";
 import SeoJsonLd from "@/components/SeoJsonLd";
@@ -118,6 +119,7 @@ export default function RootLayout({ children }) {
         <SiteLogTracker />
         <div className="flex-1 flex flex-col">{children}</div>
         <SiteFooter />
+        <SiteSupportButton />
         <BackToTop />
       </body>
     </html>
