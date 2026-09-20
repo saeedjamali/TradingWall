@@ -5,20 +5,60 @@ import { useRouter } from 'next/navigation'
 import AdminHeader from '@/components/AdminHeader'
 import Loading from '@/components/Loading'
 
+function newClientId(prefix, index = 0) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return `${prefix}-${crypto.randomUUID()}`
+  }
+  return `${prefix}-${index}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function withClientId(item, prefix, index) {
+  return {
+    ...item,
+    uid: item.uid || newClientId(prefix, index),
+  }
+}
+
+function sanitizeSlug(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '')
+}
+
 function CategoryEditor({ title, description, items, onChange }) {
   const update = (index, patch) => {
-    onChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)))
+    onChange((current) =>
+      current.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+    )
   }
 
   const remove = (index) => {
-    onChange(items.filter((_, i) => i !== index))
+    onChange((current) => current.filter((_, i) => i !== index))
   }
 
   const add = () => {
-    onChange([
-      ...items,
-      { slug: '', label: '', isActive: true, isSystem: false },
+    onChange((current) => [
+      ...current,
+      {
+        slug: '',
+        label: '',
+        isActive: true,
+        isSystem: false,
+        originKey: '',
+        uid: newClientId('new', current.length),
+      },
     ])
+  }
+
+  const move = (index, direction) => {
+    onChange((current) => {
+      const next = index + direction
+      if (next < 0 || next >= current.length) return current
+      const copy = [...current]
+      const [item] = copy.splice(index, 1)
+      copy.splice(next, 0, item)
+      return copy
+    })
   }
 
   return (
@@ -39,53 +79,100 @@ function CategoryEditor({ title, description, items, onChange }) {
 
       <div className="mt-4 space-y-2">
         {items.map((item, index) => (
-          <div
-            key={`${item.slug}-${index}`}
-            className="grid gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[1fr_1fr_auto_auto]"
-          >
-            <input
-              value={item.label}
-              onChange={(event) => update(index, { label: event.target.value })}
-              placeholder="عنوان فارسی"
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-            />
-            <input
-              value={item.slug}
-              onChange={(event) =>
-                update(index, {
-                  slug: event.target.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9-]/g, ''),
-                })
-              }
-              readOnly={item.isSystem}
-              placeholder="english-slug"
-              dir="ltr"
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm read-only:bg-gray-100"
-            />
-            <label className="flex items-center gap-2 px-2 text-xs text-gray-600">
-              <input
-                type="checkbox"
-                checked={item.isActive !== false}
-                onChange={(event) =>
-                  update(index, { isActive: event.target.checked })
-                }
-              />
-              فعال
-            </label>
-            <button
-              type="button"
-              onClick={() => remove(index)}
-              disabled={item.isSystem}
-              className="rounded-md px-2 text-xs text-rose-600 disabled:cursor-not-allowed disabled:text-gray-300"
-              title={item.isSystem ? 'دسته سیستمی قابل حذف نیست' : 'حذف'}
-            >
-              حذف
-            </button>
-          </div>
+          <CategoryRow
+            key={item.uid}
+            item={item}
+            index={index}
+            isLast={index === items.length - 1}
+            onUpdate={update}
+            onMove={move}
+            onRemove={remove}
+          />
         ))}
       </div>
     </section>
+  )
+}
+
+function CategoryRow({ item, index, isLast, onUpdate, onMove, onRemove }) {
+  return (
+    <div className="grid items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[auto_1fr_1fr_auto_auto]">
+      <div className="flex gap-1 sm:flex-col">
+        <button
+          type="button"
+          onClick={() => onMove(index, -1)}
+          disabled={index === 0}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+          title="انتقال به بالا"
+          aria-label="انتقال به بالا"
+        >
+          <MoveUpIcon />
+        </button>
+        <button
+          type="button"
+          onClick={() => onMove(index, 1)}
+          disabled={isLast}
+          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+          title="انتقال به پایین"
+          aria-label="انتقال به پایین"
+        >
+          <MoveDownIcon />
+        </button>
+      </div>
+      <input
+        value={item.label || ''}
+        onChange={(event) => onUpdate(index, { label: event.target.value })}
+        placeholder="عنوان فارسی"
+        autoComplete="off"
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+      />
+      <input
+        value={item.slug || ''}
+        onChange={(event) =>
+          onUpdate(index, { slug: sanitizeSlug(event.target.value) })
+        }
+        placeholder="english-slug"
+        dir="ltr"
+        autoComplete="off"
+        spellCheck={false}
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+      />
+      <label className="flex items-center gap-2 px-2 text-xs text-gray-600">
+        <input
+          type="checkbox"
+          checked={item.isActive !== false}
+          onChange={(event) =>
+            onUpdate(index, { isActive: event.target.checked })
+          }
+        />
+        فعال
+      </label>
+      <button
+        type="button"
+        onClick={() => onRemove(index)}
+        disabled={item.isSystem}
+        className="rounded-md px-2 text-xs text-rose-600 disabled:cursor-not-allowed disabled:text-gray-300"
+        title={item.isSystem ? 'دسته سیستمی قابل حذف نیست' : 'حذف'}
+      >
+        حذف
+      </button>
+    </div>
+  )
+}
+
+function MoveUpIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+    </svg>
+  )
+}
+
+function MoveDownIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
   )
 }
 
@@ -114,23 +201,36 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     if (!user?.id) return
+    let cancelled = false
     ;(async () => {
       try {
         const response = await fetch(
           `/api/admin/settings?adminUserId=${user.id}`,
         )
         const data = await response.json()
+        if (cancelled) return
         if (!response.ok || !data.success) {
           throw new Error(data.error || 'خطا در دریافت تنظیمات')
         }
-        setBlogCategories(data.settings.blogCategories || [])
-        setFeedbackCategories(data.settings.feedbackCategories || [])
+        setBlogCategories(
+          (data.settings.blogCategories || []).map((item, index) =>
+            withClientId(item, 'blog', index),
+          ),
+        )
+        setFeedbackCategories(
+          (data.settings.feedbackCategories || []).map((item, index) =>
+            withClientId(item, 'feedback', index),
+          ),
+        )
       } catch (error) {
-        alert(error.message)
+        if (!cancelled) alert(error.message)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     })()
+    return () => {
+      cancelled = true
+    }
   }, [user?.id])
 
   const save = async () => {
@@ -149,8 +249,16 @@ export default function AdminSettingsPage() {
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'خطا در ذخیره تنظیمات')
       }
-      setBlogCategories(data.settings.blogCategories || [])
-      setFeedbackCategories(data.settings.feedbackCategories || [])
+      setBlogCategories(
+        (data.settings.blogCategories || []).map((item, index) =>
+          withClientId(item, 'blog', index),
+        ),
+      )
+      setFeedbackCategories(
+        (data.settings.feedbackCategories || []).map((item, index) =>
+          withClientId(item, 'feedback', index),
+        ),
+      )
       alert('تنظیمات ذخیره شد')
     } catch (error) {
       alert(error.message)
@@ -176,13 +284,13 @@ export default function AdminSettingsPage() {
 
         <CategoryEditor
           title="دسته‌بندی‌های بلاگ"
-          description="این دسته‌ها در فرم مقاله و فیلترهای عمومی بلاگ استفاده می‌شوند."
+          description="این دسته‌ها در فرم مقاله و فیلترهای عمومی بلاگ استفاده می‌شوند. ترتیب لیست همان ترتیب نمایش است."
           items={blogCategories}
           onChange={setBlogCategories}
         />
         <CategoryEditor
           title="دسته‌بندی‌های خطا و بازخورد"
-          description="عنوان دسته‌های فرم پشتیبانی و صندوق پیام‌های مدیر."
+          description="عنوان دسته‌های فرم پشتیبانی و صندوق پیام‌های مدیر. ترتیب لیست همان ترتیب نمایش است."
           items={feedbackCategories}
           onChange={setFeedbackCategories}
         />

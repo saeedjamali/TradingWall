@@ -23,6 +23,13 @@ const ManagedCategorySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    originKey: {
+      type: String,
+      default: '',
+      trim: true,
+      lowercase: true,
+      maxlength: 60,
+    },
   },
   { _id: false },
 )
@@ -56,5 +63,26 @@ const SiteSettingsSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-export default mongoose.models.SiteSettings ||
-  mongoose.model('SiteSettings', SiteSettingsSchema)
+function getSiteSettingsModel() {
+  const existing = mongoose.models.SiteSettings
+  if (existing) {
+    for (const pathName of ['blogCategories', 'feedbackCategories']) {
+      const path = existing.schema.path(pathName)
+      if (path?.schema && !path.schema.path('originKey')) {
+        path.schema.add({
+          originKey: {
+            type: String,
+            default: '',
+            trim: true,
+            lowercase: true,
+            maxlength: 60,
+          },
+        })
+      }
+    }
+    return existing
+  }
+  return mongoose.model('SiteSettings', SiteSettingsSchema)
+}
+
+export default getSiteSettingsModel()
