@@ -4,7 +4,7 @@ import BacktestChallenge from '@/models/BacktestChallenge'
 import User from '@/models/User'
 import { requireActiveUser } from '@/utils/requireActiveUser'
 import { sendChallengeInviteSMS } from '@/utils/smsir'
-import { normalizePhone } from '@/utils/challenge'
+import { challengeAcceptsJoins, normalizePhone } from '@/utils/challenge'
 
 async function findChallenge(id) {
   if (/^[a-f0-9]{24}$/i.test(id)) {
@@ -41,6 +41,12 @@ export async function POST(request, { params }) {
     }
     if (String(challenge.creatorId) !== String(userId)) {
       return NextResponse.json({ error: 'فقط سازنده مجاز است' }, { status: 403 })
+    }
+    if (!challengeAcceptsJoins(challenge)) {
+      return NextResponse.json(
+        { error: 'مهلت چالش تمام شده و ارسال دعوت ممکن نیست' },
+        { status: 400 },
+      )
     }
 
     const normalized = normalizePhone(phone)

@@ -195,6 +195,13 @@ export default function ChallengeDetailPage() {
   const handleInviteSms = async (e) => {
     e.preventDefault()
     if (!user?.id) return
+    const ch = data?.challenge
+    const stillOpen =
+      ch?.acceptsJoins != null ? ch.acceptsJoins : challengeAcceptsJoins(ch)
+    if (!stillOpen) {
+      alert('مهلت چالش تمام شده و ارسال دعوت ممکن نیست')
+      return
+    }
     setInviteBusy(true)
     try {
       const res = await fetch(`/api/challenges/${code}/invite-sms`, {
@@ -365,7 +372,9 @@ export default function ChallengeDetailPage() {
                 aria-label="میانبر بخش‌های چالش"
                 className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 p-0.5"
               >
-                <JumpLink href="#challenge-manage" label="مدیریت چالش" icon={<ManageIcon />} />
+                {viewer?.isCreator && (
+                  <JumpLink href="#challenge-manage" label="مدیریت چالش" icon={<ManageIcon />} />
+                )}
                 <JumpLink href="#challenge-guides" label="راهنمای چالش‌ها" icon={<GuideIcon />} />
                 <JumpLink href="#challenge-discussion" label="گفتگوی شرکت‌کنندگان" icon={<ChatIcon />} />
                 <JumpLink href="#challenge-analysis" label="جدول تحلیل" icon={<TableIcon />} />
@@ -581,7 +590,7 @@ export default function ChallengeDetailPage() {
           </section>
         )}
 
-        {viewer?.isCreator ? (
+        {viewer?.isCreator && (
           <section
             id="challenge-manage"
             className="scroll-mt-24 bg-white rounded-xl border border-amber-100 p-5 space-y-4"
@@ -883,26 +892,32 @@ export default function ChallengeDetailPage() {
               </form>
             )}
 
-            <form onSubmit={handleInviteSms} className="flex flex-wrap gap-2 items-end">
-              <div className="flex-1 min-w-[180px]">
-                <label className="block text-[11px] text-gray-500 mb-1">
-                  دعوت با پیامک (شماره همراه)
-                </label>
-                <input
-                  value={invitePhone}
-                  onChange={(e) => setInvitePhone(e.target.value)}
-                  placeholder="09123456789"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={inviteBusy || !invitePhone}
-                className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold disabled:opacity-50"
-              >
-                {inviteBusy ? '…' : 'ارسال پیامک دعوت'}
-              </button>
-            </form>
+            {acceptsJoins ? (
+              <form onSubmit={handleInviteSms} className="flex flex-wrap gap-2 items-end">
+                <div className="flex-1 min-w-[180px]">
+                  <label className="block text-[11px] text-gray-500 mb-1">
+                    دعوت با پیامک (شماره همراه)
+                  </label>
+                  <input
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
+                    placeholder="09123456789"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={inviteBusy || !invitePhone}
+                  className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {inviteBusy ? '…' : 'ارسال پیامک دعوت'}
+                </button>
+              </form>
+            ) : (
+              <p className="text-xs text-gray-500">
+                مهلت چالش تمام شده و ارسال دعوت با پیامک ممکن نیست.
+              </p>
+            )}
 
             {data.participants?.some((p) => p.status === 'pending') && (
               <div>
@@ -937,16 +952,6 @@ export default function ChallengeDetailPage() {
                 </ul>
               </div>
             )}
-          </section>
-        ) : (
-          <section
-            id="challenge-manage"
-            className="scroll-mt-24 rounded-xl border border-dashed border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-900/80"
-          >
-            <p className="font-semibold">مدیریت چالش</p>
-            <p className="mt-0.5 text-xs text-amber-800/80">
-              دعوت، ویرایش و پایان چالش فقط برای سازنده نمایش داده می‌شود.
-            </p>
           </section>
         )}
 
