@@ -376,8 +376,8 @@ export default function ChallengeDetailPage() {
                   <JumpLink href="#challenge-manage" label="مدیریت چالش" icon={<ManageIcon />} />
                 )}
                 <JumpLink href="#challenge-guides" label="راهنمای چالش‌ها" icon={<GuideIcon />} />
-                <JumpLink href="#challenge-discussion" label="گفتگوی شرکت‌کنندگان" icon={<ChatIcon />} />
                 <JumpLink href="#challenge-analysis" label="جدول تحلیل" icon={<TableIcon />} />
+                <JumpLink href="#challenge-discussion" label="گفتگوی شرکت‌کنندگان" icon={<ChatIcon />} />
               </nav>
               <ThemeToggle />
             </div>
@@ -955,19 +955,6 @@ export default function ChallengeDetailPage() {
           </section>
         )}
 
-        <section id="challenge-discussion" className="scroll-mt-24">
-          {(viewer?.isParticipant || viewer?.isAdmin) && user ? (
-            <ChallengeDiscussionPanel challengeCode={code} user={user} />
-          ) : (
-            <div className="rounded-xl border border-dashed border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-900/80">
-              <p className="font-semibold">گفتگوی شرکت‌کنندگان</p>
-              <p className="mt-0.5 text-xs text-sky-800/80">
-                پس از پیوستن به چالش می‌توانید پرسش بگذارید و به بقیه پاسخ دهید.
-              </p>
-            </div>
-          )}
-        </section>
-
         <section
           id="challenge-analysis"
           className="scroll-mt-24 bg-white rounded-xl border border-gray-100 p-4 md:p-5"
@@ -1166,6 +1153,19 @@ export default function ChallengeDetailPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+        </section>
+
+        <section id="challenge-discussion" className="scroll-mt-24">
+          {(viewer?.isParticipant || viewer?.isAdmin) && user ? (
+            <ChallengeDiscussionPanel challengeCode={code} user={user} />
+          ) : (
+            <div className="rounded-xl border border-dashed border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-900/80">
+              <p className="font-semibold">گفتگوی شرکت‌کنندگان</p>
+              <p className="mt-0.5 text-xs text-sky-800/80">
+                پس از پیوستن به چالش می‌توانید پرسش بگذارید و به بقیه پاسخ دهید.
+              </p>
             </div>
           )}
         </section>
