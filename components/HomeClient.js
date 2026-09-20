@@ -32,7 +32,7 @@ export default function Home() {
       const params = new URLSearchParams(window.location.search);
       const category = params.get("category");
       setSupportCategory(
-        category && /^[a-z0-9-]+$/.test(category) ? category : "other",
+        category && /^[a-z0-9_-]+$/.test(category) ? category : "other",
       );
       setSupportPhone(params.get("phone") || "");
       setSupportReason(params.get("reason") || "");

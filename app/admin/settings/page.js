@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AdminHeader from '@/components/AdminHeader'
 import Loading from '@/components/Loading'
@@ -19,24 +19,56 @@ function withClientId(item, prefix, index) {
   }
 }
 
+function toSavePayload(items) {
+  return items.map((item) => ({
+    slug: item.slug,
+    label: item.label,
+    isActive: item.isActive !== false,
+    isSystem: Boolean(item.isSystem),
+    originKey: item.originKey || '',
+  }))
+}
+
+function applySaved(nextItems, prevItems, prefix) {
+  return (nextItems || []).map((item, index) => {
+    const prev =
+      prevItems.find((p) => p.originKey && p.originKey === item.originKey) ||
+      prevItems.find((p) => p.slug && p.slug === item.slug) ||
+      prevItems[index]
+    return withClientId({ ...item, uid: prev?.uid }, prefix, index)
+  })
+}
+
 function sanitizeSlug(value) {
   return String(value || '')
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '')
+    .replace(/[^a-z0-9_-]/g, '')
+}
+
+function moveByUid(items, uid, direction) {
+  const index = items.findIndex((item) => item.uid === uid)
+  const next = index + direction
+  if (index < 0 || next < 0 || next >= items.length) return items
+  const copy = [...items]
+  const current = copy[index]
+  copy[index] = copy[next]
+  copy[next] = current
+  return copy
 }
 
 function CategoryEditor({ title, description, items, onChange }) {
-  const update = (index, patch) => {
+  const update = (uid, patch) => {
     onChange((current) =>
-      current.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+      current.map((item) => (item.uid === uid ? { ...item, ...patch } : item)),
     )
   }
 
-  const remove = (index) => {
-    onChange((current) => current.filter((_, i) => i !== index))
+  const remove = (uid) => {
+    onChange((current) => current.filter((item) => item.uid !== uid))
   }
 
   const add = () => {
+    const uid = newClientId('new')
     onChange((current) => [
       ...current,
       {
@@ -45,20 +77,18 @@ function CategoryEditor({ title, description, items, onChange }) {
         isActive: true,
         isSystem: false,
         originKey: '',
-        uid: newClientId('new', current.length),
+        uid,
       },
     ])
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-cat-uid="${uid}"]`)
+        ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    })
   }
 
-  const move = (index, direction) => {
-    onChange((current) => {
-      const next = index + direction
-      if (next < 0 || next >= current.length) return current
-      const copy = [...current]
-      const [item] = copy.splice(index, 1)
-      copy.splice(next, 0, item)
-      return copy
-    })
+  const move = (uid, direction) => {
+    onChange((current) => moveByUid(current, uid, direction))
   }
 
   return (
@@ -77,12 +107,12 @@ function CategoryEditor({ title, description, items, onChange }) {
         </button>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 flex flex-col gap-2">
         {items.map((item, index) => (
           <CategoryRow
             key={item.uid}
             item={item}
-            index={index}
+            isFirst={index === 0}
             isLast={index === items.length - 1}
             onUpdate={update}
             onMove={move}
@@ -94,14 +124,17 @@ function CategoryEditor({ title, description, items, onChange }) {
   )
 }
 
-function CategoryRow({ item, index, isLast, onUpdate, onMove, onRemove }) {
+function CategoryRow({ item, isFirst, isLast, onUpdate, onMove, onRemove }) {
   return (
-    <div className="grid items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[auto_1fr_1fr_auto_auto]">
-      <div className="flex gap-1 sm:flex-col">
+    <div
+      data-cat-uid={item.uid}
+      className="grid items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[auto_1fr_1fr_auto_auto]"
+    >
+      <div className="relative z-10 flex gap-1 sm:flex-col">
         <button
           type="button"
-          onClick={() => onMove(index, -1)}
-          disabled={index === 0}
+          onClick={() => onMove(item.uid, -1)}
+          disabled={isFirst}
           className="rounded-md border border-gray-200 bg-white px-2 py-1 text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
           title="انتقال به بالا"
           aria-label="انتقال به بالا"
@@ -110,7 +143,7 @@ function CategoryRow({ item, index, isLast, onUpdate, onMove, onRemove }) {
         </button>
         <button
           type="button"
-          onClick={() => onMove(index, 1)}
+          onClick={() => onMove(item.uid, 1)}
           disabled={isLast}
           className="rounded-md border border-gray-200 bg-white px-2 py-1 text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
           title="انتقال به پایین"
@@ -121,7 +154,7 @@ function CategoryRow({ item, index, isLast, onUpdate, onMove, onRemove }) {
       </div>
       <input
         value={item.label || ''}
-        onChange={(event) => onUpdate(index, { label: event.target.value })}
+        onChange={(event) => onUpdate(item.uid, { label: event.target.value })}
         placeholder="عنوان فارسی"
         autoComplete="off"
         className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
@@ -129,7 +162,7 @@ function CategoryRow({ item, index, isLast, onUpdate, onMove, onRemove }) {
       <input
         value={item.slug || ''}
         onChange={(event) =>
-          onUpdate(index, { slug: sanitizeSlug(event.target.value) })
+          onUpdate(item.uid, { slug: sanitizeSlug(event.target.value) })
         }
         placeholder="english-slug"
         dir="ltr"
@@ -142,14 +175,14 @@ function CategoryRow({ item, index, isLast, onUpdate, onMove, onRemove }) {
           type="checkbox"
           checked={item.isActive !== false}
           onChange={(event) =>
-            onUpdate(index, { isActive: event.target.checked })
+            onUpdate(item.uid, { isActive: event.target.checked })
           }
         />
         فعال
       </label>
       <button
         type="button"
-        onClick={() => onRemove(index)}
+        onClick={() => onRemove(item.uid)}
         disabled={item.isSystem}
         className="rounded-md px-2 text-xs text-rose-600 disabled:cursor-not-allowed disabled:text-gray-300"
         title={item.isSystem ? 'دسته سیستمی قابل حذف نیست' : 'حذف'}
@@ -183,6 +216,11 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [blogCategories, setBlogCategories] = useState([])
   const [feedbackCategories, setFeedbackCategories] = useState([])
+  const settingsLoaded = useRef(false)
+  const blogCategoriesRef = useRef([])
+  const feedbackCategoriesRef = useRef([])
+  blogCategoriesRef.current = blogCategories
+  feedbackCategoriesRef.current = feedbackCategories
 
   useEffect(() => {
     const raw = localStorage.getItem('user')
@@ -200,12 +238,13 @@ export default function AdminSettingsPage() {
   }, [router])
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id || settingsLoaded.current) return
     let cancelled = false
     ;(async () => {
       try {
         const response = await fetch(
           `/api/admin/settings?adminUserId=${user.id}`,
+          { cache: 'no-store' },
         )
         const data = await response.json()
         if (cancelled) return
@@ -222,6 +261,7 @@ export default function AdminSettingsPage() {
             withClientId(item, 'feedback', index),
           ),
         )
+        settingsLoaded.current = true
       } catch (error) {
         if (!cancelled) alert(error.message)
       } finally {
@@ -233,30 +273,34 @@ export default function AdminSettingsPage() {
     }
   }, [user?.id])
 
-  const save = async () => {
+  const save = async (event) => {
+    event?.preventDefault?.()
+    const blogPayload = toSavePayload(blogCategoriesRef.current)
+    const feedbackPayload = toSavePayload(feedbackCategoriesRef.current)
     setSaving(true)
     try {
       const response = await fetch('/api/admin/settings', {
         method: 'PUT',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           adminUserId: user.id,
-          blogCategories,
-          feedbackCategories,
+          blogCategories: blogPayload,
+          feedbackCategories: feedbackPayload,
         }),
       })
       const data = await response.json()
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'خطا در ذخیره تنظیمات')
       }
-      setBlogCategories(
-        (data.settings.blogCategories || []).map((item, index) =>
-          withClientId(item, 'blog', index),
-        ),
+      setBlogCategories((prev) =>
+        applySaved(data.settings?.blogCategories || blogPayload, prev, 'blog'),
       )
-      setFeedbackCategories(
-        (data.settings.feedbackCategories || []).map((item, index) =>
-          withClientId(item, 'feedback', index),
+      setFeedbackCategories((prev) =>
+        applySaved(
+          data.settings?.feedbackCategories || feedbackPayload,
+          prev,
+          'feedback',
         ),
       )
       alert('تنظیمات ذخیره شد')
@@ -274,7 +318,7 @@ export default function AdminSettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <AdminHeader user={user} />
-      <main className="container mx-auto max-w-5xl space-y-5 px-4 py-8">
+      <main className="container mx-auto max-w-5xl space-y-5 px-4 py-8 pb-28">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">تنظیمات سیستم</h1>
           <p className="mt-1 text-sm text-gray-500">

@@ -8,6 +8,7 @@ import {
   DEFAULT_BLOG_CATEGORIES,
   DEFAULT_FEEDBACK_CATEGORIES,
   ensureSiteSettings,
+  toPlainCategories,
 } from '@/utils/siteSettings'
 
 function normalizeCategories(items, defaults) {
@@ -24,7 +25,7 @@ function normalizeCategories(items, defaults) {
     const originKey = String(item?.originKey || '')
       .trim()
       .toLowerCase()
-    if (!/^[a-z0-9-]{2,60}$/.test(slug) || !label || seenSlug.has(slug)) continue
+    if (!/^[a-z0-9_-]{2,60}$/.test(slug) || !label || seenSlug.has(slug)) continue
     const resolvedOrigin =
       originKey && defaultKeys.has(originKey)
         ? originKey
@@ -40,12 +41,17 @@ function normalizeCategories(items, defaults) {
       isActive: item.isActive !== false,
       isSystem: Boolean(item.isSystem) || defaultKeys.has(resolvedOrigin || slug),
       originKey: resolvedOrigin,
+      sortOrder: normalized.length,
     })
   }
 
   for (const item of defaults) {
     if (!seenSlug.has(item.slug) && !seenOrigin.has(item.slug)) {
-      normalized.push({ ...item, originKey: item.slug })
+      normalized.push({
+        ...item,
+        originKey: item.slug,
+        sortOrder: normalized.length,
+      })
     }
   }
   return normalized
@@ -100,8 +106,8 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       settings: {
-        blogCategories: settings.blogCategories,
-        feedbackCategories: settings.feedbackCategories,
+        blogCategories: toPlainCategories(settings.blogCategories),
+        feedbackCategories: toPlainCategories(settings.feedbackCategories),
         misc: settings.misc || {},
       },
     })
@@ -121,6 +127,8 @@ export async function PUT(request) {
     }
 
     const previous = await ensureSiteSettings()
+    const previousBlog = toPlainCategories(previous.blogCategories)
+    const previousFeedback = toPlainCategories(previous.feedbackCategories)
     const blogCategories = normalizeCategories(
       body.blogCategories,
       DEFAULT_BLOG_CATEGORIES,
@@ -136,7 +144,7 @@ export async function PUT(request) {
       )
     }
 
-    const settings = await SiteSettings.findOneAndUpdate(
+    await SiteSettings.updateOne(
       { key: 'global' },
       {
         $set: {
@@ -144,22 +152,22 @@ export async function PUT(request) {
           feedbackCategories,
           updatedBy: admin._id,
         },
-        $setOnInsert: { key: 'global' },
       },
-      { new: true, upsert: true },
     )
 
     await Promise.all([
-      migrateBlogSlugs(slugRenames(previous.blogCategories, blogCategories)),
-      migrateFeedbackSlugs(
-        slugRenames(previous.feedbackCategories, feedbackCategories),
-      ),
+      migrateBlogSlugs(slugRenames(previousBlog, blogCategories)),
+      migrateFeedbackSlugs(slugRenames(previousFeedback, feedbackCategories)),
     ])
 
     return NextResponse.json({
       success: true,
       message: 'تنظیمات ذخیره شد',
-      settings,
+      settings: {
+        blogCategories,
+        feedbackCategories,
+        misc: previous.misc || {},
+      },
     })
   } catch (error) {
     console.error('Admin settings PUT error:', error)

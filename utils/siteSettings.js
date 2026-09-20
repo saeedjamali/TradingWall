@@ -4,21 +4,23 @@ import { BLOG_CATEGORY_LABELS } from '@/utils/blog'
 import { FEEDBACK_CATEGORIES } from '@/utils/feedbackCategories'
 
 export const DEFAULT_BLOG_CATEGORIES = Object.entries(BLOG_CATEGORY_LABELS).map(
-  ([slug, label]) => ({
+  ([slug, label], index) => ({
     slug,
     label,
     isActive: true,
     isSystem: true,
     originKey: slug,
+    sortOrder: index,
   }),
 )
 
-export const DEFAULT_FEEDBACK_CATEGORIES = FEEDBACK_CATEGORIES.map((item) => ({
+export const DEFAULT_FEEDBACK_CATEGORIES = FEEDBACK_CATEGORIES.map((item, index) => ({
   slug: item.value,
   label: item.label,
   isActive: true,
   isSystem: true,
   originKey: item.value,
+  sortOrder: index,
 }))
 
 function mergeMissingDefaults(current = [], defaults = []) {
@@ -28,13 +30,20 @@ function mergeMissingDefaults(current = [], defaults = []) {
     if (item?.originKey) known.add(item.originKey)
   }
   return [
-    ...current.map((item) => ({
+    ...current.map((item, index) => ({
       ...asPlainCategory(item),
       originKey: item.originKey || (item.isSystem ? item.slug : ''),
+      sortOrder: Number.isFinite(Number(item.sortOrder))
+        ? Number(item.sortOrder)
+        : index,
     })),
     ...defaults
       .filter((item) => !known.has(item.slug))
-      .map((item) => ({ ...item, originKey: item.slug })),
+      .map((item, index) => ({
+        ...item,
+        originKey: item.slug,
+        sortOrder: current.length + index,
+      })),
   ]
 }
 
@@ -78,11 +87,29 @@ function asPlainCategory(item) {
   return typeof item.toObject === 'function' ? item.toObject() : { ...item }
 }
 
+export function toPlainCategories(items = []) {
+  return items
+    .map((item, index) => {
+      const plain = asPlainCategory(item)
+      return {
+        slug: plain.slug,
+        label: plain.label,
+        isActive: plain.isActive !== false,
+        isSystem: Boolean(plain.isSystem),
+        originKey: plain.originKey || '',
+        sortOrder: Number.isFinite(Number(plain.sortOrder))
+          ? Number(plain.sortOrder)
+          : index,
+      }
+    })
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+}
+
 export async function getManagedCategories() {
   const settings = await ensureSiteSettings()
   return {
-    blogCategories: settings.blogCategories.map(asPlainCategory),
-    feedbackCategories: settings.feedbackCategories.map(asPlainCategory),
+    blogCategories: toPlainCategories(settings.blogCategories),
+    feedbackCategories: toPlainCategories(settings.feedbackCategories),
   }
 }
 

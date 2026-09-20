@@ -30,6 +30,10 @@ const ManagedCategorySchema = new mongoose.Schema(
       lowercase: true,
       maxlength: 60,
     },
+    sortOrder: {
+      type: Number,
+      default: 0,
+    },
   },
   { _id: false },
 )
@@ -76,6 +80,14 @@ function getSiteSettingsModel() {
             trim: true,
             lowercase: true,
             maxlength: 60,
+          },
+        })
+      }
+      if (path?.schema && !path.schema.path('sortOrder')) {
+        path.schema.add({
+          sortOrder: {
+            type: Number,
+            default: 0,
           },
         })
       }

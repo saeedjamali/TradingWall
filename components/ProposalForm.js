@@ -21,7 +21,7 @@ export default function ProposalForm({
   defaultPhone = '',
   defaultTitle = '',
 }) {
-  const initialCategory = /^[a-z0-9-]+$/.test(defaultCategory)
+  const initialCategory = /^[a-z0-9_-]+$/.test(defaultCategory)
     ? defaultCategory
     : 'other'
 
@@ -38,7 +38,7 @@ export default function ProposalForm({
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    if (/^[a-z0-9-]+$/.test(defaultCategory)) {
+    if (/^[a-z0-9_-]+$/.test(defaultCategory)) {
       setCategory(defaultCategory)
     }
   }, [defaultCategory])
