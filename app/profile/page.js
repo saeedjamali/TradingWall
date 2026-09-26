@@ -43,6 +43,7 @@ export default function ProfilePage() {
     showAchievements: true,
     showActivities: true,
     showSetups: true,
+    showTradeSummary: false,
     allowJobOffers: false,
   });
   const [achievements, setAchievements] = useState([]);
@@ -114,6 +115,7 @@ export default function ProfilePage() {
           showAchievements: true,
           showActivities: true,
           showSetups: true,
+          showTradeSummary: false,
           allowJobOffers: false,
           ...(data.user.privacySettings || {}),
         });
@@ -861,6 +863,17 @@ export default function ProfilePage() {
                       )}
                     </p>
 
+                    <PrivacyToggle
+                      title="خلاصه معاملات"
+                      description="نمایش کارت‌های تعداد معامله، وین‌ریت و سود/زیان بالای دیوار (ماهانه، سالانه و کلی)"
+                      checked={privacySettings.showTradeSummary}
+                      onChange={(checked) =>
+                        setPrivacySettings({
+                          ...privacySettings,
+                          showTradeSummary: checked,
+                        })
+                      }
+                    />
                     <PrivacyToggle
                       title="تقویم معاملاتی"
                       description="نمایش فقط‌خواندنی تقویم و معاملات"

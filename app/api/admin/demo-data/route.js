@@ -5,6 +5,10 @@ import { requireAdmin } from '@/utils/adminAuth'
 import {
   seedDemoData,
   clearDemoData,
+  seedDemoBlogPosts,
+  clearDemoBlogPosts,
+  seedDemoSetups,
+  clearDemoSetups,
   getDemoDataStatus,
   DEMO_PASSWORD,
 } from '@/utils/demoSeed'
@@ -62,13 +66,63 @@ export async function POST(request) {
       return NextResponse.json({
         success: true,
         action: 'clear',
-        message: 'دیتای دمو حذف شد',
+        message: 'دیتای دمو کاربران حذف شد',
+        ...result,
+      })
+    }
+
+    if (action === 'seed-blog') {
+      const result = await seedDemoBlogPosts()
+      return NextResponse.json({
+        success: true,
+        action: 'seed-blog',
+        message: 'پست‌های بلاگ دمو همگام شد؛ بازدید و امتیاز پست‌های قبلی حفظ شد',
+        createdBlogPosts: result.created,
+        updatedBlogPosts: result.updated,
+        totalBlogPosts: result.total,
+      })
+    }
+
+    if (action === 'clear-blog') {
+      const result = await clearDemoBlogPosts()
+      return NextResponse.json({
+        success: true,
+        action: 'clear-blog',
+        message: 'پست‌های بلاگ دمو حذف شد',
+        ...result,
+      })
+    }
+
+    if (action === 'seed-setup') {
+      const result = await seedDemoSetups()
+      return NextResponse.json({
+        success: true,
+        action: 'seed-setup',
+        message:
+          result.demoUserCount === 0
+            ? 'ستاپ‌های استاندارد همگام شد. برای ستاپ کاربران دمو اول کاربران را بسازید.'
+            : 'ستاپ‌های استاندارد و ستاپ کاربران دمو همگام شد',
+        createdSetups: result.created,
+        skippedUsers: result.skippedUsers,
+        demoUserCount: result.demoUserCount,
+        standardInserted: result.standardInserted,
+        standardSkipped: result.standardSkipped,
+        standardTotal: result.standardTotal,
+      })
+    }
+
+    if (action === 'clear-setup') {
+      const result = await clearDemoSetups()
+      return NextResponse.json({
+        success: true,
+        action: 'clear-setup',
+        message: 'ستاپ‌های کاربران دمو حذف شد؛ ستاپ‌های استاندارد باقی ماند',
         ...result,
       })
     }
 
     return NextResponse.json(
-      { error: 'action نامعتبر است (seed | clear)' },
+      { error: 'action نامعتبر است (seed | clear | seed-blog | clear-blog | seed-setup | clear-setup)' },
       { status: 400 },
     )
   } catch (error) {

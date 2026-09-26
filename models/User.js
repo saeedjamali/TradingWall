@@ -69,6 +69,10 @@ const UserSchema = new mongoose.Schema({
       type: Boolean,
       default: true,
     },
+    showTradeSummary: {
+      type: Boolean,
+      default: false,
+    },
     showBacktestCalendar: {
       type: Boolean,
       default: false,

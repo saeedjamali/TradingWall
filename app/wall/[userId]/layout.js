@@ -1,6 +1,6 @@
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
-import { absoluteUrl } from '@/utils/site'
+import { buildShareMetadata } from '@/utils/shareMeta'
 
 export async function generateMetadata({ params }) {
   const { userId } = await params
@@ -33,31 +33,15 @@ export async function generateMetadata({ params }) {
       ? `دیوار معاملاتی ${name} از ${location} — ژورنال، دستاوردها و عملکرد در دیوار معاملاتی.`
       : `دیوار معاملاتی ${name} — ژورنال، دستاوردها و عملکرد در دیوار معاملاتی.`
 
-    const ogImage = user.profileImage || absoluteUrl('/icons/tradingwall-icon-512x512.png')
-
-    return {
+    return buildShareMetadata({
       title: `دیوار ${name}`,
       description,
-      alternates: {
-        canonical: `/wall/${userId}`,
-      },
-      openGraph: {
-        title: `دیوار معاملاتی ${name}`,
-        description,
-        url: `/wall/${userId}`,
-        type: 'profile',
-        images: [{ url: ogImage }],
-      },
-      twitter: {
-        card: 'summary',
-        title: `دیوار ${name}`,
-        description,
-        images: [ogImage],
-      },
-      robots: isPublic
-        ? { index: true, follow: true }
-        : { index: false, follow: false },
-    }
+      path: `/wall/${userId}`,
+      image: user.profileImage,
+      imageAlt: name,
+      type: 'profile',
+      noindex: !isPublic,
+    })
   } catch {
     return fallback
   }

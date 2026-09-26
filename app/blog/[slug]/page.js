@@ -4,9 +4,11 @@ import { getPublicPostBySlug } from '@/lib/blogQueries'
 import { BLOG_CATEGORY_LABELS, renderBlogHtml, commentsNeedApproval } from '@/utils/blog'
 import { getActiveBlogCategories } from '@/utils/siteSettings'
 import { absoluteUrl, getSiteUrl, SITE_NAME_FA } from '@/utils/site'
+import { buildShareMetadata } from '@/utils/shareMeta'
 import BlogVideo from '@/components/BlogVideo'
 import BlogEngage from '@/components/BlogEngage'
 import BlogZoomRoot, { BlogFigure } from '@/components/BlogMedia'
+import ShareLinkButton from '@/components/ShareLinkButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,28 +21,18 @@ export async function generateMetadata({ params }) {
   const post = data.post
   const title = post.seoTitle || post.title
   const description = post.seoDescription || post.excerpt || post.title
-  return {
+  return buildShareMetadata({
     title,
     description,
+    path: `/blog/${post.slug}`,
+    image: post.coverImage,
+    imageAlt: post.coverImageAlt || post.title,
+    type: 'article',
     keywords: post.keywords?.length ? post.keywords : post.tags,
-    alternates: { canonical: `/blog/${post.slug}` },
-    openGraph: {
-      type: 'article',
-      title,
-      description,
-      url: `/blog/${post.slug}`,
-      locale: 'fa_IR',
-      publishedTime: post.publishedAt,
-      modifiedTime: post.updatedAt,
-      images: post.coverImage ? [{ url: post.coverImage, alt: post.coverImageAlt || post.title }] : [],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-    },
-    robots: post.isVisible === false ? { index: false, follow: false } : { index: true, follow: true },
-  }
+    publishedTime: post.publishedAt,
+    modifiedTime: post.updatedAt,
+    noindex: post.isVisible === false,
+  })
 }
 
 export default async function BlogPostPage({ params }) {
@@ -173,7 +165,15 @@ export default async function BlogPostPage({ params }) {
             </Link>
           ))}
         </div>
-        <h1 className="text-3xl md:text-4xl font-black leading-snug text-white">{post.title}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="text-3xl md:text-4xl font-black leading-snug text-white">{post.title}</h1>
+          <ShareLinkButton
+            title={post.title}
+            text={post.excerpt || post.seoDescription || post.title}
+            path={`/blog/${post.slug}`}
+            className="mt-1 shrink-0"
+          />
+        </div>
         <p className="text-sm text-white/55 mt-4">
           {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('fa-IR') : ''}
           {post.updatedAt && post.publishedAt && new Date(post.updatedAt) > new Date(post.publishedAt)

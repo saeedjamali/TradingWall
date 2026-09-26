@@ -25,6 +25,20 @@ export const metadata = {
     url: '/blog',
     type: 'website',
     locale: 'fa_IR',
+    images: [
+      {
+        url: '/icons/tradingwall-icon-512x512.png',
+        width: 512,
+        height: 512,
+        alt: 'دیوار معاملاتی',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'بلاگ دیوار معاملاتی',
+    description: 'آموزش ژورنال معاملاتی، بک‌تست و معامله‌گری',
+    images: ['/icons/tradingwall-icon-512x512.png'],
   },
   robots: { index: true, follow: true },
 }

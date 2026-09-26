@@ -11,6 +11,7 @@ import ProposalForm from "@/components/ProposalForm";
 import { UserName } from "@/components/VerifiedBadge";
 import { MONTH_NAMES } from "@/utils/periods";
 import { getSessionUser } from "@/utils/session";
+import TradeSummaryCards from "@/components/TradeSummaryCards";
 
 const ACTIVITY_LABELS = {
   book: "کتاب",
@@ -217,6 +218,14 @@ export default function UserWallPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
+        {privacy.showTradeSummary && (
+          <TradeSummaryCards
+            summary={data.tradeSummary}
+            monthLabel={data.tradeSummary?.monthLabel}
+            yearLabel={data.tradeSummary?.yearLabel}
+          />
+        )}
+
         {(privacy.showCalendar || privacy.showBacktestCalendar) && (
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
@@ -498,7 +507,8 @@ export default function UserWallPage() {
           </section>
         )}
 
-        {!privacy.showCalendar &&
+        {!privacy.showTradeSummary &&
+          !privacy.showCalendar &&
           !privacy.showBacktestCalendar &&
           !privacy.showChallenges &&
           !privacy.showAchievements &&

@@ -18,6 +18,13 @@ import {
   resolveChallengeType,
 } from '@/utils/challenge'
 import { getChallengeStandings } from '@/utils/challengeStandings'
+import {
+  calculateWinRate,
+  calculateTotalProfitLoss,
+  calculateAverageProfitPerTrade,
+} from '@/utils/tradeAnalysis'
+import { monthLocalBounds, yearLocalBounds } from '@/utils/dateHelpers'
+import { MONTH_NAMES } from '@/utils/periods'
 
 /**
  * GET /api/wall/[userId]
@@ -56,6 +63,7 @@ export async function GET(request, { params }) {
       showAchievements: true,
       showActivities: true,
       showSetups: true,
+      showTradeSummary: false,
       allowJobOffers: false,
       ...(user.privacySettings || {}),
     }
@@ -95,6 +103,7 @@ export async function GET(request, { params }) {
     const showAchievements = isAdminView || !!privacy.showAchievements
     const showActivities = isAdminView || !!privacy.showActivities
     const showSetups = isAdminView || !!privacy.showSetups
+    const showTradeSummary = isAdminView || !!privacy.showTradeSummary
 
     const payload = {
       success: true,
@@ -119,8 +128,10 @@ export async function GET(request, { params }) {
         showAchievements,
         showActivities,
         showSetups,
+        showTradeSummary,
         allowJobOffers: isAdminView ? false : !!privacy.allowJobOffers,
       },
+      tradeSummary: null,
       calendar: null,
       backtestCalendar: null,
       challenges: null,
@@ -291,9 +302,55 @@ export async function GET(request, { params }) {
         .lean()
     }
 
+    if (showTradeSummary) {
+      const now = new Date()
+      const monthBounds = monthLocalBounds(now.getFullYear(), now.getMonth())
+      const yearBounds = yearLocalBounds(now.getFullYear())
+      const profitSelect = 'profit commission swap closeTime'
+      const [monthTrades, yearTrades, allTrades] = await Promise.all([
+        Trade.find({
+          userId,
+          closeTime: { $gte: monthBounds.start, $lte: monthBounds.end },
+        })
+          .select(profitSelect)
+          .lean(),
+        Trade.find({
+          userId,
+          closeTime: { $gte: yearBounds.start, $lte: yearBounds.end },
+        })
+          .select(profitSelect)
+          .lean(),
+        Trade.find({ userId }).select(profitSelect).lean(),
+      ])
+      payload.tradeSummary = {
+        month: summarizeTrades(monthTrades),
+        year: summarizeTrades(yearTrades),
+        all: summarizeTrades(allTrades),
+        monthLabel: `آمار ماه ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`,
+        yearLabel: `آمار سال ${now.getFullYear()}`,
+      }
+    }
+
     return NextResponse.json(payload)
   } catch (error) {
     console.error('Wall GET Error:', error)
     return NextResponse.json({ error: 'خطای سرور' }, { status: 500 })
+  }
+}
+
+function summarizeTrades(trades) {
+  if (!trades?.length) {
+    return {
+      totalTrades: 0,
+      winRate: 0,
+      totalProfitLoss: 0,
+      averageProfit: 0,
+    }
+  }
+  return {
+    totalTrades: trades.length,
+    winRate: calculateWinRate(trades),
+    totalProfitLoss: calculateTotalProfitLoss(trades),
+    averageProfit: calculateAverageProfitPerTrade(trades),
   }
 }

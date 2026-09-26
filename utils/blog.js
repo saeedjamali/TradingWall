@@ -110,6 +110,30 @@ export function renderBlogHtml(raw) {
           .join('')
         return `<ul class="blog-bullets">${items}</ul>`
       }
+      if (lines.length >= 2 && lines.every((line) => /^\|.+\|/.test(line.trim()))) {
+        const tableRows = lines.filter(
+          (line) => !/^\|\s*:?-{3,}/.test(line.trim()),
+        )
+        if (tableRows.length >= 2) {
+          const cells = (line) =>
+            line
+              .trim()
+              .replace(/^\|/, '')
+              .replace(/\|$/, '')
+              .split('|')
+              .map((cell) => cell.trim())
+          const head = cells(tableRows[0])
+          const bodyRows = tableRows.slice(1).map(cells)
+          return `<div class="blog-table-wrap"><table class="blog-table"><thead><tr>${head
+            .map((cell) => `<th>${cell}</th>`)
+            .join('')}</tr></thead><tbody>${bodyRows
+            .map(
+              (row) =>
+                `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`,
+            )
+            .join('')}</tbody></table></div>`
+        }
+      }
       return `<p class="blog-p">${trimmed.replace(/\n/g, '<br/>')}</p>`
     })
     .join('\n')

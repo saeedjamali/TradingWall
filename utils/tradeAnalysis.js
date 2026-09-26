@@ -17,10 +17,15 @@ export function calculateWinRate(trades) {
  */
 export function calculateTotalProfitLoss(trades) {
   if (!trades || trades.length === 0) return 0
-  
-  return trades.reduce((total, trade) => {
-    return total + (trade.profit + trade.commission + trade.swap)
+
+  const total = trades.reduce((sum, trade) => {
+    const profit = Number(trade.profit) || 0
+    const commission = Number(trade.commission) || 0
+    const swap = Number(trade.swap) || 0
+    return sum + profit + commission + swap
   }, 0)
+
+  return Number(total.toFixed(2))
 }
 
 /**

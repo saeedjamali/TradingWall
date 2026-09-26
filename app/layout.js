@@ -67,6 +67,7 @@ export const metadata = {
     card: "summary_large_image",
     title: HOME_TITLE,
     description: SITE_TAGLINE,
+    images: ["/icons/tradingwall-icon-512x512.png"],
   },
   robots: {
     index: true,
