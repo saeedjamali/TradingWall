@@ -9,6 +9,7 @@ import {
   calculateMaxDrawdown,
   groupTradesBySymbol,
 } from '@/utils/tradeAnalysis'
+import { parseQueryDayBound } from '@/utils/dateHelpers'
 
 export async function GET(request) {
   try {
@@ -30,8 +31,14 @@ export async function GET(request) {
     const query = { userId }
     if (startDate || endDate) {
       query.closeTime = {}
-      if (startDate) query.closeTime.$gte = new Date(startDate)
-      if (endDate) query.closeTime.$lte = new Date(endDate)
+      if (startDate) {
+        const start = parseQueryDayBound(startDate, { end: false })
+        if (start) query.closeTime.$gte = start
+      }
+      if (endDate) {
+        const end = parseQueryDayBound(endDate, { end: true })
+        if (end) query.closeTime.$lte = end
+      }
     }
     
     // Fetch trades

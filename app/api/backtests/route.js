@@ -26,6 +26,8 @@ export async function GET(request) {
       )
     }
 
+    const summary = searchParams.get('summary') === '1'
+
     const query = { userId }
     if (startDate || endDate) {
       query.date = {}
@@ -41,10 +43,13 @@ export async function GET(request) {
       }
     }
 
-    const backtests = await Backtest.find(query)
-      .sort({ date: -1, createdAt: -1 })
-      .populate('setupIds')
-      .lean()
+    let finder = Backtest.find(query).sort({ date: -1, createdAt: -1 })
+    if (summary) {
+      finder = finder.select('date tpHits slHits resultPnL')
+    } else {
+      finder = finder.populate('setupIds')
+    }
+    const backtests = await finder.lean()
 
     return NextResponse.json({ success: true, backtests })
   } catch (error) {

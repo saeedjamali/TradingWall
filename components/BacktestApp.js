@@ -61,6 +61,7 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
   const [backtests, setBacktests] = useState([])
+  const [allBacktests, setAllBacktests] = useState([])
   const [marketRealities, setMarketRealities] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
   const [dayListOpen, setDayListOpen] = useState(false)
@@ -90,6 +91,13 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
     })
   }, [])
 
+  const fetchAllBacktests = useCallback(async (userId) => {
+    const params = new URLSearchParams({ userId, summary: '1' })
+    const res = await fetch(`/api/backtests?${params}`, { cache: 'no-store' })
+    const data = await res.json()
+    if (data.success) setAllBacktests(data.backtests || [])
+  }, [])
+
   const fetchMonth = useCallback(async (userId, monthDate) => {
     const { start, end } = monthBounds(monthDate)
     const params = new URLSearchParams({
@@ -106,6 +114,11 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
     if (btData.success) setBacktests(btData.backtests || [])
     if (mrData.success) setMarketRealities(mrData.marketRealities || [])
   }, [])
+
+  useEffect(() => {
+    if (!user?.id) return
+    fetchAllBacktests(user.id)
+  }, [user?.id, fetchAllBacktests])
 
   useEffect(() => {
     if (!user?.id) return
@@ -179,19 +192,31 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
     end.setDate(start.getDate() + 6)
     end.setHours(23, 59, 59, 999)
 
-    const weekItems = backtests.filter((b) => {
+    const weekItems = allBacktests.filter((b) => {
       const d = new Date(b.date)
       return d >= start && d <= end
     })
     return buildBacktestReports(weekItems)
-  }, [backtests])
+  }, [allBacktests])
 
   const todayStats = useMemo(() => {
     const today = new Date()
     return buildBacktestReports(
-      backtests.filter((b) => sameLocalDay(b.date, today)),
+      allBacktests.filter((b) => sameLocalDay(b.date, today)),
     )
-  }, [backtests])
+  }, [allBacktests])
+
+  const yearStats = useMemo(() => {
+    const year = currentMonth.getFullYear()
+    return buildBacktestReports(
+      allBacktests.filter((b) => new Date(b.date).getFullYear() === year),
+    )
+  }, [allBacktests, currentMonth])
+
+  const allStats = useMemo(
+    () => buildBacktestReports(allBacktests),
+    [allBacktests],
+  )
 
   const openDay = (day) => {
     if (!day) return
@@ -232,7 +257,11 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
   }
 
   const handleSaved = async () => {
-    if (user?.id) await fetchMonth(user.id, currentMonth)
+    if (!user?.id) return
+    await Promise.all([
+      fetchMonth(user.id, currentMonth),
+      fetchAllBacktests(user.id),
+    ])
   }
 
   const handleDelete = async (item) => {
@@ -246,7 +275,10 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
       alert(data.error || 'خطا در حذف')
       return
     }
-    await fetchMonth(user.id, currentMonth)
+    await Promise.all([
+      fetchMonth(user.id, currentMonth),
+      fetchAllBacktests(user.id),
+    ])
   }
 
   const handleLogout = () => {
@@ -346,7 +378,7 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" dir="rtl">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6" dir="rtl">
           <StatCard
             title="بک‌تست امروز"
             value={todayStats.count}
@@ -388,6 +420,22 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
                   ? 'bad'
                   : 'neutral'
             }
+          />
+          <StatCard
+            title={`بک‌تست سال ${currentMonth.getFullYear()}`}
+            value={yearStats.count}
+            tp={yearStats.tp}
+            sl={yearStats.sl}
+            unitNet={yearStats.unitNet}
+            pnl={yearStats.withRisk ? yearStats.pnl : null}
+          />
+          <StatCard
+            title="بک‌تست کلی"
+            value={allStats.count}
+            tp={allStats.tp}
+            sl={allStats.sl}
+            unitNet={allStats.unitNet}
+            pnl={allStats.withRisk ? allStats.pnl : null}
           />
         </div>
 

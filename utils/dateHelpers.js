@@ -89,6 +89,15 @@ export function monthLocalBounds(year, monthIndex) {
   return { start, end }
 }
 
+/** Local calendar year: Jan 1 00:00:00.000 → Dec 31 23:59:59.999 */
+export function yearLocalBounds(year) {
+  const start = new Date(year, 0, 1)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(year, 11, 31)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
 /**
  * Query bound from YYYY-MM-DD (local calendar day) or a full ISO timestamp.
  * Full ISO is used as-is so the client's timezone is preserved.

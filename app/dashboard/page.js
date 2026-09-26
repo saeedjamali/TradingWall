@@ -20,12 +20,30 @@ import AppTopNav from "@/components/AppTopNav";
 import { useInboxCounts } from "@/components/useInboxCounts";
 import { checkPlanCompliance, getPlanForDate } from "@/utils/planCompliance";
 import { getSessionUser } from "@/utils/session";
-import { monthLocalBounds } from "@/utils/dateHelpers";
+import { monthLocalBounds, yearLocalBounds } from "@/utils/dateHelpers";
+
+const STATS_PERIOD_KEY = "tw_dashboard_stats_period";
+const STATS_PERIODS = [
+  { id: "month", label: "ماهانه" },
+  { id: "year", label: "سالانه" },
+  { id: "all", label: "کلی" },
+];
+
+function readStatsPeriod() {
+  try {
+    const saved = localStorage.getItem(STATS_PERIOD_KEY);
+    if (saved === "month" || saved === "year" || saved === "all") return saved;
+  } catch {
+    // ignore storage errors
+  }
+  return "month";
+}
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
+  const [statsPeriod, setStatsPeriod] = useState("month");
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthTrades, setMonthTrades] = useState([]);
@@ -45,7 +63,7 @@ export default function DashboardPage() {
     }
 
     setUser(parsedUser);
-    fetchStats(parsedUser.id);
+    setStatsPeriod(readStatsPeriod());
     checkProfileReminder(parsedUser.id);
   }, [router]);
 
@@ -108,9 +126,39 @@ export default function DashboardPage() {
     }
   }, [currentMonth, user]);
 
-  const fetchStats = async (userId) => {
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchStats(user.id, statsPeriod, currentMonth);
+  }, [user?.id, statsPeriod, currentMonth]);
+
+  const changeStatsPeriod = (period) => {
+    setStatsPeriod(period);
     try {
-      const response = await fetch(`/api/trades/stats?userId=${userId}`);
+      localStorage.setItem(STATS_PERIOD_KEY, period);
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const fetchStats = async (userId, period = statsPeriod, month = currentMonth) => {
+    try {
+      const params = new URLSearchParams({ userId });
+      if (period === "month") {
+        const { start, end } = monthLocalBounds(
+          month.getFullYear(),
+          month.getMonth(),
+        );
+        params.set("startDate", start.toISOString());
+        params.set("endDate", end.toISOString());
+      } else if (period === "year") {
+        const { start, end } = yearLocalBounds(month.getFullYear());
+        params.set("startDate", start.toISOString());
+        params.set("endDate", end.toISOString());
+      }
+
+      const response = await fetch(`/api/trades/stats?${params}`, {
+        cache: "no-store",
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -285,6 +333,31 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Overview */}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2" dir="rtl">
+          <p className="text-xs sm:text-sm text-white/70">
+            {statsPeriod === "month"
+              ? `آمار ماه ${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`
+              : statsPeriod === "year"
+                ? `آمار سال ${currentMonth.getFullYear()}`
+                : "آمار کلی همه معاملات"}
+          </p>
+          <div className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 p-0.5">
+            {STATS_PERIODS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => changeStatsPeriod(item.id)}
+                className={`rounded-md px-2.5 py-1 text-[11px] sm:text-xs font-semibold transition-colors ${
+                  statsPeriod === item.id
+                    ? "bg-white text-slate-800"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-8">
           <StatCard
             title="تعداد معاملات"
@@ -557,6 +630,7 @@ export default function DashboardPage() {
                     t._id === tradeId ? { ...t, ...patch } : t,
                   ),
                 );
+                fetchStats(user.id, statsPeriod, currentMonth);
               }}
             />
           </div>
@@ -610,7 +684,10 @@ export default function DashboardPage() {
             <FileUploadCard
               userId={user.id}
               compact={true}
-              onUploadSuccess={() => fetchMonthTrades(user.id)}
+              onUploadSuccess={() => {
+                fetchMonthTrades(user.id);
+                fetchStats(user.id, statsPeriod, currentMonth);
+              }}
             />
           )}
           <QuickActionCard
