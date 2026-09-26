@@ -27,9 +27,9 @@ export const metadata = {
     locale: 'fa_IR',
     images: [
       {
-        url: '/icons/tradingwall-icon-512x512.png',
-        width: 512,
-        height: 512,
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
         alt: 'دیوار معاملاتی',
       },
     ],
@@ -38,7 +38,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'بلاگ دیوار معاملاتی',
     description: 'آموزش ژورنال معاملاتی، بک‌تست و معامله‌گری',
-    images: ['/icons/tradingwall-icon-512x512.png'],
+    images: ['/opengraph-image'],
   },
   robots: { index: true, follow: true },
 }

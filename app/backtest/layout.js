@@ -23,11 +23,13 @@ export const metadata = {
     url: '/backtest',
     type: 'website',
     locale: 'fa_IR',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'بک‌تست معاملاتی',
     description: 'ژورنال بک‌تست با گزارش TP/SL و ستاپ‌ها',
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,

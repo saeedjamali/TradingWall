@@ -33,6 +33,18 @@ export default async function robots() {
         ],
       },
       {
+        userAgent: 'TelegramBot',
+        allow: ['/', '/blog', '/blog/', '/guides/', '/opengraph-image', '/twitter-image'],
+      },
+      {
+        userAgent: 'Twitterbot',
+        allow: ['/', '/blog', '/blog/', '/guides/', '/opengraph-image', '/twitter-image'],
+      },
+      {
+        userAgent: 'facebookexternalhit',
+        allow: ['/', '/blog', '/blog/', '/guides/', '/opengraph-image', '/twitter-image'],
+      },
+      {
         userAgent: 'Googlebot',
         allow: [
           '/',

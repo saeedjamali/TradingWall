@@ -17,6 +17,11 @@ export const metadata = {
     title: 'چالش بک‌تست / چالش معامله | دیوار معاملاتی',
     description:
       'هدف چالش‌ها شناسایی نقاط ضعف و قوت و تحلیل آن‌هاست — چالش بک‌تست روی چارت تاریخی و چالش معامله روی معاملات واقعی.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/opengraph-image'],
   },
 }
 

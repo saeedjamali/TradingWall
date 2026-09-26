@@ -14,7 +14,7 @@ import {
   SITE_KEYWORDS,
   SITE_NAME_FA,
   SITE_TAGLINE,
-  getSiteUrl,
+  getSeoSiteUrl,
 } from "@/utils/site";
 
 const vazir = Vazirmatn({
@@ -29,7 +29,7 @@ const orbitron = Orbitron({
   display: "swap",
 });
 
-const siteUrl = getSiteUrl();
+const siteUrl = getSeoSiteUrl();
 const googleVerification =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined;
 
@@ -56,9 +56,9 @@ export const metadata = {
     description: SITE_TAGLINE,
     images: [
       {
-        url: "/icons/tradingwall-icon-512x512.png",
-        width: 512,
-        height: 512,
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
         alt: SITE_NAME_FA,
       },
     ],
@@ -67,7 +67,7 @@ export const metadata = {
     card: "summary_large_image",
     title: HOME_TITLE,
     description: SITE_TAGLINE,
-    images: ["/icons/tradingwall-icon-512x512.png"],
+    images: ["/opengraph-image"],
   },
   robots: {
     index: true,

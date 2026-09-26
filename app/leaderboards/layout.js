@@ -11,6 +11,11 @@ export const metadata = {
       'مشاهده برترین وین‌ریت و سودده‌ترین تریدرها در بازه‌های هفته، ماه و سال.',
     url: '/leaderboards',
     type: 'website',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,

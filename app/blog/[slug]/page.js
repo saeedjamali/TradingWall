@@ -4,7 +4,7 @@ import { getPublicPostBySlug } from '@/lib/blogQueries'
 import { BLOG_CATEGORY_LABELS, renderBlogHtml, commentsNeedApproval } from '@/utils/blog'
 import { getActiveBlogCategories } from '@/utils/siteSettings'
 import { absoluteUrl, getSiteUrl, SITE_NAME_FA } from '@/utils/site'
-import { buildShareMetadata } from '@/utils/shareMeta'
+import { buildShareMetadata, publicPageUrl } from '@/utils/shareMeta'
 import BlogVideo from '@/components/BlogVideo'
 import BlogEngage from '@/components/BlogEngage'
 import BlogZoomRoot, { BlogFigure } from '@/components/BlogMedia'
@@ -170,7 +170,7 @@ export default async function BlogPostPage({ params }) {
           <ShareLinkButton
             title={post.title}
             text={post.excerpt || post.seoDescription || post.title}
-            path={`/blog/${post.slug}`}
+            url={publicPageUrl(`/blog/${post.slug}`)}
             className="mt-1 shrink-0"
           />
         </div>
