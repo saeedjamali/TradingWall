@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Loading from "@/components/Loading";
 import PlanModal from "@/components/PlanModal";
 import MonthlyChart from "@/components/MonthlyChart";
+import YearlyMonthlyChart from "@/components/YearlyMonthlyChart";
 import BuySellChart from "@/components/BuySellChart";
 import WinRateTrendChart from "@/components/WinRateTrendChart";
 import DisciplineResultChart from "@/components/DisciplineResultChart";
@@ -47,6 +48,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthTrades, setMonthTrades] = useState([]);
+  const [yearTrades, setYearTrades] = useState([]);
   const [isExporting, setIsExporting] = useState(false);
   const [showMonthPlans, setShowMonthPlans] = useState(false);
   const [showProfileReminder, setShowProfileReminder] = useState(false);
@@ -127,6 +129,12 @@ export default function DashboardPage() {
   }, [currentMonth, user]);
 
   useEffect(() => {
+    if (user) {
+      fetchYearTrades(user.id);
+    }
+  }, [user, currentMonth.getFullYear()]);
+
+  useEffect(() => {
     if (!user?.id) return;
     fetchStats(user.id, statsPeriod, currentMonth);
   }, [user?.id, statsPeriod, currentMonth]);
@@ -188,6 +196,22 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("Error fetching month trades:", error);
+    }
+  };
+
+  const fetchYearTrades = async (userId) => {
+    try {
+      const { start, end } = yearLocalBounds(currentMonth.getFullYear());
+      const response = await fetch(
+        `/api/trades?userId=${userId}&startDate=${encodeURIComponent(start.toISOString())}&endDate=${encodeURIComponent(end.toISOString())}&limit=5000`,
+        { cache: "no-store" },
+      );
+      const data = await response.json();
+      if (data.success) {
+        setYearTrades(data.trades || []);
+      }
+    } catch (error) {
+      console.error("Error fetching year trades:", error);
     }
   };
 
@@ -630,6 +654,11 @@ export default function DashboardPage() {
                     t._id === tradeId ? { ...t, ...patch } : t,
                   ),
                 );
+                setYearTrades((prev) =>
+                  (prev || []).map((t) =>
+                    t._id === tradeId ? { ...t, ...patch } : t,
+                  ),
+                );
                 fetchStats(user.id, statsPeriod, currentMonth);
               }}
             />
@@ -650,6 +679,13 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 h-full">
               <BuySellChart trades={monthTrades} currentMonth={currentMonth} />
             </div>
+          </div>
+
+          <div className="mb-4">
+            <YearlyMonthlyChart
+              trades={yearTrades}
+              currentMonth={currentMonth}
+            />
           </div>
 
           {/* Win Rate + Discipline Charts */}
@@ -686,6 +722,7 @@ export default function DashboardPage() {
               compact={true}
               onUploadSuccess={() => {
                 fetchMonthTrades(user.id);
+                fetchYearTrades(user.id);
                 fetchStats(user.id, statsPeriod, currentMonth);
               }}
             />
