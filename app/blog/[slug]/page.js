@@ -4,11 +4,12 @@ import { getPublicPostBySlug } from '@/lib/blogQueries'
 import { BLOG_CATEGORY_LABELS, renderBlogHtml, commentsNeedApproval } from '@/utils/blog'
 import { getActiveBlogCategories } from '@/utils/siteSettings'
 import { absoluteUrl, getSiteUrl, SITE_NAME_FA } from '@/utils/site'
-import { buildShareMetadata, publicPageUrl } from '@/utils/shareMeta'
+import { buildShareMetadata, publicPageUrl, shareImage } from '@/utils/shareMeta'
 import BlogVideo from '@/components/BlogVideo'
 import BlogEngage from '@/components/BlogEngage'
 import BlogZoomRoot, { BlogFigure } from '@/components/BlogMedia'
 import ShareLinkButton from '@/components/ShareLinkButton'
+import BalePreviewTags from '@/components/BalePreviewTags'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,6 +148,13 @@ export default async function BlogPostPage({ params }) {
       {howToLd ? (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
       ) : null}
+
+      <BalePreviewTags
+        title={post.seoTitle || post.title}
+        description={post.seoDescription || post.excerpt || post.title}
+        image={shareImage(post.coverImage, post.coverImageAlt || post.title).url}
+        url={publicPageUrl(`/blog/${post.slug}`)}
+      />
 
       <header className="rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-950/55 via-slate-900/40 to-cyan-950/40 p-6 md:p-8">
         <nav className="text-xs text-emerald-200/70 mb-4">

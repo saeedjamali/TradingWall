@@ -59,7 +59,12 @@ export function buildShareMetadata({
     title,
     description,
     keywords,
-    alternates: { canonical: path },
+    alternates: {
+      canonical: path,
+      types: {
+        'application/json+oembed': `${origin}/api/oembed?url=${encodeURIComponent(pageUrl)}`,
+      },
+    },
     openGraph: {
       type,
       siteName: SITE_NAME_FA,

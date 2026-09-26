@@ -45,6 +45,14 @@ export default async function robots() {
         allow: ['/', '/blog', '/blog/', '/guides/', '/opengraph-image', '/twitter-image'],
       },
       {
+        userAgent: 'Bale',
+        allow: ['/', '/blog', '/blog/', '/guides/', '/opengraph-image', '/twitter-image', '/api/oembed'],
+      },
+      {
+        userAgent: 'WhatsApp',
+        allow: ['/', '/blog', '/blog/', '/guides/', '/opengraph-image', '/twitter-image'],
+      },
+      {
         userAgent: 'Googlebot',
         allow: [
           '/',
