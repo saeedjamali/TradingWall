@@ -52,14 +52,26 @@ export default async function BlogPostPage({ params }) {
     ? post.categories
     : [post.category].filter(Boolean)
   const siteUrl = getSiteUrl()
+  const bodyImagePaths = [
+    ...String(post.body || '').matchAll(
+      /!\[[^\]]*\]\((https?:\/\/[^)\s]+|\/[^)\s]+)\)/g,
+    ),
+  ].map((match) => match[1])
+  const articleImages = [
+    ...new Set(
+      [post.coverImage, ...bodyImagePaths, ...(post.gallery || [])].filter(Boolean),
+    ),
+  ].map((src) => absoluteUrl(src, siteUrl))
 
   const articleLd = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': 'BlogPosting',
     headline: post.title,
     description: post.seoDescription || post.excerpt,
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
+    inLanguage: 'fa-IR',
+    isAccessibleForFree: true,
     author: { '@type': 'Organization', name: post.authorName || SITE_NAME_FA },
     publisher: {
       '@type': 'Organization',
@@ -67,8 +79,9 @@ export default async function BlogPostPage({ params }) {
       logo: { '@type': 'ImageObject', url: absoluteUrl('/icons/tradingwall-icon-512x512.png', siteUrl) },
     },
     mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`, siteUrl),
-    image: post.coverImage ? [absoluteUrl(post.coverImage, siteUrl)] : undefined,
+    image: articleImages.length ? articleImages : undefined,
     keywords: (post.keywords || post.tags || []).join(', '),
+    about: (post.tags || []).map((name) => ({ '@type': 'Thing', name })),
     articleSection: postCategories
       .map((item) => categoryLabels[item] || item)
       .join('، '),
@@ -134,6 +147,7 @@ export default async function BlogPostPage({ params }) {
             position: index + 1,
             name: item.name,
             text: item.text,
+            image: item.image ? absoluteUrl(item.image, siteUrl) : undefined,
           })),
         }
       : null

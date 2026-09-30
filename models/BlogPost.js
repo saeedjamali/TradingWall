@@ -22,6 +22,7 @@ const HowToStepSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true, maxlength: 160 },
     text: { type: String, trim: true, maxlength: 600 },
+    image: { type: String, default: '', trim: true, maxlength: 500 },
   },
   { _id: false },
 )
@@ -125,6 +126,12 @@ function getBlogPostModel() {
           default: undefined,
           index: true,
         },
+      })
+    }
+    const howToStepSchema = existing.schema.path('howToSteps')?.schema
+    if (howToStepSchema && !howToStepSchema.path('image')) {
+      howToStepSchema.add({
+        image: { type: String, default: '', trim: true, maxlength: 500 },
       })
     }
     return existing
