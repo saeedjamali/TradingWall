@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,10 @@ import Loading from "@/components/Loading";
 import PlanModal from "@/components/PlanModal";
 import MonthlyChart from "@/components/MonthlyChart";
 import YearlyMonthlyChart from "@/components/YearlyMonthlyChart";
+import YearlyFinanceCharts from "@/components/YearlyFinanceCharts";
+import EquityDrawdownChart from "@/components/EquityDrawdownChart";
+import DashboardChartBoard from "@/components/DashboardChartBoard";
+import DashboardPresentation from "@/components/DashboardPresentation";
 import BuySellChart from "@/components/BuySellChart";
 import WinRateTrendChart from "@/components/WinRateTrendChart";
 import DisciplineResultChart from "@/components/DisciplineResultChart";
@@ -51,6 +56,12 @@ export default function DashboardPage() {
   const [yearTrades, setYearTrades] = useState([]);
   const [isExporting, setIsExporting] = useState(false);
   const [showMonthPlans, setShowMonthPlans] = useState(false);
+  const [calendarNatural, setCalendarNatural] = useState(0);
+  const [presentationSlide, setPresentationSlide] = useState(null);
+  const [presentationZoom, setPresentationZoom] = useState(1);
+  const [calendarSlot, setCalendarSlot] = useState(null);
+  const calendarWrapRef = useRef(null);
+  const calendarCardRef = useRef(null);
   const [showProfileReminder, setShowProfileReminder] = useState(false);
   const { userUnread, adminInbox } = useInboxCounts({
     userId: user?.id,
@@ -66,6 +77,11 @@ export default function DashboardPage() {
 
     setUser(parsedUser);
     setStatsPeriod(readStatsPeriod());
+    try {
+      localStorage.removeItem("tw_dashboard_calendar_zoom");
+    } catch {
+      // ignore storage errors
+    }
     checkProfileReminder(parsedUser.id);
   }, [router]);
 
@@ -221,25 +237,44 @@ export default function DashboardPage() {
       const html2canvas = (await import("html2canvas")).default;
 
       // Get calendar and chart elements
-      const calendarElement = document.querySelector(
-        ".calendar-export-section",
-      );
+      const calendarElement =
+        calendarCardRef.current ||
+        document.querySelector(".calendar-export-section");
 
       if (calendarElement) {
-        const canvas = await html2canvas(calendarElement, {
-          backgroundColor: "#f9fafb",
-          scale: 2,
-          logging: false,
-          useCORS: true,
-        });
+        const wrap = calendarWrapRef.current;
+        const previousTransform = calendarElement.style.transform;
+        const previousWidth = calendarElement.style.width;
+        const previousHeight = wrap?.style.height;
+        const previousOverflow = wrap?.style.overflow;
+        calendarElement.style.transform = "none";
+        calendarElement.style.width = "100%";
+        if (wrap) {
+          wrap.style.height = "auto";
+          wrap.style.overflow = "visible";
+        }
+        try {
+          const canvas = await html2canvas(calendarElement, {
+            backgroundColor: "#f9fafb",
+            scale: 2,
+            logging: false,
+            useCORS: true,
+          });
 
-        // Download as image
-        const link = document.createElement("a");
-        const monthName = monthNames[currentMonth.getMonth()];
-        const year = currentMonth.getFullYear();
-        link.download = `trading-calendar-${monthName}-${year}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
+          const link = document.createElement("a");
+          const monthName = monthNames[currentMonth.getMonth()];
+          const year = currentMonth.getFullYear();
+          link.download = `trading-calendar-${monthName}-${year}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+        } finally {
+          calendarElement.style.transform = previousTransform;
+          calendarElement.style.width = previousWidth;
+          if (wrap) {
+            wrap.style.height = previousHeight || "";
+            wrap.style.overflow = previousOverflow || "";
+          }
+        }
       }
     } catch (error) {
       console.error("Error exporting calendar:", error);
@@ -266,6 +301,242 @@ export default function DashboardPage() {
     "October",
     "November",
     "December",
+  ];
+
+  const calendarNode = (
+          <div
+            ref={calendarWrapRef}
+            className={presentationSlide == null ? "mb-4" : "w-full overflow-hidden"}
+            style={
+              presentationSlide != null
+                ? {
+                    height: calendarNatural
+                      ? Math.round(calendarNatural * presentationZoom)
+                      : undefined,
+                    width: "min(100%, 72rem)",
+                  }
+                : undefined
+            }
+          >
+          <div
+            ref={calendarCardRef}
+            className="calendar-export-section rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-4 text-slate-800"
+            style={
+              presentationSlide != null
+                ? {
+                    transform: `scale(${presentationZoom})`,
+                    transformOrigin: "top center",
+                  }
+                : undefined
+            }
+          >
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <button
+                onClick={() => setShowMonthPlans(true)}
+                className="p-1.5 md:px-3 md:py-1.5 bg-white border border-primary-200 text-primary-700 rounded-lg hover:bg-primary-50 transition-colors flex items-center gap-1.5 text-xs shrink-0"
+                title="مشاهده پلن‌های این ماه"
+              >
+                <span>📋</span>
+                <span className="hidden sm:inline">پلن‌ها</span>
+              </button>
+
+              <div className="flex items-center justify-center gap-1.5 min-w-0">
+                <button
+                  onClick={() =>
+                    setCurrentMonth(
+                      new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth() + 1,
+                        1,
+                      ),
+                    )
+                  }
+                  className="p-1.5 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                  title="ماه بعد"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <div className="px-3 py-1 bg-white border border-primary-200 rounded-md text-center min-w-[9.5rem]">
+                  <div className="text-[11px] font-semibold text-slate-500 leading-tight">تقویم معاملاتی</div>
+                  <div className="text-sm font-bold text-primary-800 leading-tight">
+                    {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                  </div>
+                </div>
+                <button
+                  onClick={() =>
+                    setCurrentMonth(
+                      new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth() - 1,
+                        1,
+                      ),
+                    )
+                  }
+                  className="p-1.5 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                  title="ماه قبل"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {presentationSlide == null && (
+                  <button
+                    type="button"
+                    onClick={() => setPresentationSlide(0)}
+                    className="p-1.5 md:px-3 md:py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-1.5 text-xs"
+                    title="تقویم تمام‌صفحه؛ بعد، نمودارها یکی‌یکی"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" />
+                    </svg>
+                    <span className="hidden sm:inline">تمام‌صفحه</span>
+                  </button>
+                )}
+                <a
+                  href="#quick-actions"
+                  title="رفتن به بارگذاری فایل معامله"
+                  className="p-1.5 md:px-3 md:py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-1.5 text-xs"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span className="hidden sm:inline">معامله</span>
+                </a>
+                <button
+                  onClick={handleExportCalendar}
+                  disabled={isExporting}
+                  className="p-1.5 md:px-3 md:py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="دانلود تصویر تقویم"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span className="hidden md:inline">
+                    {isExporting ? "..." : "تصویر"}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div
+              dir="rtl"
+              className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-slate-200 bg-white/80 px-2 py-1 text-[11px] text-slate-600"
+            >
+              <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-300" />سود</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-rose-100 border border-rose-300" />ضرر</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-300" />سر به سر</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-slate-50 border border-slate-200" />بدون معامله</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-slate-200/80 border border-slate-300" />تعطیل</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-primary-400" />با پلن</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-orange-400" />بدون پلن</span>
+              <span className="text-sky-800">کلیک روز: پلن · چشم: معاملات و ستاپ</span>
+            </div>
+
+            {/* Calendar Grid */}
+            <TradingCalendar
+              currentMonth={currentMonth}
+              userId={user?.id}
+              monthTrades={monthTrades}
+              onTradeUpdated={(tradeId, patch) => {
+                setMonthTrades((prev) =>
+                  (prev || []).map((t) =>
+                    t._id === tradeId ? { ...t, ...patch } : t,
+                  ),
+                );
+                setYearTrades((prev) =>
+                  (prev || []).map((t) =>
+                    t._id === tradeId ? { ...t, ...patch } : t,
+                  ),
+                );
+                fetchStats(user.id, statsPeriod, currentMonth);
+              }}
+            />
+          </div>
+          </div>
+  );
+
+  const chartItems = [
+              {
+                id: "daily",
+                title: "عملکرد روزانه",
+                description: "تعداد معاملات موفق و ناموفق هر روز این ماه، همراه با برایند دلاری.",
+                render: () => (
+                  <MonthlyChart trades={monthTrades} currentMonth={currentMonth} />
+                ),
+              },
+              {
+                id: "buysell",
+                title: "خرید و فروش",
+                description: "مقایسه معاملات Buy و Sell این ماه و اینکه هر کدام چقدر موفق بوده‌اند.",
+                render: () => (
+                  <BuySellChart trades={monthTrades} currentMonth={currentMonth} />
+                ),
+              },
+              {
+                id: "yearly",
+                title: "عملکرد ماهانه سال",
+                description: "مقایسه دوازده ماه از نظر تعداد معاملات موفق، ناموفق و برایند دلاری.",
+                render: () => (
+                  <YearlyMonthlyChart trades={yearTrades} currentMonth={currentMonth} />
+                ),
+              },
+              {
+                id: "pnl",
+                title: "سود و زیان دلاری",
+                description: "برایند دلاری هر ماه؛ ستون سبز یعنی ماه سودده و ستون قرمز یعنی ماه ضررده.",
+                render: () => (
+                  <YearlyFinanceCharts trades={yearTrades} currentMonth={currentMonth} part="pnl" />
+                ),
+              },
+              {
+                id: "year-winrate",
+                title: "وین‌ریت ماهانه",
+                description: "درصد معاملات موفق هر ماه سال. ماه بدون معامله در نمودار خالی می‌ماند.",
+                render: () => (
+                  <YearlyFinanceCharts trades={yearTrades} currentMonth={currentMonth} part="winrate" />
+                ),
+              },
+              {
+                id: "equity",
+                title: "منحنی سرمایه",
+                description: "جمع سود، کمیسیون و سواپ از ابتدای سال، و فاصله سرمایه تا آخرین سقف.",
+                render: () => (
+                  <EquityDrawdownChart trades={yearTrades} currentMonth={currentMonth} />
+                ),
+              },
+              {
+                id: "winrate",
+                title: "روند وین‌ریت",
+                description: "درصد موفقیت از ابتدای ماه تا هر روز، به‌علاوه نتیجه همان روز.",
+                render: () => (
+                  <WinRateTrendChart trades={monthTrades} currentMonth={currentMonth} />
+                ),
+              },
+              {
+                id: "discipline",
+                title: "انضباط و نتیجه",
+                description: "مقایسه روزهای منظم، نامنظم و بدون پلن با سود و زیان همان روزها.",
+                render: () => (
+                  <DisciplineResultChart
+                    trades={monthTrades}
+                    currentMonth={currentMonth}
+                    userId={user?.id}
+                  />
+                ),
+              },
+              {
+                id: "setups",
+                title: "گزارش ستاپ‌ها",
+                description: "تعداد برد و باخت و وین‌ریت هر ستاپ در ماه انتخاب‌شده.",
+                render: () => (
+                  <SetupPerformanceChart trades={monthTrades} currentMonth={currentMonth} />
+                ),
+              },
   ];
 
   return (
@@ -444,225 +715,34 @@ export default function DashboardPage() {
         </div>
 
         {/* Calendar and Chart Export Section */}
-        <div className="calendar-export-section">
+        <div>
           {/* Calendar Header */}
           {/* Pre-Trade Checklist */}
           {user && (
-            <div className="mb-6">
+            <div className="mb-3">
               <PreTradeChecklist userId={user.id} />
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-6 mb-8 text-slate-800">
-            {/* Title + actions */}
-            <div className="mb-4 md:mb-6 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  onClick={() => setShowMonthPlans(true)}
-                  className="p-2 md:px-4 md:py-2 bg-white border border-primary-200 text-primary-700 rounded-lg hover:bg-primary-50 transition-colors flex items-center gap-2 text-sm shrink-0"
-                  title="مشاهده پلن‌های این ماه"
-                >
-                  <span>📋</span>
-                  <span className="hidden sm:inline">پلن‌های این ماه</span>
-                </button>
+          {presentationSlide == null
+            ? calendarNode
+            : calendarSlot
+              ? createPortal(calendarNode, calendarSlot)
+              : null}
 
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  <a
-                    href="#quick-actions"
-                    title="رفتن به بارگذاری فایل معامله"
-                    className="p-2 md:px-4 md:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2 text-sm"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                      />
-                    </svg>
-                    <span className="hidden sm:inline">افزودن معامله</span>
-                  </a>
-                  <button
-                    onClick={handleExportCalendar}
-                    disabled={isExporting}
-                    className="p-2 md:px-4 md:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="دانلود تصویر تقویم و نمودار"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    <span className="hidden sm:inline">
-                      {isExporting ? "در حال آماده‌سازی..." : "Export Image"}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 md:gap-3 mb-1 md:mb-2">
-                  <span className="text-2xl md:text-4xl">📊</span>
-                  <h2 className="text-xl md:text-3xl font-bold text-gray-800">
-                    Trading Calendar
-                  </h2>
-                </div>
-                <p className="text-xs md:text-sm text-gray-500">تقویم معاملاتی</p>
-              </div>
-            </div>
-
-            {/* Month Navigation - Centered */}
-            <div className="flex items-center justify-center gap-2 md:gap-3 mb-4 md:mb-6">
-              <button
-                onClick={() =>
-                  setCurrentMonth(
-                    new Date(
-                      currentMonth.getFullYear(),
-                      currentMonth.getMonth() + 1,
-                      1,
-                    ),
-                  )
-                }
-                className="p-2 md:p-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                title="ماه بعد"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-
-              <div className="px-4 md:px-8 py-2 md:py-3 bg-gradient-to-r from-primary-50 to-primary-100 border-2 border-primary-300 rounded-lg min-w-[160px] md:min-w-[220px] text-center">
-                <div className="text-lg md:text-2xl font-bold text-primary-800">
-                  {monthNames[currentMonth.getMonth()]}{" "}
-                  {currentMonth.getFullYear()}
-                </div>
-              </div>
-
-              <button
-                onClick={() =>
-                  setCurrentMonth(
-                    new Date(
-                      currentMonth.getFullYear(),
-                      currentMonth.getMonth() - 1,
-                      1,
-                    ),
-                  )
-                }
-                className="p-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                title="ماه قبل"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Color Legend */}
-            <div className="flex flex-wrap gap-3 mb-4 text-xs text-slate-700 bg-white/70 border border-slate-200 p-3 rounded-xl">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-emerald-100 border border-emerald-300 rounded"></div>
-                <span>Profit Day (روز سودده)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-rose-100 border border-rose-300 rounded"></div>
-                <span>Loss Day (روز ضررده)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-amber-100 border border-amber-300 rounded"></div>
-                <span>Break-even (بدون سود/ضرر)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-slate-50 border border-slate-200 rounded"></div>
-                <span>No Trades (بدون معامله)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-slate-200/70 border border-slate-300 rounded"></div>
-                <span>Weekend (تعطیل)</span>
-              </div>
-              <span className="text-slate-300">|</span>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary-400 rounded"></div>
-                <span>✓ Disciplined (با پلن)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-orange-400 rounded"></div>
-                <span>⚠ Undisciplined (بدون پلن)</span>
-              </div>
-            </div>
-
-            {/* راهنمای استفاده از تقویم */}
-            <div
-              dir="rtl"
-              className="mb-4 rounded-xl border border-sky-200 bg-sky-50/90 px-3 py-2.5 text-xs text-sky-900 leading-relaxed"
-            >
-              <p className="font-semibold mb-1">راهنمای تقویم</p>
-              <ul className="space-y-1 list-disc list-inside text-sky-800/90">
-                <li>
-                  با کلیک روی هر روز، پنجرهٔ <strong>پلن معاملاتی</strong> باز
-                  می‌شود.
-                </li>
-                <li>
-                  با کلیک روی آیکون چشم / «مشاهده»، می‌توانید{" "}
-                  <strong>معاملات آن روز</strong> را ببینید و برای هر معامله{" "}
-                  <strong>ستاپ</strong> و <strong>تصویر</strong> ثبت کنید.
-                </li>
-              </ul>
-            </div>
-
-            {/* Calendar Grid */}
-            <TradingCalendar
-              currentMonth={currentMonth}
-              userId={user?.id}
-              monthTrades={monthTrades}
-              onTradeUpdated={(tradeId, patch) => {
-                setMonthTrades((prev) =>
-                  (prev || []).map((t) =>
-                    t._id === tradeId ? { ...t, ...patch } : t,
-                  ),
-                );
-                setYearTrades((prev) =>
-                  (prev || []).map((t) =>
-                    t._id === tradeId ? { ...t, ...patch } : t,
-                  ),
-                );
-                fetchStats(user.id, statsPeriod, currentMonth);
+          {presentationSlide != null && (
+            <DashboardPresentation
+              slide={presentationSlide}
+              charts={chartItems}
+              onSlide={setPresentationSlide}
+              onClose={() => setPresentationSlide(null)}
+              onCalendarSlot={setCalendarSlot}
+              onCalendarZoom={(zoom, natural) => {
+                setPresentationZoom((prev) => (Math.abs(prev - zoom) < 0.008 ? prev : zoom));
+                setCalendarNatural((prev) => (prev === natural ? prev : natural));
               }}
             />
-          </div>
+          )}
 
           <MonthPlansListModal
             isOpen={showMonthPlans}
@@ -671,43 +751,7 @@ export default function DashboardPage() {
             currentMonth={currentMonth}
           />
 
-          {/* Monthly Performance Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4 items-stretch">
-            <div className="lg:col-span-3 h-full">
-              <MonthlyChart trades={monthTrades} currentMonth={currentMonth} />
-            </div>
-            <div className="lg:col-span-2 h-full">
-              <BuySellChart trades={monthTrades} currentMonth={currentMonth} />
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <YearlyMonthlyChart
-              trades={yearTrades}
-              currentMonth={currentMonth}
-            />
-          </div>
-
-          {/* Win Rate + Discipline Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-            <WinRateTrendChart
-              trades={monthTrades}
-              currentMonth={currentMonth}
-            />
-            <DisciplineResultChart
-              trades={monthTrades}
-              currentMonth={currentMonth}
-              userId={user?.id}
-            />
-          </div>
-
-          {/* Setup performance report */}
-          <div className="mb-8">
-            <SetupPerformanceChart
-              trades={monthTrades}
-              currentMonth={currentMonth}
-            />
-          </div>
+          <DashboardChartBoard items={chartItems} />
         </div>
         {/* End Export Section */}
 

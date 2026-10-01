@@ -47,13 +47,13 @@ export default async function BlogIndexPage({ searchParams }) {
   }
 
   return (
-    <main className="container mx-auto px-4 py-10 max-w-6xl" dir="rtl">
+    <main className="container mx-auto px-4 py-10" dir="rtl">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogLd) }} />
       <p className="text-emerald-400/90 text-xs font-semibold mb-2">آموزش معامله‌گری</p>
       <h1 className="text-3xl md:text-4xl font-black mb-3">
         بلاگ ژورنال معاملاتی و بک‌تست فارکس
       </h1>
-      <p className="text-white/65 max-w-2xl leading-relaxed mb-6">
+      <p className="text-white/65 leading-relaxed mb-6">
         مقاله‌های کاربردی درباره ثبت ژورنال، بکتست استراتژی، روانشناسی معامله و ابزارهای فارکس
       </p>
 

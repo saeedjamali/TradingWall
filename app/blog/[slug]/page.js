@@ -153,7 +153,7 @@ export default async function BlogPostPage({ params }) {
       : null
 
   return (
-    <main className="container mx-auto px-4 py-10 max-w-3xl space-y-6" dir="rtl">
+    <main className="container mx-auto px-4 py-10 space-y-6" dir="rtl">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {faqLd ? (

@@ -105,8 +105,8 @@ export default function MonthlyChart({ trades, currentMonth }) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-[280px]">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-[300px] w-full">
+        <ResponsiveContainer width="100%" height={300}>
           <ComposedChart
             data={chartData}
             margin={{ top: 20, right: 8, left: 0, bottom: 8 }}

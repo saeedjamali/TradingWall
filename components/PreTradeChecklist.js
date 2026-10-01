@@ -118,10 +118,8 @@ export default function PreTradeChecklist({ userId, className = '' }) {
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-lg shadow-md p-4 ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-        </div>
+      <div className={`h-9 rounded-lg bg-white shadow-sm ${className}`}>
+        <div className="h-full animate-pulse rounded-lg bg-gray-100" />
       </div>
     )
   }
@@ -138,91 +136,47 @@ export default function PreTradeChecklist({ userId, className = '' }) {
   const done = pct === 100
 
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-lg shadow-sm overflow-hidden ${className}`} dir="rtl">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 hover:bg-gray-50 transition-colors"
+        className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-gray-50 transition-colors"
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <span className="text-xl sm:text-2xl shrink-0">✅</span>
-          <div className="text-right min-w-0">
-            <h3 className="text-sm sm:text-lg font-bold text-gray-800 truncate">
-              چک‌لیست قبل از معامله
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-600 truncate">
-              {checkedCount} از {totalItems} مورد انجام شده
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div
-            className={`flex items-center gap-2 rounded-2xl px-2.5 py-1.5 ${
-              done
-                ? 'bg-emerald-50 ring-1 ring-emerald-200'
-                : 'bg-slate-50 ring-1 ring-slate-200'
+        <span className="text-sm font-bold text-gray-800 shrink-0">چک لیست معامله</span>
+        <span className="text-[11px] text-gray-500 shrink-0 tabular-nums">
+          {checkedCount} از {totalItems}
+        </span>
+        <span className="h-1.5 min-w-[4.5rem] flex-1 overflow-hidden rounded-full bg-slate-200">
+          <span
+            className={`block h-full rounded-full transition-all duration-300 ${
+              done ? 'bg-emerald-500' : 'bg-primary-500'
             }`}
-          >
-            {done ? (
-              <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-500 text-white">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </span>
-            ) : null}
-            <div className="flex w-[3.75rem] sm:w-[5.25rem] flex-col items-stretch gap-1">
-              <div className="flex items-baseline justify-between gap-1">
-                <span className="text-[10px] font-medium text-slate-500 tabular-nums">
-                  {checkedCount}/{totalItems}
-                </span>
-                <span
-                  className={`text-sm sm:text-base font-black tabular-nums leading-none ${
-                    done ? 'text-emerald-700' : 'text-primary-700'
-                  }`}
-                >
-                  {pct}%
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    done
-                      ? 'bg-emerald-500'
-                      : 'bg-gradient-to-l from-primary-500 to-sky-400'
-                  }`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          </div>
-          <svg
-            className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform shrink-0 ${
-              isOpen ? 'rotate-180' : ''
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </div>
+            style={{ width: `${pct}%` }}
+          />
+        </span>
+        <span
+          className={`text-xs font-bold tabular-nums shrink-0 ${
+            done ? 'text-emerald-700' : 'text-primary-700'
+          }`}
+        >
+          {pct}٪
+        </span>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
       </button>
 
       {isOpen && (

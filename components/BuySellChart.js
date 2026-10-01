@@ -108,8 +108,8 @@ export default function BuySellChart({ trades, currentMonth }) {
           معامله‌ای در این ماه ثبت نشده
         </div>
       ) : (
-        <div className="flex-1 min-h-[280px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart
               data={chartData}
               margin={{ top: 24, right: 16, left: 0, bottom: 8 }}

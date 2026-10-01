@@ -724,3 +724,8 @@ html.theme-light .page-shell .text-amber-100 {
 html.theme-light .page-shell .text-rose-200 {
   color: #be123c;
 }
+
+html.tw-presenting,
+html.tw-presenting body {
+  overflow: hidden !important;
+}
