@@ -155,13 +155,13 @@ function Verdict({ report, limit, period }) {
   )
 }
 
-function YearLine({ report, yearLabel }) {
-  if (report.actual.totalTrades === 0 || report.excluded === 0) return null
+function ScopeLine({ label, report }) {
+  if (!report || report.actual.totalTrades === 0) return null
   const up = report.deltaProfit > 0.005
   const down = report.deltaProfit < -0.005
   return (
     <Note tone={up ? 'emerald' : down ? 'rose' : 'slate'}>
-      <span className="font-bold text-slate-800">سال {yearLabel}</span>
+      <span className="font-bold text-slate-800">{label}</span>
       <span className="mx-1 text-slate-300">·</span>
       واقعی <Amount value={report.actual.totalProfitLoss} className="text-slate-700" />
       <span className="mx-1 text-slate-300">←</span>
@@ -195,8 +195,8 @@ export default function DailyTradeCap({
   const [exporting, setExporting] = useState(false)
   const scopeTrades = period === 'all' ? allTrades : period === 'year' ? yearTrades : monthTrades
   const report = capReport(scopeTrades, limit)
+  const month = capReport(monthTrades, limit)
   const year = capReport(yearTrades, limit)
-  const showAnnual = period === 'month' && year.actual.totalTrades !== report.actual.totalTrades
 
   const setLimit = (value) => {
     const next = Math.round(Number(value))
@@ -386,7 +386,14 @@ export default function DailyTradeCap({
           />
           <div className="mt-1.5 space-y-1.5">
             <Verdict report={report} limit={limit} period={period} />
-            {showAnnual && year.excluded > 0 ? <YearLine report={year} yearLabel={yearLabel} /> : null}
+            {period === 'all' ? (
+              <ScopeLine label="کلی" report={report} />
+            ) : (
+              <>
+                <ScopeLine label={`ماه ${monthLabel} ${yearLabel}`} report={month} />
+                <ScopeLine label={`سال ${yearLabel}`} report={year} />
+              </>
+            )}
           </div>
             </>
           )}
