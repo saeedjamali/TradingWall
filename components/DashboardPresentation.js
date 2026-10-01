@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { captureElement } from '@/utils/captureElement'
 
 function fa(value) {
   return Number(value).toLocaleString('fa-IR')
@@ -20,12 +21,15 @@ export default function DashboardPresentation({
   onClose,
   onCalendarZoom,
   onCalendarSlot,
+  calendarFileName = 'tradingwall-calendar.png',
 }) {
   const calendarStageRef = useRef(null)
   const calendarSlotRef = useRef(null)
   const chartStageRef = useRef(null)
   const contentRef = useRef(null)
   const onCalendarZoomRef = useRef(onCalendarZoom)
+  const exportingRef = useRef(false)
+  const [exporting, setExporting] = useState(false)
   const total = charts.length + 1
   const chart = slide > 0 ? charts[slide - 1] : null
   onCalendarZoomRef.current = onCalendarZoom
@@ -67,6 +71,7 @@ export default function DashboardPresentation({
     let observedCard = null
     const cardObserver = new ResizeObserver(() => fit())
     function fit() {
+      if (exportingRef.current) return
       const card = stage.querySelector('.calendar-export-section')
       if (!card) return
       if (observedCard !== card) {
@@ -101,6 +106,7 @@ export default function DashboardPresentation({
     if (!stage || !content || slide === 0) return
 
     const fit = () => {
+      if (exportingRef.current) return
       const availW = Math.max(0, stage.clientWidth - 32)
       const availH = Math.max(0, stage.clientHeight - 16)
       if (availW < 80 || availH < 80) return
@@ -113,6 +119,9 @@ export default function DashboardPresentation({
       const next = Math.max(0.45, Math.min(1.8, availW / naturalW, availH / naturalH))
       const zoom = String(Math.round(next * 1000) / 1000)
       if (content.style.zoom !== zoom) content.style.zoom = zoom
+      if (content.style.getPropertyValue('--slide-zoom') !== zoom) {
+        content.style.setProperty('--slide-zoom', zoom)
+      }
     }
 
     fit()
@@ -121,6 +130,89 @@ export default function DashboardPresentation({
     observer.observe(content)
     return () => observer.disconnect()
   }, [slide, chart?.id])
+
+  const downloadCanvas = (canvas, fileName) => {
+    const link = document.createElement('a')
+    link.download = fileName
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  }
+
+  const handleExport = async () => {
+    if (exportingRef.current) return
+    exportingRef.current = true
+    setExporting(true)
+    const chartId = chart?.id
+    const chartTitle = chart?.title
+    try {
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+
+      if (slide === 0) {
+        const card = calendarStageRef.current?.querySelector('.calendar-export-section')
+        const wrap = card?.parentElement
+        if (!card) return
+        const previousTransform = card.style.transform
+        const previousWidth = card.style.width
+        const previousHeight = wrap?.style.height
+        const previousOverflow = wrap?.style.overflow
+        const watermark = card.querySelector('.calendar-export-watermark')
+        const previousWatermarkTransform = watermark?.style.transform || ''
+        card.style.transform = 'none'
+        card.style.width = '100%'
+        if (wrap) {
+          wrap.style.height = 'auto'
+          wrap.style.overflow = 'visible'
+        }
+        if (watermark) watermark.style.transform = 'none'
+        try {
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+          const canvas = await captureElement(card, {
+            backgroundColor: '#f9fafb',
+            scale: 2,
+            logging: false,
+            useCORS: true,
+          })
+          downloadCanvas(canvas, calendarFileName)
+        } finally {
+          card.style.transform = previousTransform
+          card.style.width = previousWidth
+          if (watermark) watermark.style.transform = previousWatermarkTransform
+          if (wrap) {
+            wrap.style.height = previousHeight || ''
+            wrap.style.overflow = previousOverflow || ''
+          }
+        }
+        return
+      }
+
+      const frame = contentRef.current
+      if (!frame) return
+      const previousZoom = frame.style.zoom
+      const previousSlideZoom = frame.style.getPropertyValue('--slide-zoom')
+      frame.style.zoom = '1'
+      frame.style.setProperty('--slide-zoom', '1')
+      try {
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+        const canvas = await captureElement(frame, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          logging: false,
+          useCORS: true,
+        })
+        downloadCanvas(canvas, `tradingwall-${chartId || chartTitle || 'chart'}.png`)
+      } finally {
+        frame.style.zoom = previousZoom
+        if (previousSlideZoom) frame.style.setProperty('--slide-zoom', previousSlideZoom)
+        else frame.style.removeProperty('--slide-zoom')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('خطا در دانلود تصویر')
+    } finally {
+      exportingRef.current = false
+      setExporting(false)
+    }
+  }
 
   if (typeof document === 'undefined' || slide == null) return null
 
@@ -150,6 +242,15 @@ export default function DashboardPresentation({
           </span>
           <button
             type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+            title="دانلود تصویر همین اسلاید"
+          >
+            {exporting ? '...' : 'تصویر'}
+          </button>
+          <button
+            type="button"
             onClick={onClose}
             className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
           >
@@ -170,8 +271,11 @@ export default function DashboardPresentation({
         className={slide > 0 ? 'flex min-h-0 flex-1 items-center justify-center overflow-hidden px-4 py-3' : 'hidden'}
       >
         {slide > 0 && chart ? (
-          <div ref={contentRef} className="max-w-full">
+          <div ref={contentRef} className="presentation-slide-frame relative max-w-full">
             {chart.render()}
+            <span className="slide-frame-watermark blog-watermark blog-watermark-lg" aria-hidden="true">
+              tradingwall.ir
+            </span>
           </div>
         ) : null}
       </div>

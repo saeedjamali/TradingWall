@@ -27,8 +27,12 @@ import { useInboxCounts } from "@/components/useInboxCounts";
 import { checkPlanCompliance, getPlanForDate } from "@/utils/planCompliance";
 import { getSessionUser } from "@/utils/session";
 import { monthLocalBounds, yearLocalBounds } from "@/utils/dateHelpers";
+import { limitTradesPerDay, netStats } from "@/utils/tradeCap";
+import { captureElement } from "@/utils/captureElement";
+import DailyTradeCap from "@/components/DailyTradeCap";
 
 const STATS_PERIOD_KEY = "tw_dashboard_stats_period";
+const DAILY_CAP_KEY = "tw_daily_trade_cap";
 const STATS_PERIODS = [
   { id: "month", label: "ماهانه" },
   { id: "year", label: "سالانه" },
@@ -63,6 +67,9 @@ export default function DashboardPage() {
   const calendarWrapRef = useRef(null);
   const calendarCardRef = useRef(null);
   const [showProfileReminder, setShowProfileReminder] = useState(false);
+  const [dailyCapOn, setDailyCapOn] = useState(false);
+  const [dailyCapLimit, setDailyCapLimit] = useState(2);
+  const [allTrades, setAllTrades] = useState(null);
   const { userUnread, adminInbox } = useInboxCounts({
     userId: user?.id,
     isAdmin: user?.role === "admin",
@@ -79,6 +86,10 @@ export default function DashboardPage() {
     setStatsPeriod(readStatsPeriod());
     try {
       localStorage.removeItem("tw_dashboard_calendar_zoom");
+      const savedCap = JSON.parse(localStorage.getItem(DAILY_CAP_KEY) || "");
+      const savedLimit = Math.round(Number(savedCap?.limit));
+      if (savedLimit >= 1 && savedLimit <= 20) setDailyCapLimit(savedLimit);
+      if (savedCap?.on) setDailyCapOn(true);
     } catch {
       // ignore storage errors
     }
@@ -154,6 +165,27 @@ export default function DashboardPage() {
     if (!user?.id) return;
     fetchStats(user.id, statsPeriod, currentMonth);
   }, [user?.id, statsPeriod, currentMonth]);
+
+  useEffect(() => {
+    if (!user?.id || statsPeriod !== "all" || allTrades) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/trades?userId=${user.id}&limit=5000`,
+          { cache: "no-store" },
+        );
+        const data = await response.json();
+        if (!cancelled) setAllTrades(data.success ? data.trades || [] : []);
+      } catch (error) {
+        console.error("Error fetching all trades:", error);
+        if (!cancelled) setAllTrades([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, statsPeriod, allTrades]);
 
   const changeStatsPeriod = (period) => {
     setStatsPeriod(period);
@@ -234,8 +266,6 @@ export default function DashboardPage() {
   const handleExportCalendar = async () => {
     setIsExporting(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-
       // Get calendar and chart elements
       const calendarElement =
         calendarCardRef.current ||
@@ -253,8 +283,16 @@ export default function DashboardPage() {
           wrap.style.height = "auto";
           wrap.style.overflow = "visible";
         }
+        const watermark = calendarElement.querySelector(".calendar-export-watermark");
+        const watermarkWasHidden = watermark?.classList.contains("hidden");
+        const previousWatermarkTransform = watermark?.style.transform || "";
+        if (watermark) {
+          watermark.classList.remove("hidden");
+          watermark.style.transform = "none";
+        }
         try {
-          const canvas = await html2canvas(calendarElement, {
+          await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+          const canvas = await captureElement(calendarElement, {
             backgroundColor: "#f9fafb",
             scale: 2,
             logging: false,
@@ -270,6 +308,8 @@ export default function DashboardPage() {
         } finally {
           calendarElement.style.transform = previousTransform;
           calendarElement.style.width = previousWidth;
+          if (watermarkWasHidden) watermark?.classList.add("hidden");
+          if (watermark) watermark.style.transform = previousWatermarkTransform;
           if (wrap) {
             wrap.style.height = previousHeight || "";
             wrap.style.overflow = previousOverflow || "";
@@ -287,6 +327,40 @@ export default function DashboardPage() {
   if (loading) {
     return <Loading text="در حال بارگذاری داشبورد..." />;
   }
+
+  const changeDailyCap = (on, limit) => {
+    const nextLimit = Math.min(20, Math.max(1, Math.round(Number(limit)) || 2));
+    setDailyCapOn(on);
+    setDailyCapLimit(nextLimit);
+    try {
+      localStorage.setItem(
+        DAILY_CAP_KEY,
+        JSON.stringify({ on, limit: nextLimit }),
+      );
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const activeCap = dailyCapOn ? dailyCapLimit : 0;
+  const visibleMonthTrades = activeCap
+    ? limitTradesPerDay(monthTrades, activeCap)
+    : monthTrades;
+  const visibleYearTrades = activeCap
+    ? limitTradesPerDay(yearTrades, activeCap)
+    : yearTrades;
+  const cardStats =
+    activeCap && statsPeriod !== "all"
+      ? netStats(statsPeriod === "year" ? visibleYearTrades : visibleMonthTrades)
+      : stats;
+
+  const shiftReportDate = (delta) => {
+    setCurrentMonth(
+      statsPeriod === "year"
+        ? new Date(currentMonth.getFullYear() + delta, currentMonth.getMonth(), 1)
+        : new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1),
+    );
+  };
 
   const monthNames = [
     "January",
@@ -320,7 +394,7 @@ export default function DashboardPage() {
           >
           <div
             ref={calendarCardRef}
-            className="calendar-export-section rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-4 text-slate-800"
+            className="calendar-export-section relative rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-primary-50/40 shadow-md p-3 md:p-4 text-slate-800"
             style={
               presentationSlide != null
                 ? {
@@ -363,6 +437,11 @@ export default function DashboardPage() {
                   <div className="text-sm font-bold text-primary-800 leading-tight">
                     {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                   </div>
+                  {activeCap > 0 && (
+                    <div className="text-[10px] font-bold text-amber-700 leading-tight">
+                      سقف {activeCap} معامله اول
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() =>
@@ -443,7 +522,7 @@ export default function DashboardPage() {
             <TradingCalendar
               currentMonth={currentMonth}
               userId={user?.id}
-              monthTrades={monthTrades}
+              monthTrades={visibleMonthTrades}
               onTradeUpdated={(tradeId, patch) => {
                 setMonthTrades((prev) =>
                   (prev || []).map((t) =>
@@ -458,86 +537,97 @@ export default function DashboardPage() {
                 fetchStats(user.id, statsPeriod, currentMonth);
               }}
             />
+            <span
+              className={`calendar-export-watermark blog-watermark blog-watermark-lg ${
+                presentationSlide == null ? "hidden" : ""
+              }`}
+              style={
+                presentationSlide != null && presentationZoom > 0
+                  ? {
+                      transform: `scale(${1 / presentationZoom})`,
+                      transformOrigin: "bottom left",
+                    }
+                  : undefined
+              }
+              aria-hidden="true"
+            >
+              tradingwall.ir
+            </span>
           </div>
           </div>
   );
+
+  const monthChart = (Chart, extra) => ({
+    render: () => (
+      <Chart trades={visibleMonthTrades} currentMonth={currentMonth} {...extra} />
+    ),
+    renderActual: () => (
+      <Chart trades={monthTrades} currentMonth={currentMonth} {...extra} />
+    ),
+  });
+  const yearChart = (Chart, extra) => ({
+    render: () => (
+      <Chart trades={visibleYearTrades} currentMonth={currentMonth} {...extra} />
+    ),
+    renderActual: () => (
+      <Chart trades={yearTrades} currentMonth={currentMonth} {...extra} />
+    ),
+  });
 
   const chartItems = [
               {
                 id: "daily",
                 title: "عملکرد روزانه",
                 description: "تعداد معاملات موفق و ناموفق هر روز این ماه، همراه با برایند دلاری.",
-                render: () => (
-                  <MonthlyChart trades={monthTrades} currentMonth={currentMonth} />
-                ),
+                ...monthChart(MonthlyChart),
               },
               {
                 id: "buysell",
                 title: "خرید و فروش",
                 description: "مقایسه معاملات Buy و Sell این ماه و اینکه هر کدام چقدر موفق بوده‌اند.",
-                render: () => (
-                  <BuySellChart trades={monthTrades} currentMonth={currentMonth} />
-                ),
+                ...monthChart(BuySellChart),
               },
               {
                 id: "yearly",
                 title: "عملکرد ماهانه سال",
                 description: "مقایسه دوازده ماه از نظر تعداد معاملات موفق، ناموفق و برایند دلاری.",
-                render: () => (
-                  <YearlyMonthlyChart trades={yearTrades} currentMonth={currentMonth} />
-                ),
+                ...yearChart(YearlyMonthlyChart),
               },
               {
                 id: "pnl",
                 title: "سود و زیان دلاری",
                 description: "برایند دلاری هر ماه؛ ستون سبز یعنی ماه سودده و ستون قرمز یعنی ماه ضررده.",
-                render: () => (
-                  <YearlyFinanceCharts trades={yearTrades} currentMonth={currentMonth} part="pnl" />
-                ),
+                ...yearChart(YearlyFinanceCharts, { part: "pnl" }),
               },
               {
                 id: "year-winrate",
                 title: "وین‌ریت ماهانه",
                 description: "درصد معاملات موفق هر ماه سال. ماه بدون معامله در نمودار خالی می‌ماند.",
-                render: () => (
-                  <YearlyFinanceCharts trades={yearTrades} currentMonth={currentMonth} part="winrate" />
-                ),
+                ...yearChart(YearlyFinanceCharts, { part: "winrate" }),
               },
               {
                 id: "equity",
                 title: "منحنی سرمایه",
                 description: "جمع سود، کمیسیون و سواپ از ابتدای سال، و فاصله سرمایه تا آخرین سقف.",
-                render: () => (
-                  <EquityDrawdownChart trades={yearTrades} currentMonth={currentMonth} />
-                ),
+                ...yearChart(EquityDrawdownChart),
               },
               {
                 id: "winrate",
                 title: "روند وین‌ریت",
                 description: "درصد موفقیت از ابتدای ماه تا هر روز، به‌علاوه نتیجه همان روز.",
-                render: () => (
-                  <WinRateTrendChart trades={monthTrades} currentMonth={currentMonth} />
-                ),
+                ...monthChart(WinRateTrendChart),
               },
               {
                 id: "discipline",
                 title: "انضباط و نتیجه",
                 description: "مقایسه روزهای منظم، نامنظم و بدون پلن با سود و زیان همان روزها.",
-                render: () => (
-                  <DisciplineResultChart
-                    trades={monthTrades}
-                    currentMonth={currentMonth}
-                    userId={user?.id}
-                  />
-                ),
+                ...monthChart(DisciplineResultChart, { userId: user?.id }),
               },
               {
                 id: "setups",
                 title: "گزارش ستاپ‌ها",
                 description: "تعداد برد و باخت و وین‌ریت هر ستاپ در ماه انتخاب‌شده.",
-                render: () => (
-                  <SetupPerformanceChart trades={monthTrades} currentMonth={currentMonth} />
-                ),
+                ...monthChart(SetupPerformanceChart),
               },
   ];
 
@@ -630,62 +720,65 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Overview */}
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2" dir="rtl">
+        <div className="mb-8" dir="rtl">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs sm:text-sm text-white/70">
             {statsPeriod === "month"
               ? `آمار ماه ${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`
               : statsPeriod === "year"
                 ? `آمار سال ${currentMonth.getFullYear()}`
                 : "آمار کلی همه معاملات"}
+            {activeCap > 0 && statsPeriod !== "all" ? ` · سقف ${activeCap} معامله اول` : ""}
+            {activeCap > 0 && statsPeriod === "all" ? " · سقف روزانه روی آمار کلی اعمال نمی‌شود" : ""}
           </p>
           <div className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 p-0.5">
-            {STATS_PERIODS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => changeStatsPeriod(item.id)}
-                className={`rounded-md px-2.5 py-1 text-[11px] sm:text-xs font-semibold transition-colors ${
-                  statsPeriod === item.id
-                    ? "bg-white text-slate-800"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+              {STATS_PERIODS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => changeStatsPeriod(item.id)}
+                  className={`rounded-md px-2.5 py-1 text-[11px] sm:text-xs font-semibold transition-colors ${
+                    statsPeriod === item.id
+                      ? "bg-white text-slate-800"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
             title="تعداد معاملات"
-            value={stats?.totalTrades || 0}
+            value={cardStats?.totalTrades || 0}
             icon="📊"
             accent="sky"
           />
           <StatCard
             title="وین ریت"
-            value={stats ? `${stats.winRate}%` : "0%"}
+            value={cardStats ? `${cardStats.winRate}%` : "0%"}
             icon="🎯"
             accent="teal"
           />
           <StatCard
             title="سود/زیان کل"
-            value={stats ? `$${stats.totalProfitLoss.toFixed(2)}` : "$0"}
+            value={cardStats ? `$${cardStats.totalProfitLoss.toFixed(2)}` : "$0"}
             icon="💰"
             accent={
-              stats
-                ? stats.totalProfitLoss > 0
+              cardStats
+                ? cardStats.totalProfitLoss > 0
                   ? "profit"
-                  : stats.totalProfitLoss < 0
+                  : cardStats.totalProfitLoss < 0
                     ? "loss"
                     : "sky"
                 : "sky"
             }
             valueTone={
-              stats
-                ? stats.totalProfitLoss > 0
+              cardStats
+                ? cardStats.totalProfitLoss > 0
                   ? "profit"
-                  : stats.totalProfitLoss < 0
+                  : cardStats.totalProfitLoss < 0
                     ? "loss"
                     : "neutral"
                 : "neutral"
@@ -693,27 +786,28 @@ export default function DashboardPage() {
           />
           <StatCard
             title="میانگین سود"
-            value={stats ? `$${stats.averageProfit.toFixed(2)}` : "$0"}
+            value={cardStats ? `$${cardStats.averageProfit.toFixed(2)}` : "$0"}
             icon="📈"
             accent={
-              stats
-                ? stats.averageProfit > 0
+              cardStats
+                ? cardStats.averageProfit > 0
                   ? "profit"
-                  : stats.averageProfit < 0
+                  : cardStats.averageProfit < 0
                     ? "loss"
                     : "cyan"
                 : "cyan"
             }
             valueTone={
-              stats
-                ? stats.averageProfit > 0
+              cardStats
+                ? cardStats.averageProfit > 0
                   ? "profit"
-                  : stats.averageProfit < 0
+                  : cardStats.averageProfit < 0
                     ? "loss"
                     : "neutral"
                 : "neutral"
             }
           />
+        </div>
         </div>
 
         {/* Calendar and Chart Export Section */}
@@ -725,6 +819,28 @@ export default function DashboardPage() {
               <PreTradeChecklist userId={user.id} />
             </div>
           )}
+
+          <DailyTradeCap
+            enabled={dailyCapOn}
+            limit={dailyCapLimit}
+            onChange={changeDailyCap}
+            period={statsPeriod}
+            onPeriodChange={changeStatsPeriod}
+            onShiftDate={shiftReportDate}
+            monthLabel={monthNames[currentMonth.getMonth()]}
+            yearLabel={String(currentMonth.getFullYear())}
+            monthTrades={monthTrades}
+            yearTrades={yearTrades}
+            allTrades={allTrades || []}
+            scopeLoading={statsPeriod === "all" && allTrades == null}
+            exportName={
+              statsPeriod === "all"
+                ? "tradingwall-daily-cap-all.png"
+                : statsPeriod === "year"
+                  ? `tradingwall-daily-cap-${currentMonth.getFullYear()}.png`
+                  : `tradingwall-daily-cap-${monthNames[currentMonth.getMonth()]}-${currentMonth.getFullYear()}.png`
+            }
+          />
 
           {presentationSlide == null
             ? calendarNode
@@ -739,6 +855,7 @@ export default function DashboardPage() {
               onSlide={setPresentationSlide}
               onClose={() => setPresentationSlide(null)}
               onCalendarSlot={setCalendarSlot}
+              calendarFileName={`trading-calendar-${monthNames[currentMonth.getMonth()]}-${currentMonth.getFullYear()}.png`}
               onCalendarZoom={(zoom, natural) => {
                 setPresentationZoom((prev) => (Math.abs(prev - zoom) < 0.008 ? prev : zoom));
                 setCalendarNatural((prev) => (prev === natural ? prev : natural));
@@ -753,7 +870,11 @@ export default function DashboardPage() {
             currentMonth={currentMonth}
           />
 
-          <DashboardChartBoard items={chartItems} />
+          <DashboardChartBoard
+            items={chartItems}
+            compare={activeCap > 0}
+            capLabel={activeCap || ""}
+          />
         </div>
         {/* End Export Section */}
 

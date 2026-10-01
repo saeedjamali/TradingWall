@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Modal from './Modal'
+import WatermarkedFigure from './WatermarkedFigure'
 import SelectedSetupNote from '@/components/SelectedSetupNote'
 import { formatDate } from '@/utils/dateHelpers'
 import { formatTradeSymbol } from '@/utils/tradeSymbol'
@@ -507,10 +508,11 @@ export default function DayTradesModal({
           >
             بستن
           </button>
-          <img
+          <WatermarkedFigure
             src={previewImage}
             alt="پیش‌نمایش تصویر معامله"
-            className="max-h-[90vh] max-w-full rounded-lg object-contain"
+            large
+            imgClassName="max-h-[90vh] max-w-full rounded-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

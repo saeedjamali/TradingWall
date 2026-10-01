@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Loading from '@/components/Loading'
 import Modal from '@/components/Modal'
+import WatermarkedFigure from '@/components/WatermarkedFigure'
 import BacktestModal from '@/components/BacktestModal'
 import BacktestCharts from '@/components/BacktestCharts'
 import MarketRealityDayPanel from '@/components/MarketRealityDayPanel'
@@ -1304,10 +1305,11 @@ export default function BacktestApp({ loginRedirect = '/auth/login' }) {
         {previewImage && (
           <div className="flex flex-col items-center gap-3">
             <div className="w-full flex justify-center bg-gray-950/5 rounded-lg p-2">
-              <img
+              <WatermarkedFigure
                 src={previewImage}
                 alt="تصویر بک‌تست"
-                className="max-w-full max-h-[75vh] object-contain rounded"
+                large
+                imgClassName="max-w-full max-h-[75vh] object-contain rounded"
               />
             </div>
             <a

@@ -142,6 +142,12 @@ export default function PreTradeChecklist({ userId, className = '' }) {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-gray-50 transition-colors"
       >
+        <span
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary-100 text-sm"
+          aria-hidden="true"
+        >
+          ✅
+        </span>
         <span className="text-sm font-bold text-gray-800 shrink-0">چک لیست معامله</span>
         <span className="text-[11px] text-gray-500 shrink-0 tabular-nums">
           {checkedCount} از {totalItems}

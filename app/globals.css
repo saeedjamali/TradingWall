@@ -672,6 +672,12 @@ html.theme-light .blog-featured .text-white\/45 {
   padding: 0.3rem 0.7rem;
 }
 
+.slide-frame-watermark {
+  z-index: 5;
+  transform: scale(calc(1 / var(--slide-zoom, 1)));
+  transform-origin: bottom left;
+}
+
 html.theme-light .page-shell .text-cyan-50,
 html.theme-light .page-shell .text-cyan-50\/90,
 html.theme-light .page-shell .text-cyan-100,

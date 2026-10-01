@@ -280,7 +280,7 @@ export default function AdminDemoDataPage() {
           <div className="mb-4">
             <h3 className="font-bold text-gray-900">پست‌های بلاگ دمو</h3>
             <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-              پست‌های آموزشی آماده (از جمله مقایسه دلاری بازارها) را جدا از
+              پست‌های آموزشی آماده (از جمله اورترید و سقف روزانه) را جدا از
               کاربران می‌سازد. اگر پستی از قبل باشد، فقط متن و تصویر به‌روز
               می‌شود؛ بازدید و امتیاز ریست نمی‌شود.
             </p>

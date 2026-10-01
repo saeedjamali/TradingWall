@@ -6,6 +6,44 @@ const STORAGE_KEY = 'tw_dashboard_chart_prefs'
 const PREFS_VERSION = 2
 const DEFAULT_PINNED = ['daily', 'yearly']
 
+function LayerToggle({ active, onClick, activeClass, children }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold ${
+        active ? activeClass : 'bg-white/10 text-white/45'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function ChartLayer({ label, tone, children }) {
+  const cap = tone === 'cap'
+  return (
+    <div
+      className={`h-auto min-w-0 self-start rounded-xl border-2 p-2 [&>*]:!h-auto ${
+        cap
+          ? 'border-amber-400 bg-amber-400/15'
+          : 'border-sky-400 bg-sky-400/10'
+      }`}
+    >
+      <div
+        className={`mb-2 inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ${
+          cap ? 'bg-amber-400 text-slate-900' : 'bg-sky-500 text-white'
+        }`}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${cap ? 'bg-slate-900/70' : 'bg-white'}`} />
+        {label}
+      </div>
+      {children}
+    </div>
+  )
+}
+
 function asIds(value) {
   return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : []
 }
@@ -26,11 +64,24 @@ function readPrefs() {
   }
 }
 
-export default function DashboardChartBoard({ items }) {
+export default function DashboardChartBoard({ items, compare = false, capLabel = '' }) {
   const [pinned, setPinned] = useState(DEFAULT_PINNED)
   const [open, setOpen] = useState([])
   const [recent, setRecent] = useState(DEFAULT_PINNED)
   const [ready, setReady] = useState(false)
+  const [layers, setLayers] = useState({ actual: true, capped: true })
+
+  useEffect(() => {
+    if (compare) setLayers({ actual: true, capped: true })
+  }, [compare])
+
+  const toggleLayer = (key) => {
+    setLayers((prev) => {
+      const next = { ...prev, [key]: !prev[key] }
+      if (!next.actual && !next.capped) return prev
+      return next
+    })
+  }
 
   useEffect(() => {
     const saved = readPrefs()
@@ -88,11 +139,31 @@ export default function DashboardChartBoard({ items }) {
 
   return (
     <section className="mt-4 mb-8" dir="rtl">
-      <div className="mb-3">
-        <h2 className="text-base font-bold text-white">نمودارها</h2>
-        <p className="text-xs text-white/60 mt-1">
-          نوع نمودار را از فهرست راست انتخاب کنید؛ نمودار همان‌جا روبه‌رو باز می‌شود. «همیشه» آن را برای دفعه‌های بعد هم باز نگه می‌دارد.
-        </p>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-base font-bold text-white">نمودارها</h2>
+          <p className="text-xs text-white/60 mt-1">
+            نوع نمودار را از فهرست راست انتخاب کنید؛ نمودار همان‌جا روبه‌رو باز می‌شود. «همیشه» آن را برای دفعه‌های بعد هم باز نگه می‌دارد.
+          </p>
+        </div>
+        {compare && (
+          <div className="flex items-center gap-1.5" role="group" aria-label="نمایش نمودار واقعی و سقف">
+            <LayerToggle
+              active={layers.actual}
+              onClick={() => toggleLayer('actual')}
+              activeClass="bg-white text-slate-800"
+            >
+              واقعی
+            </LayerToggle>
+            <LayerToggle
+              active={layers.capped}
+              onClick={() => toggleLayer('capped')}
+              activeClass="bg-amber-400 text-slate-900"
+            >
+              سقف {capLabel}
+            </LayerToggle>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[16.5rem_minmax(0,1fr)] gap-4 items-start">
@@ -144,7 +215,22 @@ export default function DashboardChartBoard({ items }) {
           ) : (
             visible.map((item) => (
               <div key={item.id} id={`dashboard-chart-${item.id}`} className="scroll-mt-24">
-                {item.render()}
+                {compare && item.renderActual ? (
+                  <div className={`grid grid-cols-1 items-start gap-3 ${layers.actual && layers.capped ? 'lg:grid-cols-2' : ''}`}>
+                    {layers.actual && (
+                      <ChartLayer label="واقعی" tone="actual">
+                        {item.renderActual()}
+                      </ChartLayer>
+                    )}
+                    {layers.capped && (
+                      <ChartLayer label={`سقف ${capLabel}`} tone="cap">
+                        {item.render()}
+                      </ChartLayer>
+                    )}
+                  </div>
+                ) : (
+                  item.render()
+                )}
               </div>
             ))
           )}

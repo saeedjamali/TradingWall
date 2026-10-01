@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Modal from '@/components/Modal'
+import WatermarkedFigure from '@/components/WatermarkedFigure'
 import { sameLocalDay, sessionLabel, buildBacktestReports } from '@/utils/backtest'
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -245,10 +246,11 @@ export default function WallBacktestCalendar({ year, month, backtests = [] }) {
       >
         {previewImage && (
           <div className="flex justify-center bg-gray-950/5 rounded-lg p-2">
-            <img
+            <WatermarkedFigure
               src={previewImage}
               alt="تصویر بک‌تست"
-              className="max-w-full max-h-[75vh] object-contain rounded"
+              large
+              imgClassName="max-w-full max-h-[75vh] object-contain rounded"
             />
           </div>
         )}

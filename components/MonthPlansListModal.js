@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Modal from './Modal'
+import WatermarkedFigure from './WatermarkedFigure'
 
 const PERIOD_LABELS = {
   daily: 'روزانه',
@@ -265,10 +266,11 @@ export default function MonthPlansListModal({
           >
             بستن
           </button>
-          <img
+          <WatermarkedFigure
             src={previewImage}
             alt="پیش‌نمایش تصویر پلن"
-            className="max-h-[90vh] max-w-full rounded-lg object-contain"
+            large
+            imgClassName="max-h-[90vh] max-w-full rounded-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
