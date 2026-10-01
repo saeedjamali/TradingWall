@@ -434,7 +434,9 @@ export default function DashboardPage() {
               <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-slate-200/80 border border-slate-300" />تعطیل</span>
               <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-primary-400" />با پلن</span>
               <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-orange-400" />بدون پلن</span>
-              <span className="text-sky-800">کلیک روز: پلن · چشم: معاملات و ستاپ</span>
+              <span className="basis-full text-sky-800">
+                کلیک روی هر روز برای ثبت پلن معاملاتی · دکمه مشاهده یا چشم برای ثبت ستاپ
+              </span>
             </div>
 
             {/* Calendar Grid */}
