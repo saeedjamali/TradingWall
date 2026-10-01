@@ -163,9 +163,9 @@ function ScopeLine({ label, report }) {
     <Note tone={up ? 'emerald' : down ? 'rose' : 'slate'}>
       <span className="font-bold text-slate-800">{label}</span>
       <span className="mx-1 text-slate-300">·</span>
-      واقعی <Amount value={report.actual.totalProfitLoss} className="text-slate-700" />
+      برایند دلاری معاملات واقعی  <Amount value={report.actual.totalProfitLoss} className="text-slate-700" />
       <span className="mx-1 text-slate-300">←</span>
-      با سقف <Amount value={report.limited.totalProfitLoss} className="text-amber-800 ring-amber-200" />
+      با در نظر گرفتن سقف روزانه <Amount value={report.limited.totalProfitLoss} className="text-amber-800 ring-amber-200" />
       <span className="mx-1 text-slate-300">·</span>
       اختلاف{' '}
       <Amount
