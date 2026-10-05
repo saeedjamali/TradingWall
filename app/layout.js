@@ -115,6 +115,18 @@ export default function RootLayout({ children }) {
         <Script id="tw-theme" strategy="beforeInteractive">
           {THEME_BOOTSTRAP}
         </Script>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-FL4GR6GMHK"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-FL4GR6GMHK');
+          `}
+        </Script>
         <SeoJsonLd />
         <ActiveSessionGuard />
         <SiteLogTracker />
